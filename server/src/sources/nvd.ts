@@ -23,7 +23,7 @@ interface NvdCve {
   descriptions: { lang: string; value: string }[];
   metrics?: Record<string, CvssMetric[] | undefined>;
   weaknesses?: { source: string; description: { lang: string; value: string }[] }[];
-  configurations?: { nodes: { cpeMatch?: { vulnerable: boolean; criteria: string }[] }[] }[];
+  configurations?: { nodes?: { cpeMatch?: { vulnerable: boolean; criteria: string }[] }[] }[];
   references?: { url: string; source?: string; tags?: string[] }[];
   cisaExploitAdd?: string;
   cisaVulnerabilityName?: string;
@@ -80,8 +80,8 @@ export function parseCpe(cpe: string): { vendor: string; product: string; part: 
 
 const humanize = (s: string) => s.replace(/_/g, ' ').replace(/\b[a-z]/g, (c) => c.toUpperCase());
 
-export function parseNvd(resp: NvdResponse, opts: { onlyNotable?: boolean } = {}): Batch {
-  const b = emptyBatch();
+export function parseNvd(resp: NvdResponse, opts: { onlyNotable?: boolean } = {}): Batch & { skipped: string[] } {
+  const b = { ...emptyBatch(), skipped: [] as string[] };
   const refs = new Set<string>();
   const ref = (node: Batch['nodes'][number]) => {
     if (refs.has(node.id)) return;
@@ -91,8 +91,22 @@ export function parseNvd(resp: NvdResponse, opts: { onlyNotable?: boolean } = {}
   };
 
   for (const { cve } of resp.vulnerabilities) {
+    const mark = [b.nodes.length, b.edges.length, b.provenance.length] as const;
+    try {
+      parseOne(cve);
+    } catch {
+      // One malformed record must not discard the rest of the page; drop its partial output.
+      b.nodes.length = mark[0];
+      b.edges.length = mark[1];
+      b.provenance.length = mark[2];
+      b.skipped.push(cve?.id ?? 'unknown');
+    }
+  }
+  return b;
+
+  function parseOne(cve: NvdCve) {
     const cvss = bestCvss(cve.metrics);
-    if (opts.onlyNotable && !cve.cisaExploitAdd && (cvss?.score ?? 0) < RECENT_MIN_CVSS) continue;
+    if (opts.onlyNotable && !cve.cisaExploitAdd && (cvss?.score ?? 0) < RECENT_MIN_CVSS) return;
 
     const id = cveNodeId(cve.id);
     const desc = cve.descriptions.find((d) => d.lang === 'en')?.value ?? cve.descriptions[0]?.value ?? '';
@@ -129,7 +143,7 @@ export function parseNvd(resp: NvdResponse, opts: { onlyNotable?: boolean } = {}
 
     const products = new Map<string, { vendor: string; product: string }>();
     for (const cfg of cve.configurations ?? []) {
-      for (const node of cfg.nodes) {
+      for (const node of cfg.nodes ?? []) {
         for (const m of node.cpeMatch ?? []) {
           if (!m.vulnerable) continue;
           const p = parseCpe(m.criteria);
@@ -147,7 +161,6 @@ export function parseNvd(resp: NvdResponse, opts: { onlyNotable?: boolean } = {}
       );
     }
   }
-  return b;
 }
 
 const merge = (into: Batch, from: Batch) => {
@@ -173,7 +186,9 @@ export const nvdSource: SourceModule = {
         // `hasKev` is a valueless flag in the NVD API.
         const url = `${NVD_API}?${qs.toString().replace('hasKev=', 'hasKev')}`;
         const resp = await ctx.fetchJson<NvdResponse>(url, { headers, timeoutMs: 90_000, retries: 3 });
-        merge(out, parseNvd(resp, { onlyNotable }));
+        const { skipped, ...batch } = parseNvd(resp, { onlyNotable });
+        if (skipped.length) ctx.log(`nvd: skipped malformed records ${skipped.join(', ')}`);
+        merge(out, batch);
         ctx.log(`nvd: ${Math.min(start + pageSize, resp.totalResults)}/${resp.totalResults}`);
         if (start + pageSize >= resp.totalResults) break;
       }
