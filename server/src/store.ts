@@ -185,7 +185,8 @@ export class Store {
 
   /**
    * Writes a batch atomically. Existing nodes are merged: non-null incoming columns win,
-   * null columns keep the stored value, and attrs are JSON-merged.
+   * null columns keep the stored value, and attrs are JSON-merged. An empty title means
+   * "enrichment only, keep the stored title"; reference nodes keep the first title seen.
    */
   writeBatch(batch: Batch): void {
     const now = this.now();
@@ -195,7 +196,8 @@ export class Store {
        values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        on conflict (id) do update set
          type = excluded.type,
-         title = excluded.title,
+         title = case when excluded.title = '' or nodes.type in ('vendor', 'product', 'weakness')
+           then nodes.title else excluded.title end,
          summary = coalesce(excluded.summary, nodes.summary),
          url = coalesce(excluded.url, nodes.url),
          category = coalesce(excluded.category, nodes.category),
