@@ -1,16 +1,17 @@
 # SENTINEL — Backlog
 
-This file is the source of truth for the backlog until it is mirrored into GitHub Issues.
+This file is the planning source for the backlog. It is mirrored in
+[GitHub Issues](https://github.com/HVStudios/sentinel/issues), where day-to-day status lives.
 `node scripts/create-github-issues.mjs` creates one issue per `###` entry below. Its
 `--dry-run` flag prints the issues instead of creating them. Each entry has an ID, a
 priority (P0 = MVP), labels, a status, and acceptance criteria.
 
-Status values: `todo` · `in-progress` · `done (branch)`.
+Status values: `todo` · `in-progress` · `done (merged)`.
 
 ## P0 — MVP
 
 ### SEN-01 · Project scaffold, tooling and CI
-Priority: P0 · Labels: infra · Status: done (feature/sen-01-scaffold)
+Priority: P0 · Labels: infra · Status: done (merged)
 
 npm workspaces (`server`, `web`), strict TypeScript, Vitest, GitHub Actions CI running
 typecheck, tests and build.
@@ -19,7 +20,7 @@ typecheck, tests and build.
 - [x] CI workflow runs on push and pull_request
 
 ### SEN-02 · SQLite store and domain model
-Priority: P0 · Labels: backend, data · Status: done (feature/sen-02-store)
+Priority: P0 · Labels: backend, data · Status: done (merged)
 
 Nodes, edges, provenance and sources tables using `node:sqlite`. Idempotent upserts,
 transactional batch writes, query helpers.
@@ -29,7 +30,7 @@ transactional batch writes, query helpers.
 - [x] Unit tests with in-memory DB
 
 ### SEN-03 · Ingest CISA KEV
-Priority: P0 · Labels: backend, ingestion · Status: done (feature/sen-03-ingest)
+Priority: P0 · Labels: backend, ingestion · Status: done (merged)
 
 Parse the KEV JSON feed into vulnerability, vendor, product and CWE nodes with
 reported edges.
@@ -38,7 +39,7 @@ reported edges.
 - [x] dateAdded → occurred_at; ransomware use, due date, required action kept
 
 ### SEN-04 · NVD enrichment
-Priority: P0 · Labels: backend, ingestion · Status: done (feature/sen-03-ingest)
+Priority: P0 · Labels: backend, ingestion · Status: done (merged)
 
 Fetch CVE details (CVSS v3.x/v4, CWE, references, description) for KEV CVEs that lack
 them and for recently published CVEs. Respect rate limits.
@@ -47,34 +48,34 @@ them and for recently published CVEs. Respect rate limits.
 - [x] Parser tested against recorded fixture
 
 ### SEN-05 · FIRST EPSS scores
-Priority: P0 · Labels: backend, ingestion · Status: done (feature/sen-03-ingest)
+Priority: P0 · Labels: backend, ingestion · Status: done (merged)
 
 Batch-fetch EPSS score and percentile for stored CVEs.
 
 - [x] Batches of ≤ 100 CVEs; score date kept
 
 ### SEN-06 · Geolocated world events (USGS, NASA EONET)
-Priority: P0 · Labels: backend, ingestion, geo · Status: done (feature/sen-03-ingest)
+Priority: P0 · Labels: backend, ingestion, geo · Status: done (merged)
 
 - [x] Coordinates taken verbatim from source; `geo_basis = coordinates`
 - [x] Parsers tested against fixtures
 
 ### SEN-07 · News and tech sources (GDELT, Hacker News)
-Priority: P0 · Labels: backend, ingestion · Status: done (feature/sen-03-ingest)
+Priority: P0 · Labels: backend, ingestion · Status: done (merged)
 
 - [x] GDELT publisher country stored as `country` with `geo_basis = publisher_country` (never as event location)
 - [x] HN stories have no geography
 - [x] Source failure is recorded and does not abort the run
 
 ### SEN-08 · Relationship inference
-Priority: P0 · Labels: backend, analysis · Status: done (feature/sen-03-ingest)
+Priority: P0 · Labels: backend, analysis · Status: done (merged)
 
 - [x] CVE-ID mention → inferred edge, confidence 0.95
 - [x] Vendor-name mention → inferred edge, confidence 0.6, with stop-list
 - [x] Inferred edges recomputed each run; reported edges untouched
 
 ### SEN-09 · HTTP API
-Priority: P0 · Labels: backend, api · Status: done (feature/sen-04-api)
+Priority: P0 · Labels: backend, api · Status: done (merged)
 
 Feed, map, timeline, node, graph, sources and ingest endpoints (see ARCHITECTURE.md).
 
@@ -82,38 +83,38 @@ Feed, map, timeline, node, graph, sources and ingest endpoints (see ARCHITECTURE
 - [x] Input validation for query params
 
 ### SEN-10 · Web shell and world map
-Priority: P0 · Labels: frontend, geo · Status: done (feature/sen-05-web)
+Priority: P0 · Labels: frontend, geo · Status: done (merged)
 
 - [x] Equal Earth map, zoom/pan, points at true coordinates
 - [x] Publisher-country shading labelled as such; unmapped countries reported
 - [x] Click point → opens investigation
 
 ### SEN-11 · Event feed with filters
-Priority: P0 · Labels: frontend · Status: done (feature/sen-05-web)
+Priority: P0 · Labels: frontend · Status: done (merged)
 
 - [x] Category toggles, time window, text search
 - [x] KEV / EPSS / CVSS / ransomware badges, source attribution and timestamps
 
 ### SEN-12 · Investigation view and relationship graph
-Priority: P0 · Labels: frontend, analysis · Status: done (feature/sen-05-web)
+Priority: P0 · Labels: frontend, analysis · Status: done (merged)
 
 - [x] Facts, provenance and timestamps for any node
 - [x] Force graph, reported solid vs inferred dashed with confidence on hover
 - [x] Navigate by clicking graph nodes
 
 ### SEN-13 · Timeline
-Priority: P0 · Labels: frontend · Status: done (feature/sen-05-web)
+Priority: P0 · Labels: frontend · Status: done (merged)
 
 - [x] Stacked histogram by type; brush selects time window for map and feed
 
 ### SEN-14 · Documentation
-Priority: P0 · Labels: docs · Status: done (feature/sen-05-web)
+Priority: P0 · Labels: docs · Status: done (merged)
 
 - [x] README: install, ingest, run, test
 - [x] Backlog statuses reflect reality
 
 ### SEN-24 · Hosted static site on GitHub Pages
-Priority: P0 · Labels: infra, frontend · Status: done (feature/sen-24-pages)
+Priority: P0 · Labels: infra, frontend · Status: done (merged)
 
 Make SENTINEL viewable without running it locally. A scheduled GitHub Actions workflow runs
 the ingest and exports a JSON snapshot. The web app is built in *static mode*, which answers
@@ -123,7 +124,7 @@ the same queries client-side from that snapshot. The result is deployed to GitHu
 - [x] Static mode implements feed, map, timeline, node and graph queries client-side, with tests
 - [x] Workflow: scheduled refresh, ingest, export, build, deploy to Pages
 - [x] UI shows snapshot time and hides the refresh action in static mode
-- [ ] Pages enabled on the repository (needs a public repo or a paid plan for private Pages)
+- [x] Pages enabled; live at https://hvstudios.github.io/sentinel/
 
 ## P1 — Next
 
