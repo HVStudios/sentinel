@@ -112,6 +112,19 @@ Priority: P0 · Labels: docs · Status: done (feature/sen-05-web)
 - [x] README: install, ingest, run, test
 - [x] Backlog statuses reflect reality
 
+### SEN-24 · Hosted static site on GitHub Pages
+Priority: P0 · Labels: infra, frontend · Status: done (feature/sen-24-pages)
+
+Make SENTINEL viewable without running it locally. A scheduled GitHub Actions workflow runs
+the ingest and exports a JSON snapshot. The web app is built in *static mode*, which answers
+the same queries client-side from that snapshot. The result is deployed to GitHub Pages.
+
+- [x] `npm run export` writes a self-contained snapshot (all nodes, edges, provenance, source status)
+- [x] Static mode implements feed, map, timeline, node and graph queries client-side, with tests
+- [x] Workflow: scheduled refresh, ingest, export, build, deploy to Pages
+- [x] UI shows snapshot time and hides the refresh action in static mode
+- [ ] Pages enabled on the repository (needs a public repo or a paid plan for private Pages)
+
 ## P1 — Next
 
 ### SEN-15 · Scheduled refresh and ingest status panel

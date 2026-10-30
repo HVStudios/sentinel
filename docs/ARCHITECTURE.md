@@ -130,6 +130,25 @@ the current data.
 - **UI**: component tests for the feed, filters, detail panel and map rendering (jsdom).
 - **No network in tests**. Live fetching is exercised only by `npm run ingest`.
 
+## Static deployment (GitHub Pages)
+
+The web app has two data back-ends behind one `Api` interface (`web/src/api.ts`):
+
+- **live** (default): HTTP calls to the local server.
+- **static** (`VITE_STATIC=1`): downloads `snapshot.json` once and answers feed, map, timeline,
+  node and graph queries in the browser (`web/src/staticApi.ts`).
+
+`npm run export` writes the snapshot from the SQLite store (`server/src/snapshot.ts`), about
+11 MB raw and about 1 MB gzipped. `server/test/static-parity.test.ts` runs the full offline
+ingest, round-trips the snapshot through JSON, and asserts the static engine returns exactly
+what the SQL queries return (paging cursors, map aggregates, timeline buckets, graph
+truncation).
+
+`.github/workflows/pages.yml` runs on pushes to `main`, every 6 hours, and on demand. It
+runs tests, ingests live data, exports, builds with `VITE_BASE=/<repo>/`, and deploys with
+`actions/deploy-pages`. Routing uses `#/node/<id>` hashes, so deep links work without
+server rewrites. An optional `NVD_API_KEY` repository secret speeds up the NVD step.
+
 ## Operational notes
 
 - Config via env: `PORT` (default 8787), `HOST` (default 127.0.0.1),

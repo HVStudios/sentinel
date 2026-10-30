@@ -72,24 +72,44 @@ async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
 
 const timeParams = (f: Filters) => ({ from: f.from, to: f.to, types: f.types.join(',') || undefined });
 
-export const api = {
-  feed: (f: Filters, before?: string, signal?: AbortSignal) =>
+export interface SourcesResponse {
+  sources: SourceStatus[];
+  ingest: { running: boolean; last: { startedAt: string; finishedAt?: string; error?: string } | null };
+  /** Set in static mode: when the snapshot was exported. */
+  generatedAt?: string;
+}
+
+export interface Api {
+  /** `live` talks to the local server; `static` answers from a bundled snapshot (GitHub Pages). */
+  mode: 'live' | 'static';
+  feed(f: Filters, before?: string, signal?: AbortSignal): Promise<{ items: SNode[]; nextCursor: string | null }>;
+  map(f: Filters, signal?: AbortSignal): Promise<{ points: SNode[]; countries: { country: string; count: number }[] }>;
+  timeline(
+    f: Filters & { from: string; to: string },
+    buckets: number,
+    signal?: AbortSignal,
+  ): Promise<{ from: string; to: string; bucketMs: number; series: Partial<Record<TimedType, number[]>> }>;
+  node(id: string, signal?: AbortSignal): Promise<NodeDetail>;
+  graph(id: string, depth: number, signal?: AbortSignal): Promise<{ nodes: SNode[]; edges: SEdge[] }>;
+  sources(signal?: AbortSignal): Promise<SourcesResponse>;
+  startIngest(): Promise<void>;
+}
+
+export const httpApi: Api = {
+  mode: 'live',
+  feed: (f, before, signal) =>
     get<{ items: SNode[]; nextCursor: string | null }>(`/api/feed${qs({ ...timeParams(f), q: f.q, before, limit: 50 })}`, signal),
-  map: (f: Filters, signal?: AbortSignal) =>
+  map: (f, signal) =>
     get<{ points: SNode[]; countries: { country: string; count: number }[] }>(`/api/map${qs(timeParams(f))}`, signal),
-  timeline: (f: Filters & { from: string; to: string }, buckets: number, signal?: AbortSignal) =>
+  timeline: (f, buckets, signal) =>
     get<{ from: string; to: string; bucketMs: number; series: Partial<Record<TimedType, number[]>> }>(
       `/api/timeline${qs({ ...timeParams(f), buckets })}`,
       signal,
     ),
-  node: (id: string, signal?: AbortSignal) => get<NodeDetail>(`/api/nodes/${encodeURIComponent(id)}`, signal),
-  graph: (id: string, depth: number, signal?: AbortSignal) =>
+  node: (id, signal) => get<NodeDetail>(`/api/nodes/${encodeURIComponent(id)}`, signal),
+  graph: (id, depth, signal) =>
     get<{ nodes: SNode[]; edges: SEdge[] }>(`/api/graph/${encodeURIComponent(id)}${qs({ depth, limit: 60 })}`, signal),
-  sources: (signal?: AbortSignal) =>
-    get<{ sources: SourceStatus[]; ingest: { running: boolean; last: { startedAt: string; finishedAt?: string; error?: string } | null } }>(
-      '/api/sources',
-      signal,
-    ),
+  sources: (signal?: AbortSignal) => get<SourcesResponse>('/api/sources', signal),
   startIngest: async () => {
     const res = await fetch('/api/ingest', { method: 'POST' });
     if (!res.ok && res.status !== 409) throw new Error(`Refresh unavailable (${res.status})`);

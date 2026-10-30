@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { api } from '../api.ts';
+import { api } from '../apiClient.ts';
 import { formatDate, relativeTime } from '../lib/format.ts';
 import { useFetch } from '../lib/useFetch.ts';
 
@@ -62,12 +62,21 @@ export function SourcesPanel({ onClose }: { onClose: () => void }) {
           </tbody>
         </table>
         <div className="modal-foot">
-          <button onClick={refresh} disabled={data?.ingest.running}>
-            {data?.ingest.running ? 'Refreshing…' : 'Refresh all sources'}
-          </button>
-          <button className="ghost" onClick={() => setTick((t) => t + 1)}>
-            Reload status
-          </button>
+          {api.mode === 'static' ? (
+            <span className="muted small">
+              Static snapshot{data?.generatedAt && ` generated ${formatDate(data.generatedAt)} (${relativeTime(data.generatedAt)})`}. It is
+              rebuilt automatically by a scheduled GitHub Actions workflow.
+            </span>
+          ) : (
+            <>
+              <button onClick={refresh} disabled={data?.ingest.running}>
+                {data?.ingest.running ? 'Refreshing…' : 'Refresh all sources'}
+              </button>
+              <button className="ghost" onClick={() => setTick((t) => t + 1)}>
+                Reload status
+              </button>
+            </>
+          )}
           {msg && <span className="muted small">{msg}</span>}
         </div>
       </div>

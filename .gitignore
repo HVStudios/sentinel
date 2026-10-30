@@ -8,3 +8,5 @@ data/*.db-*
 .env
 playwright-report/
 test-results/
+web/public/snapshot.json
+.claude/

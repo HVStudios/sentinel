@@ -80,6 +80,8 @@ h3 { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: 
 .toggle-natural_event.on i { background: var(--c-event); box-shadow: 0 0 8px var(--c-event); }
 .toggle-article.on i { background: var(--c-news); box-shadow: 0 0 8px var(--c-news); }
 
+.snapshot-tag { margin-left: 8px; font-size: 11px; font-family: var(--mono); color: var(--accent); border: 1px solid rgba(94, 230, 196, 0.4); border-radius: 5px; padding: 0 5px; }
+
 /* Layout */
 .main {
   flex: 1; min-height: 0; display: grid; gap: 12px; padding: 12px;
