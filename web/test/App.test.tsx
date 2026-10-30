@@ -60,6 +60,18 @@ describe('App', () => {
     await waitFor(() => expect(calls.some((c) => c.startsWith('/api/feed') && c.includes('q=ivanti'))).toBe(true));
   });
 
+  it('orders the feed as mixed by default and switches without refetching the map', async () => {
+    const calls = mockApi();
+    render(<App now={() => new Date('2026-10-30T12:00:00Z')} />);
+    await screen.findByText('Ivanti flaw exploited');
+    expect(calls.some((c) => c.startsWith('/api/feed') && c.includes('sort=mixed'))).toBe(true);
+    const mapCalls = calls.filter((c) => c.startsWith('/api/map')).length;
+    fireEvent.click(screen.getByRole('button', { name: 'Top' }));
+    await waitFor(() => expect(calls.some((c) => c.startsWith('/api/feed') && c.includes('sort=top'))).toBe(true));
+    expect(calls.filter((c) => c.startsWith('/api/map')).length).toBe(mapCalls);
+    expect(screen.getByRole('button', { name: 'Top' }).getAttribute('aria-pressed')).toBe('true');
+  });
+
   it('never allows deselecting every category', async () => {
     mockApi();
     render(<App now={() => new Date('2026-10-30T12:00:00Z')} />);

@@ -68,9 +68,14 @@ sources(id PK, name, homepage, description, last_run_at, last_status,
   - `publisher_country`: the publishing outlet's country (GDELT, or the curated feed registry).
     This is *not* where the event happened, and the UI labels it as publisher country.
   - `null`: no location. This applies to all vulnerabilities.
-- **Severity** is normalised to 0–1 so the map and feed can rank items consistently
-  (max(CVSS/10, EPSS), earthquake magnitude scaled, etc.). The raw values are kept in
-  `attrs`.
+- **Severity** is normalised to 0–1 so the map and feed can rank items consistently. The raw
+  values are kept in `attrs`.
+  - Vulnerabilities: KEV-listed CVEs take 0.90–1.00 and all others 0–0.89 (confirmed
+    exploitation outranks theoretical severity). Within each band, max(CVSS/10, EPSS) decides.
+  - Natural events: scaled from magnitude (earthquakes), acreage (wildfires) or wind (storms).
+  - Articles have no source severity. SENTINEL assigns a heuristic rank (category base, Hacker
+    News points, mentions of KEV-listed or known CVEs). Every contribution is stored in
+    `attrs.rank.factors`, and the UI shows it as "SENTINEL rank", not as a fact.
 - **Edges** have `basis = reported | inferred`. Inferred edges always have
   `confidence` and `rationale`.
 
@@ -116,14 +121,22 @@ Articles use the same `news:<sha1(url)>` id as GDELT, so an article seen by both
 | Article contains a known vendor name (word boundary, ≥ 4 chars, stop-list for generic names) → `mentions` | inferred | 0.6 |
 
 Inferred edges are deleted and recomputed on every run, so they stay consistent with
-the current data.
+the current data. The same step recomputes vulnerability severity and article ranks.
+
+## Feed ordering
+
+A chronological feed is dominated by whichever category publishes most (a few days of NVD
+CVEs). `mixed` and `top` take from each category in turn: each category keeps its own offset,
+the cursor carries all of them (`mix:vulnerability=12,natural_event=4,article=5`), and if one
+category runs out the others fill the page. The static engine implements the same algorithm,
+and the parity test covers all three orderings.
 
 ## API
 
 | Endpoint | Description |
 |---|---|
 | `GET /api/health` | Liveness and DB counts. |
-| `GET /api/feed?from&to&types&q&limit&before` | Time-bound nodes, newest first, cursor pagination. |
+| `GET /api/feed?from&to&types&q&sort&limit&before` | Time-bound nodes with cursor pagination. `sort` is `latest` (chronological), `mixed` (one category at a time, newest first within each) or `top` (one category at a time, by severity/rank). |
 | `GET /api/map?from&to&types` | `{ points[], countries[] }`: geolocated nodes and publisher-country aggregates. |
 | `GET /api/timeline?from&to&types` | Histogram buckets per node type. |
 | `GET /api/nodes/:id` | Node, provenance and adjacent edges. |

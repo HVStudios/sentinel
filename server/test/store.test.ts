@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { Store } from '../src/store.ts';
+import { decodeMixCursor, encodeMixCursor, Store } from '../src/store.ts';
 import type { Batch } from '../src/types.ts';
 
 const src = { id: 'test', name: 'Test source', homepage: 'https://example.org', description: 'fixture' };
@@ -110,6 +110,64 @@ describe('Store', () => {
     expect(store.feed({ q: '100%' }).items).toHaveLength(0);
     // Reference nodes such as vendors never appear in the feed.
     expect(store.feed({ types: ['vendor'] }).items.every((i) => i.type !== 'vendor')).toBe(true);
+  });
+
+  describe('mixed and top orderings', () => {
+    /** 6 recent CVEs, 2 events and 2 articles: chronologically the CVEs crowd everything out. */
+    const crowded = (): Batch => ({
+      nodes: [
+        ...Array.from({ length: 6 }, (_, i) => ({ id: `cve:CVE-2026-000${i}`, type: 'vulnerability' as const, title: `CVE ${i}`, occurredAt: `2026-10-30T1${i}:00:00.000Z`, severity: 0.7 + i / 100 })),
+        { id: 'quake:a', type: 'natural_event' as const, title: 'Quake A', occurredAt: '2026-10-29T00:00:00.000Z', severity: 0.9 },
+        { id: 'quake:b', type: 'natural_event' as const, title: 'Quake B', occurredAt: '2026-10-29T06:00:00.000Z', severity: 0.1 },
+        { id: 'news:x', type: 'article' as const, title: 'Story X', occurredAt: '2026-10-28T00:00:00.000Z', severity: 0.6 },
+        { id: 'news:y', type: 'article' as const, title: 'Story Y', occurredAt: '2026-10-28T06:00:00.000Z' },
+      ],
+      edges: [],
+      provenance: [],
+    });
+
+    it('latest lets the busiest category fill the page', () => {
+      store.writeBatch(crowded());
+      expect(store.feed({ limit: 3 }).items.every((i) => i.type === 'vulnerability')).toBe(true);
+    });
+
+    it('mixed takes from each category in turn, newest first within each', () => {
+      store.writeBatch(crowded());
+      const page = store.feed({ limit: 6, sort: 'mixed' });
+      expect(page.items.map((i) => i.id)).toEqual(['cve:CVE-2026-0005', 'quake:b', 'news:y', 'cve:CVE-2026-0004', 'quake:a', 'news:x']);
+      const rest = store.feed({ limit: 6, sort: 'mixed', before: page.nextCursor! });
+      expect(rest.items.map((i) => i.id)).toEqual(['cve:CVE-2026-0003', 'cve:CVE-2026-0002', 'cve:CVE-2026-0001', 'cve:CVE-2026-0000']);
+      expect(rest.nextCursor).toBeNull();
+    });
+
+    it('top orders each category by severity, unranked last', () => {
+      store.writeBatch(crowded());
+      const page = store.feed({ limit: 6, sort: 'top' });
+      expect(page.items.map((i) => i.id)).toEqual(['cve:CVE-2026-0005', 'quake:a', 'news:x', 'cve:CVE-2026-0004', 'quake:b', 'news:y']);
+    });
+
+    it('pages through every item exactly once and respects filters', () => {
+      store.writeBatch(crowded());
+      for (const sort of ['mixed', 'top'] as const) {
+        const seen: string[] = [];
+        let before: string | undefined;
+        do {
+          const page = store.feed({ limit: 3, sort, before });
+          seen.push(...page.items.map((i) => i.id));
+          before = page.nextCursor ?? undefined;
+        } while (before);
+        expect(seen).toHaveLength(10);
+        expect(new Set(seen).size).toBe(10);
+      }
+      expect(store.feed({ sort: 'mixed', types: ['article'] }).items.map((i) => i.id)).toEqual(['news:y', 'news:x']);
+      expect(store.feed({ sort: 'top', q: 'quake' }).items.map((i) => i.id)).toEqual(['quake:a', 'quake:b']);
+    });
+
+    it('encodes cursors and ignores malformed ones', () => {
+      expect(decodeMixCursor(encodeMixCursor({ vulnerability: 3, article: 1 }))).toEqual({ vulnerability: 3, article: 1 });
+      expect(decodeMixCursor('mix:vendor=4,article=x,natural_event=2')).toEqual({ natural_event: 2 });
+      expect(decodeMixCursor('2026-01-01|id')).toEqual({});
+    });
   });
 
   it('separates coordinate points from publisher-country aggregates on the map', () => {

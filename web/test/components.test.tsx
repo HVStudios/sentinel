@@ -88,13 +88,15 @@ describe('Timeline', () => {
 
 describe('Investigate (articles)', () => {
   it('shows the outlet and the reference for its publisher country', async () => {
-    const feedArticle = { ...article, attrs: { domain: 'cyber.gc.ca', outlet: 'Canadian Centre for Cyber Security', publisherCountry: 'Canada', publisherCountryRef: 'https://www.cyber.gc.ca/en/about-cyber-centre', publisherCountryBasis: 'Outlet headquarters or issuing agency' } };
+    const feedArticle = { ...article, attrs: { rank: { score: 0.8, factors: ['government advisory (+0.55)', 'mentions a CISA KEV-listed CVE (+0.25)'] }, domain: 'cyber.gc.ca', outlet: 'Canadian Centre for Cyber Security', publisherCountry: 'Canada', publisherCountryRef: 'https://www.cyber.gc.ca/en/about-cyber-centre', publisherCountryBasis: 'Outlet headquarters or issuing agency' } };
     vi.stubGlobal('fetch', vi.fn((url: string) =>
       url.startsWith('/api/nodes/') ? json({ node: feedArticle, provenance: [], edges: [] }) : json({ nodes: [feedArticle], edges: [] }),
     ));
     render(<Investigate id={article.id} onSelect={() => {}} onClose={() => {}} />);
     expect(await screen.findByText('Canadian Centre for Cyber Security (cyber.gc.ca)')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'reference' }).getAttribute('href')).toBe('https://www.cyber.gc.ca/en/about-cyber-centre');
+    expect(screen.getByText(/government advisory \(\+0\.55\) · mentions a CISA KEV-listed CVE/)).toBeTruthy();
+    expect(screen.getByText('0.80', { exact: false })).toBeTruthy();
   });
 });
 

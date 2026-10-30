@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { TIMED_TYPES, type Filters, type SNode, type TimedType } from './api.ts';
+import { TIMED_TYPES, type FeedSort, type Filters, type SNode, type TimedType } from './api.ts';
 import { api } from './apiClient.ts';
 import { relativeTime, TYPE_LABEL } from './lib/format.ts';
 import { useFetch } from './lib/useFetch.ts';
@@ -18,6 +18,12 @@ export const PRESETS = [
 ] as const;
 type PresetId = (typeof PRESETS)[number]['id'];
 
+export const FEED_SORTS: { id: FeedSort; label: string; title: string }[] = [
+  { id: 'mixed', label: 'Mixed', title: 'Newest first, taking from each category in turn so no single category crowds out the others' },
+  { id: 'latest', label: 'Latest', title: 'Strictly newest first across all categories' },
+  { id: 'top', label: 'Top', title: 'Highest severity or SENTINEL rank first, taking from each category in turn' },
+];
+
 const nodeFromHash = () => {
   const m = /^#\/node\/(.+)$/.exec(window.location.hash);
   return m ? decodeURIComponent(m[1]!) : null;
@@ -33,6 +39,7 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
   const [history, setHistory] = useState<string[]>([]);
   const [showSources, setShowSources] = useState(false);
   const [showCountries, setShowCountries] = useState(true);
+  const [sort, setSort] = useState<FeedSort>('mixed');
   // Recomputed when the preset changes, so the window slides forward on re-selection.
   const [anchor, setAnchor] = useState(() => now().getTime());
 
@@ -66,13 +73,16 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
 
   const [pages, setPages] = useState<{ key: string; items: SNode[]; cursor: string | null }>({ key: '', items: [], cursor: null });
   const [cursor, setCursor] = useState<string | undefined>(undefined);
-  const feed = useFetch((s) => api.feed(filters, cursor, s), `${fkey}|${cursor ?? ''}`);
-  useEffect(() => setCursor(undefined), [fkey]);
+  // Sorting only affects the feed, so the map and timeline do not refetch when it changes.
+  const feedFilters: Filters = { ...filters, sort };
+  const feedKey = JSON.stringify(feedFilters);
+  const feed = useFetch((s) => api.feed(feedFilters, cursor, s), `${feedKey}|${cursor ?? ''}`);
+  useEffect(() => setCursor(undefined), [feedKey]);
   useEffect(() => {
     if (!feed.data) return;
     setPages((prev) => {
-      const items = cursor && prev.key === fkey ? [...prev.items, ...feed.data!.items] : feed.data!.items;
-      return { key: fkey, items, cursor: feed.data!.nextCursor };
+      const items = cursor && prev.key === feedKey ? [...prev.items, ...feed.data!.items] : feed.data!.items;
+      return { key: feedKey, items, cursor: feed.data!.nextCursor };
     });
     // Only react to new data; cursor and key are read as of that response.
   }, [feed.data]);
@@ -187,12 +197,19 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
           <div className="stage-head">
             <h2>Feed</h2>
             <span className="muted small">{pages.items.length ? `${pages.items.length}${pages.cursor ? '+' : ''} items` : ''}</span>
+            <div className="seg seg-sm" role="group" aria-label="Feed order">
+              {FEED_SORTS.map((o) => (
+                <button key={o.id} className={sort === o.id ? 'on' : ''} title={o.title} aria-pressed={sort === o.id} onClick={() => setSort(o.id)}>
+                  {o.label}
+                </button>
+              ))}
+            </div>
           </div>
           <Feed
-            items={pages.key === fkey ? pages.items : []}
+            items={pages.key === feedKey ? pages.items : []}
             loading={feed.loading}
             error={feed.error}
-            hasMore={pages.key === fkey && Boolean(pages.cursor)}
+            hasMore={pages.key === feedKey && Boolean(pages.cursor)}
             selectedId={selected}
             onSelect={select}
             onMore={() => pages.cursor && setCursor(pages.cursor)}

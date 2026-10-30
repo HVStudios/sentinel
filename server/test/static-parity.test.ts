@@ -44,8 +44,8 @@ describe('static snapshot engine parity', () => {
     { types: ['article', 'vulnerability'] as TimedType[], from: '2020-01-01T00:00:00.000Z', to: '2026-10-29T00:00:00.000Z' },
   ];
 
-  it('pages the feed identically', () => {
-    for (const f of cases) {
+  it('pages the feed identically in every ordering', () => {
+    for (const f of cases.flatMap((c) => (['latest', 'mixed', 'top'] as const).map((sort) => ({ ...c, sort })))) {
       let srvCursor: string | undefined;
       let staticCursor: string | undefined;
       for (let page = 0; page < 4; page++) {

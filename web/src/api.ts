@@ -50,11 +50,15 @@ export interface SourceStatus {
   lastDurationMs: number | null;
 }
 
+/** See server/src/store.ts: latest = chronological; mixed/top = one category at a time, by time or rank. */
+export type FeedSort = 'latest' | 'mixed' | 'top';
+
 export interface Filters {
   from?: string;
   to?: string;
   types: TimedType[];
   q?: string;
+  sort?: FeedSort;
 }
 
 const qs = (params: Record<string, string | number | undefined>) => {
@@ -98,7 +102,7 @@ export interface Api {
 export const httpApi: Api = {
   mode: 'live',
   feed: (f, before, signal) =>
-    get<{ items: SNode[]; nextCursor: string | null }>(`/api/feed${qs({ ...timeParams(f), q: f.q, before, limit: 50 })}`, signal),
+    get<{ items: SNode[]; nextCursor: string | null }>(`/api/feed${qs({ ...timeParams(f), q: f.q, sort: f.sort, before, limit: 50 })}`, signal),
   map: (f, signal) =>
     get<{ points: SNode[]; countries: { country: string; count: number }[] }>(`/api/map${qs(timeParams(f))}`, signal),
   timeline: (f, buckets, signal) =>

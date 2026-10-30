@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildVendorMatchers, extractCves, inferEdges, isMatchableVendor, runInference, vulnerabilitySeverity } from '../src/relate.ts';
+import { articleRank, buildVendorMatchers, extractCves, inferEdges, isMatchableVendor, runInference, vulnerabilitySeverity } from '../src/relate.ts';
 import { Store } from '../src/store.ts';
 
 describe('relationship inference', () => {
@@ -43,11 +43,22 @@ describe('relationship inference', () => {
     expect(edges.every((e) => e.rationale && e.rationale.length > 10)).toBe(true);
   });
 
-  it('ranks vulnerability severity from KEV, CVSS and EPSS', () => {
+  it('ranks known exploitation above theoretical severity', () => {
     expect(vulnerabilitySeverity({})).toBe(0);
-    expect(vulnerabilitySeverity({ kev: {} })).toBe(0.75);
-    expect(vulnerabilitySeverity({ kev: {}, cvss: { score: 9.8 } })).toBeCloseTo(0.98);
-    expect(vulnerabilitySeverity({ cvss: { score: 5 }, epss: { score: 0.9 } })).toBe(0.9);
+    expect(vulnerabilitySeverity({ kev: {} })).toBe(0.9);
+    expect(vulnerabilitySeverity({ kev: {}, cvss: { score: 9.8 } })).toBe(0.998);
+    expect(vulnerabilitySeverity({ cvss: { score: 5 }, epss: { score: 0.9 } })).toBe(0.801);
+    // An unexploited CVSS 10 still ranks below any KEV-listed CVE.
+    expect(vulnerabilitySeverity({ cvss: { score: 10 } })).toBeLessThan(vulnerabilitySeverity({ kev: {}, cvss: { score: 4 } }));
+  });
+
+  it('ranks articles with explained factors', () => {
+    expect(articleRank({ category: 'tech-news', attrs: {} }, { kevCves: 0, cves: 0 })).toEqual({ score: 0.3, factors: ['tech news (+0.30)'] });
+    const hot = articleRank({ category: 'security-news', attrs: { points: 500 } }, { kevCves: 1, cves: 2 });
+    expect(hot.score).toBe(0.85);
+    expect(hot.factors).toEqual(['security news (+0.45)', '500 Hacker News points (+0.15)', 'mentions a CISA KEV-listed CVE (+0.25)']);
+    expect(articleRank({ category: 'advisory', attrs: {} }, { kevCves: 0, cves: 3 }).score).toBe(0.65);
+    expect(articleRank({ category: 'advisory', attrs: { points: 5000 } }, { kevCves: 2, cves: 2 }).score).toBe(1);
   });
 
   it('recomputes inferred edges without touching reported ones', () => {
@@ -65,6 +76,10 @@ describe('relationship inference', () => {
     expect(runInference(store).edges).toBe(2);
     expect(runInference(store).edges).toBe(2);
     expect(store.counts().edges).toBe(3);
-    expect(store.getNode('cve:CVE-2026-0001')!.severity).toBe(0.75);
+    expect(store.getNode('cve:CVE-2026-0001')!.severity).toBe(0.9);
+    // The article mentions a KEV-listed CVE, so its rank says so.
+    const article = store.getNode('news:1')!;
+    expect(article.severity).toBe(0.55);
+    expect(article.attrs.rank).toEqual({ score: 0.55, factors: ['news (+0.30)', 'mentions a CISA KEV-listed CVE (+0.25)'] });
   });
 });

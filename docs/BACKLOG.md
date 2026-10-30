@@ -178,10 +178,14 @@ Actions runners, so it stays best-effort.
 - [x] Investigation panel shows the outlet, publisher country and its reference
 
 ### SEN-23 · Feed significance sort
-Priority: P1 · Labels: frontend, backend · Status: todo
+Priority: P1 · Labels: frontend, backend · Status: done (merged)
 
-A few days of notable NVD CVEs (CVSS ≥ 7) can push other categories out of the chronological
-feed. Add a "most significant" ordering (severity, then time) and per-category quotas.
+A few days of notable NVD CVEs (CVSS ≥ 7) pushed other categories out of the chronological feed.
+
+- [x] Feed orderings `mixed` (default; one category at a time, newest first), `latest` and `top` (one category at a time, by rank)
+- [x] Explained article rank (category, HN points, mentions of KEV-listed or known CVEs), shown as "SENTINEL rank"
+- [x] KEV-listed CVEs always outrank unexploited ones
+- [x] Same behaviour in the static (Pages) build, covered by the parity test
 
 ### SEN-21 · Story clustering over time
 Priority: P2 · Labels: analysis · Status: todo
