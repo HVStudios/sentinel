@@ -47,7 +47,7 @@ export const extractCves = (text: string): string[] => [...new Set((text.match(C
 /** Pure inference over the given nodes; `exists` reports whether a node id is in the store. */
 export function inferEdges(
   articles: Pick<NodeRow, 'id' | 'title' | 'summary'>[],
-  vulnerabilities: Pick<NodeRow, 'id' | 'summary'>[],
+  vulnerabilities: Pick<NodeRow, 'id' | 'summary' | 'attrs'>[],
   vendors: VendorMatcher[],
   exists: (id: string) => boolean,
 ): SentinelEdge[] {
@@ -74,11 +74,13 @@ export function inferEdges(
 
   for (const v of vulnerabilities) {
     const self = v.id.slice(4);
-    for (const cve of extractCves(v.summary ?? '')) {
+    // NVD's description replaces KEV's as `summary`; CISA's own text (e.g. "can be chained with…") is kept in attrs.
+    const kevText = (v.attrs?.kev as { description?: string } | undefined)?.description ?? '';
+    for (const cve of extractCves(`${v.summary ?? ''} ${kevText}`)) {
       if (cve === self || !exists(cveNodeId(cve))) continue;
       edges.push({
         src: v.id, dst: cveNodeId(cve), rel: 'references', basis: 'inferred', confidence: CONFIDENCE.cveReference, sourceId,
-        rationale: `The description of ${self} refers to ${cve} (e.g. an exploit chain).`,
+        rationale: `The NVD or CISA description of ${self} refers to ${cve} (e.g. an exploit chain).`,
       });
     }
   }

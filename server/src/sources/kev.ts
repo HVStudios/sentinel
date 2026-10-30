@@ -60,6 +60,7 @@ export function parseKev(feed: KevFeed): Batch {
           dateAdded: v.dateAdded,
           dueDate: v.dueDate,
           requiredAction: v.requiredAction,
+          description: v.shortDescription,
           ransomware: v.knownRansomwareCampaignUse,
           vendorProject: v.vendorProject,
           product: v.product,
