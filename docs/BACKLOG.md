@@ -166,13 +166,16 @@ Priority: P1 · Labels: frontend, a11y · Status: todo
 Keyboard navigation for map and graph, ARIA labels, mobile layout, contrast audit.
 
 ### SEN-22 · Reliable news source with publisher country
-Priority: P1 · Labels: ingestion, geo · Status: todo
+Priority: P1 · Labels: ingestion, geo · Status: done (merged)
 
-GDELT DOC 2.0 returned HTTP 429 or empty results for most requests during development. The
-pipeline already records the failure and carries on. Next steps: honour GDELT's
-one-request-per-5-seconds limit across runs (persist the last request time), add backoff
-across runs, and evaluate a second news source that gives the publisher country (for example
-curated RSS feeds whose outlet country is configured explicitly and attributed).
+GDELT DOC 2.0 returned HTTP 429 or empty results for most requests, locally and on GitHub
+Actions runners, so it stays best-effort.
+
+- [x] Curated RSS/Atom feed registry (17 feeds: security news, government advisories, tech/AI) with the publisher country and a reference per outlet
+- [x] Items without date or link dropped, 30-day window, deduplicated with GDELT by URL
+- [x] Per-feed failures reported as source warnings; GDELT partial failures too
+- [x] Tech-feed items classified by headline (security / AI / tech)
+- [x] Investigation panel shows the outlet, publisher country and its reference
 
 ### SEN-23 · Feed significance sort
 Priority: P1 · Labels: frontend, backend · Status: todo

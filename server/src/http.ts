@@ -19,24 +19,17 @@ export interface FetchOptions {
 
 const defaultSleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
-/** GET a JSON document with a timeout and exponential backoff on 429/5xx and network errors. */
-export async function fetchJson<T = unknown>(url: string, opts: FetchOptions = {}): Promise<T> {
-  const { timeoutMs = 30_000, retries = 2, headers = {}, fetchImpl = fetch, sleep = defaultSleep } = opts;
+/** GET a document as text with a timeout and exponential backoff on 429/5xx and network errors. */
+export async function fetchText(url: string, opts: FetchOptions & { accept?: string } = {}): Promise<string> {
+  const { timeoutMs = 30_000, retries = 2, headers = {}, fetchImpl = fetch, sleep = defaultSleep, accept = '*/*' } = opts;
   let lastErr: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const res = await fetchImpl(url, {
-        headers: { 'user-agent': `sentinel/${VERSION} (+local research tool)`, accept: 'application/json', ...headers },
+        headers: { 'user-agent': `sentinel/${VERSION} (+local research tool)`, accept, ...headers },
         signal: AbortSignal.timeout(timeoutMs),
       });
-      if (res.ok) {
-        const text = await res.text();
-        try {
-          return JSON.parse(text) as T;
-        } catch {
-          throw new HttpError(res.status, `Invalid JSON from ${new URL(url).host}: ${text.slice(0, 120)}`);
-        }
-      }
+      if (res.ok) return await res.text();
       const err = new HttpError(res.status, `HTTP ${res.status} from ${new URL(url).host}`);
       if (res.status !== 429 && res.status < 500) throw err;
       lastErr = err;
@@ -49,6 +42,16 @@ export async function fetchJson<T = unknown>(url: string, opts: FetchOptions = {
     }
   }
   throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
+}
+
+/** GET a JSON document (see fetchText for retry behaviour). */
+export async function fetchJson<T = unknown>(url: string, opts: FetchOptions = {}): Promise<T> {
+  const text = await fetchText(url, { ...opts, accept: 'application/json' });
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new HttpError(200, `Invalid JSON from ${new URL(url).host}: ${text.slice(0, 120)}`);
+  }
 }
 
 /** Sliding-window limiter: at most `max` acquisitions per `windowMs`. */

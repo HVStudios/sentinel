@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <id>urn:uuid:72595d37-5e23-4d48-9c9f-67a6a47c2f53</id>
+    <title>heise security News</title>
+    <updated>2026-10-30T14:23:00.000Z</updated>
+    <generator>Heise - Content</generator>
+    <author>
+        <name>Heise</name>
+        <uri>https://www.heise.de</uri>
+    </author>
+    <link rel="alternate" href="https://www.heise.de/security/feed.xml"/>
+    <rights>Copyright (c) Heise Medien</rights>
+    <entry>
+        <title type="html"><![CDATA[„SMS des Todes“: Sicherheitslücke lässt Android-Smartphones abstürzen]]></title>
+        <id>urn:bid:5192158</id>
+        <link href="https://www.heise.de/news/SMS-des-Todes-Sicherheitsluecke-laesst-Android-Smartphones-abstuerzen-11506526.html"/>
+        <updated>2026-10-30T14:23:00.000Z</updated>
+        <summary type="html"><![CDATA[Eine unsichtbare SMS lässt Android-Smartphones abstürzen, unterbricht Anrufe und hält Geräte in einer Reboot-Schleife gefangen. Google hat bereits reagiert.]]></summary>
+        <content type="html"><![CDATA[<section><a href="https://www.heise.de/news/SMS-des-Todes-Sicherheitsluecke-laesst-Android-Smartphones-abstuerzen-11506526.html"><img src="https://heise.cloudimg.io/v7/_www-heise-de_/imgs/18/5/1/9/2/1/5/8/android-bugdroid-schloss-6685cd28a2fdd995.jpeg?height=300&amp;org_if_sml=1&amp;q=75" alt="Android-Bugdroid vor Schloss-Symbol"/></a><p>Eine unsichtbare SMS lässt Android-Smartphones abstürzen, unterbricht Anrufe und hält Geräte in einer Reboot-Schleife gefangen. Google hat bereits reagiert.</p></section>]]></content>
+        <published>2026-10-30T14:23:00.000Z</published>
+    </entry><entry>
+        <title type="html"><![CDATA[Claude-Code-Erweiterung im Cursor-Marktplatz mit Malware infiziert]]></title>
+        <id>urn:bid:5192079</id>
+        <link href="https://www.heise.de/news/Claude-Code-Erweiterung-im-Cursor-Marktplatz-mit-Malware-infiziert-11506368.html"/>
+        <updated>2026-10-30T13:08:00.000Z</updated>
+        <summary type="html"><![CDATA[Im Marktplatz der Entwicklungsumgebung Cursor steckte in der offiziellen Claude-Code-Erweiterung eine SSH-Backdoor.]]></summary>
+        <content type="html"><![CDATA[<section><a href="https://www.heise.de/news/Claude-Code-Erweiterung-im-Cursor-Marktplatz-mit-Malware-infiziert-11506368.html"><img src="https://heise.cloudimg.io/v7/_www-heise-de_/imgs/18/5/1/9/2/0/7/9/shutterstock_2550518111-267ab5f57bfada2a.jpeg?height=300&amp;org_if_sml=1&amp;q=75" alt="Ein Smartphone mit dem Schriftzug Anthropic auf dem Display liegt auf einer Tastatur."/></a><p>Im Marktplatz der Entwicklungsumgebung Cursor steckte in der offiziellen Claude-Code-Erweiterung eine SSH-Backdoor.</p></section>]]></content>
+        <published>2026-10-30T13:08:00.000Z</published>
+    </entry></feed>

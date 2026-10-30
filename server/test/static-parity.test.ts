@@ -27,7 +27,7 @@ describe('static snapshot engine parity', () => {
 
   beforeAll(async () => {
     vi.spyOn(RateLimiter.prototype, 'acquire').mockResolvedValue();
-    await ingest(store, { ctx: { fetchJson: fakeFetch, env: {}, log: () => {}, now: () => new Date('2026-10-30T20:00:00Z') } });
+    await ingest(store, { ctx: { fetchJson: fakeFetch, fetchText: (async () => readFileSync(new URL('./fixtures/atom-cccs.xml', import.meta.url), 'utf8')) as never, env: {}, log: () => {}, now: () => new Date('2026-10-30T20:00:00Z') } });
     vi.restoreAllMocks();
     // Round-trip through JSON exactly like the deployed snapshot file.
     ix = indexSnapshot(JSON.parse(JSON.stringify(buildSnapshot(store))) as Snapshot);

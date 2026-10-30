@@ -20,6 +20,9 @@ const fakeFetch = (async (url: string) => {
   throw new Error(`unexpected ${url}`);
 }) as typeof fetchJson;
 
+/** Every curated feed answers with the same recorded RSS document. */
+const fakeFetchText = (async () => readFileSync(new URL('./fixtures/rss-bleepingcomputer.xml', import.meta.url), 'utf8')) as unknown as typeof import('../src/http.ts').fetchText;
+
 describe('ingest pipeline', () => {
   it('runs all sources offline, isolates failures and records status', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
@@ -28,7 +31,7 @@ describe('ingest pipeline', () => {
     // Speed up rate limiters: the pipeline must not depend on wall-clock sleeps in tests.
     vi.spyOn(RateLimiter.prototype, 'acquire').mockResolvedValue();
     const { results, inferredEdges } = await ingest(store, {
-      ctx: { fetchJson: fakeFetch, env: {}, log: (m) => logs.push(m), now: () => new Date('2026-10-30T20:00:00Z') },
+      ctx: { fetchJson: fakeFetch, fetchText: fakeFetchText, env: {}, log: (m) => logs.push(m), now: () => new Date('2026-10-30T20:00:00Z') },
     });
     vi.useRealTimers();
     vi.restoreAllMocks();
@@ -36,6 +39,8 @@ describe('ingest pipeline', () => {
     expect(results.map((r) => [r.source, r.status])).toEqual(SOURCES.map((s) => [s.meta.id, s.meta.id === 'gdelt' ? 'error' : 'ok']));
     const gdelt = store.sources().find((s) => s.id === 'gdelt')!;
     expect(gdelt.lastError).toContain('429');
+    // Feed articles carry the configured publisher country and shade the map.
+    expect(store.mapData({}).countries.length).toBeGreaterThan(0);
 
     const log4j = store.getNode('cve:CVE-2021-44228')!;
     // KEV facts, NVD CVSS and EPSS score merged onto one node with three provenance records.

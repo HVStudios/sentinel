@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0"
+        xmlns:content="http://purl.org/rss/1.0/modules/content/"
+        xmlns:wfw="http://wellformedweb.org/CommentAPI/"
+        xmlns:dc="http://purl.org/dc/elements/1.1/"
+        xmlns:atom="http://www.w3.org/2005/Atom"
+        >
+
+<channel>
+        <title>BleepingComputer</title>
+
+        <link>https://www.bleepingcomputer.com/</link>
+        <description>BleepingComputer - All Stories</description>
+        <pubDate>Fri, 30 Oct 2026 21:59:25 GMT</pubDate>
+        <generator>https://www.bleepingcomputer.com/</generator>
+        <language>en</language>
+        <atom:link href="https://www.bleepingcomputer.com/feed/" rel="self" type="application/rss+xml" />
+        
+ <item>
+        <title>Critical Linux kernel flaw allows remote root attacks on MPTCP servers</title>
+        <link>https://www.bleepingcomputer.com/news/security/critical-linux-kernel-flaw-allows-remote-root-attacks-on-mptcp-servers/</link>
+        <pubDate>Fri, 30 Oct 2026 17:09:46 -0400</pubDate>
+        <dc:creator>Lawrence Abrams</dc:creator>
+        
+        <category><![CDATA[Security]]></category>
+
+        <category><![CDATA[Linux]]></category>
+
+        <guid>https://www.bleepingcomputer.com/news/security/critical-linux-kernel-flaw-allows-remote-root-attacks-on-mptcp-servers/</guid>
+        <description><![CDATA[Security researchers at Anthropic have developed an exploit for a critical Linux kernel vulnerability that allows unauthenticated attackers to remotely execute commands as root on servers running Multipath TCP (MPTCP) listeners. [...]]]></description>
+ </item><item>
+        <title>Trezor warns of suspected crypto-theft implant in hardware wallet</title>
+        <link>https://www.bleepingcomputer.com/news/security/trezor-warns-of-suspected-crypto-theft-implant-in-hardware-wallet/</link>
+        <pubDate>Fri, 30 Oct 2026 11:58:20 -0400</pubDate>
+        <dc:creator>Bill Toulas</dc:creator>
+        
+        <category><![CDATA[Security]]></category>
+
+        <category><![CDATA[CryptoCurrency]]></category>
+
+        <category><![CDATA[Hardware]]></category>
+
+        <guid>https://www.bleepingcomputer.com/news/security/trezor-warns-of-suspected-crypto-theft-implant-in-hardware-wallet/</guid>
+        <description><![CDATA[Hardware wallet device maker Trezor has received credible reports about a suspected hardware crypto-theft implant in a Trezor Safe 5 sold by its reseller CryptoBilis in Southeast Asia. [...]]]></description>
+ </item><item>
+        <title>Malicious Claude Code extension on Cursor planted SSH backdoors</title>
+        <link>https://www.bleepingcomputer.com/news/security/malicious-claude-code-extension-on-cursor-planted-ssh-backdoors/</link>
+        <pubDate>Fri, 30 Oct 2026 10:36:54 -0400</pubDate>
+        <dc:creator>Bill Toulas</dc:creator>
+        
+        <category><![CDATA[Security]]></category>
+
+        <guid>https://www.bleepingcomputer.com/news/security/malicious-claude-code-extension-on-cursor-planted-ssh-backdoors/</guid>
+        <description><![CDATA[A malicious version of Anthropic's Claude Code VS Code extension was distributed through Cursor's extension marketplace for approximately 11 hours on October 29, exposing up to 5,000 developers to malware designed to install persistent SSH backdoors. [...]]]></description>
+ </item></channel></rss>
