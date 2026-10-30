@@ -1,0 +1,56 @@
+name: Publish snapshot to GitHub Pages
+
+# Rebuilds the static site from fresh public data. The site needs no server: the web app
+# is built in static mode and answers every query from snapshot.json in the browser.
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 */6 * * *' # every 6 hours
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Ingest public sources
+        # Exits non-zero only if every source fails; partial data is still published.
+        run: npm run ingest
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+      - run: npm run export
+      - name: Build static site
+        run: npm run build -w web
+        env:
+          VITE_STATIC: '1'
+          VITE_BASE: /${{ github.event.repository.name }}/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

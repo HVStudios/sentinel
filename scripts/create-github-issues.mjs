@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 // Mirrors docs/BACKLOG.md into GitHub Issues using the gh CLI.
+// Implemented items stay open with an `in-review` label until their PR reaches main.
 // Usage: node scripts/create-github-issues.mjs [--dry-run] [--repo owner/name]
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
@@ -14,8 +15,9 @@ const entries = text.split(/^### /m).slice(1).map((chunk) => {
   const [heading, ...rest] = chunk.split('\n');
   const body = rest.join('\n').replace(/\n## [\s\S]*$/, '').trim();
   const meta = body.match(/Priority: (\S+) · Labels: ([^·]+) · Status: (.+)/);
-  const labels = meta ? [meta[1], ...meta[2].split(',').map((l) => l.trim())] : [];
-  return { title: heading.trim(), body, labels, done: meta?.[3].startsWith('done') };
+  const done = Boolean(meta?.[3].startsWith('done'));
+  const labels = meta ? [meta[1], ...meta[2].split(',').map((l) => l.trim()), ...(done ? ['in-review'] : [])] : [];
+  return { title: heading.trim(), body, labels, done };
 });
 
 const gh = (ghArgs) => execFileSync('gh', repo ? [...ghArgs, '--repo', repo] : ghArgs, { encoding: 'utf8' });
@@ -29,5 +31,4 @@ for (const e of entries) {
   if (dryRun) { console.log(`[${e.labels.join(', ')}] ${e.title}${e.done ? ' (done)' : ''}`); continue; }
   const url = gh(['issue', 'create', '--title', e.title, '--body', e.body, ...e.labels.flatMap((l) => ['--label', l])]).trim();
   console.log(url);
-  if (e.done) gh(['issue', 'close', url, '--reason', 'completed']);
 }

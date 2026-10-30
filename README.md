@@ -65,6 +65,33 @@ npm run dev
 This runs the API with `--watch` on port 8787 and Vite on http://localhost:5173 (with `/api`
 proxied to the API).
 
+## Hosted version (GitHub Pages)
+
+SENTINEL can run without a server. `.github/workflows/pages.yml` ingests fresh data every
+6 hours, exports it to a static `snapshot.json`, and publishes the app to GitHub Pages. In
+that build the browser answers every query from the snapshot, and the header shows how old
+the snapshot is.
+
+One-time setup:
+1. GitHub Pages must be available for the repository. Free accounts only get Pages on
+   **public** repositories; private repositories need GitHub Pro, Team or Enterprise.
+2. **Settings → Pages → Source: GitHub Actions**.
+3. Optional: add a free [NVD API key](https://nvd.nist.gov/developers/request-an-api-key) as
+   the repository secret `NVD_API_KEY`.
+
+The workflow runs on pushes to `main`, on its schedule, or manually under
+**Actions → Publish snapshot to GitHub Pages → Run workflow**.
+
+To try the static build locally:
+
+```bash
+VITE_BASE=/sentinel/ npm run build:static
+```
+
+```bash
+cd web && VITE_BASE=/sentinel/ npx vite preview
+```
+
 ## Testing
 
 ```bash
@@ -79,6 +106,8 @@ production build. CI (`.github/workflows/ci.yml`) runs the same steps. Individua
   store semantics (idempotent merges, atomic batches, paging), inference rules, the full
   offline ingest pipeline with failure isolation, HTTP retry/rate-limit helpers, and API
   integration via Fastify `inject()`.
+- **Static parity:** the snapshot engine used on GitHub Pages is checked against the SQL queries
+  on the same ingested data.
 - **Web (Vitest + Testing Library + jsdom):** formatting and geography helpers, the map
   (points, publisher-country shading, unmapped countries), feed, timeline brushing,
   investigation panel (reported vs inferred), and app-level filtering and navigation.
@@ -116,8 +145,10 @@ server/src/
   relate.ts    relationship inference and severity ranking
   ingest.ts    orchestration with per-source failure isolation
   api.ts       Fastify routes          main.ts  server entry
+  snapshot.ts  static export for GitHub Pages (npm run export)
 web/src/
   components/  WorldMap, Timeline, Feed, Investigate, Graph, SourcesPanel
+  staticApi.ts client-side query engine over snapshot.json (static mode)
   lib/         formatting, country-name mapping, fetch hook
 docs/          product spec, architecture, backlog
 scripts/       dev runner, GitHub issue creation from the backlog

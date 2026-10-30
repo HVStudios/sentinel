@@ -396,7 +396,10 @@ export class Store {
       for (const cur of frontier) {
         // Prefer reported, high-confidence links when the neighbourhood must be truncated.
         const adj = this.edgesOf(cur).sort(
-          (a, b) => (a.basis === b.basis ? b.confidence - a.confidence : a.basis === 'reported' ? -1 : 1),
+          (a, b) =>
+            (a.basis === b.basis ? 0 : a.basis === 'reported' ? -1 : 1) ||
+            b.confidence - a.confidence ||
+            `${a.src}|${a.dst}|${a.rel}`.localeCompare(`${b.src}|${b.dst}|${b.rel}`),
         );
         for (const e of adj) {
           const other = e.src === cur ? e.dst : e.src;
@@ -413,6 +416,20 @@ export class Store {
       frontier = next;
     }
     return { nodes: [...seen.values()], edges: [...edges.values()] };
+  }
+
+  /** Everything needed to answer API queries offline (see web/src/staticApi.ts). */
+  snapshot(): { nodes: NodeRow[]; edges: EdgeRow[]; provenance: { nodeId: string; sourceId: string; sourceUrl: string | null; fetchedAt: string }[] } {
+    return {
+      nodes: (this.db.prepare('select * from nodes order by id').all() as Row[]).map(toNode),
+      edges: (this.db.prepare('select * from edges order by src, dst, rel').all() as Row[]).map(toEdge),
+      provenance: (this.db.prepare('select * from provenance order by node_id, source_id').all() as Row[]).map((r) => ({
+        nodeId: r.node_id as string,
+        sourceId: r.source_id as string,
+        sourceUrl: r.source_url as string | null,
+        fetchedAt: r.fetched_at as string,
+      })),
+    };
   }
 
   sources(): SourceRow[] {

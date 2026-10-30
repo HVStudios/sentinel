@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
-import { api, type NodeDetail } from '../api.ts';
+import type { NodeDetail } from '../api.ts';
+import { api } from '../apiClient.ts';
 import { badgesFor, categoryLabel, formatDate, locationLabel, relativeTime, TYPE_LABEL } from '../lib/format.ts';
 import { useFetch } from '../lib/useFetch.ts';
 import { Graph } from './Graph.tsx';

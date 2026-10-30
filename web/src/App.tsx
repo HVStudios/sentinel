@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { api, TIMED_TYPES, type Filters, type SNode, type TimedType } from './api.ts';
-import { TYPE_LABEL } from './lib/format.ts';
+import { TIMED_TYPES, type Filters, type SNode, type TimedType } from './api.ts';
+import { api } from './apiClient.ts';
+import { relativeTime, TYPE_LABEL } from './lib/format.ts';
 import { useFetch } from './lib/useFetch.ts';
 import { WorldMap } from './components/WorldMap.tsx';
 import { Timeline } from './components/Timeline.tsx';
@@ -97,6 +98,8 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
   const toggleType = (t: TimedType) =>
     setTypes((cur) => (cur.includes(t) ? (cur.length > 1 ? cur.filter((x) => x !== t) : cur) : [...cur, t]));
 
+  const snapshot = useFetch((s) => api.sources(s), api.mode === 'static' ? 'snapshot' : null);
+
   const counts = map.data ? { points: map.data.points.length, countries: map.data.countries.reduce((s, c) => s + c.count, 0) } : null;
 
   return (
@@ -141,6 +144,11 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
         </div>
         <button className="ghost" onClick={() => setShowSources(true)}>
           Sources
+          {snapshot.data?.generatedAt && (
+            <span className="snapshot-tag" title={`Static snapshot generated ${snapshot.data.generatedAt}`}>
+              snapshot · {relativeTime(snapshot.data.generatedAt)}
+            </span>
+          )}
         </button>
       </header>
 
