@@ -5,6 +5,8 @@ technology and AI news, and significant world events into one explorable picture
 map, a unified feed, a brushable timeline, and an investigation view showing how items
 connect.
 
+**Live:** https://hvstudios.github.io/sentinel/ (a static snapshot rebuilt every 6 hours by GitHub Actions)
+
 ![SENTINEL main view](docs/screenshot.png)
 
 - **Real, attributed data.** CISA KEV, NIST NVD, FIRST EPSS, USGS, NASA EONET, GDELT and Hacker News.
