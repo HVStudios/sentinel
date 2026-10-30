@@ -79,7 +79,6 @@ export const gdeltSource: SourceModule = {
       }
     }
     if (errors.length === GDELT_QUERIES.length) throw new Error(errors.join('; '));
-    for (const e of errors) ctx.log(`gdelt: ${e}`);
-    return out;
+    return { ...out, warnings: errors };
   },
 };

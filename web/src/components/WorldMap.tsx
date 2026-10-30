@@ -160,7 +160,7 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
         <div className="legend-note">Points: coordinates as reported by USGS / NASA EONET. Size = severity.</div>
         {showCountries && (
           <div className="legend-note">
-            <i className="swatch-news" /> Shading: news volume by <strong>publisher country</strong> (GDELT), not where events happened.
+            <i className="swatch-news" /> Shading: news volume by <strong>publisher country</strong> (curated feeds and GDELT), not where events happened.
             {unmapped.length > 0 && (
               <span className="unmapped" title="These countries are too small for the 1:110m base map and are not drawn rather than guessed.">
                 {' '}

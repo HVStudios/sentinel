@@ -1,19 +1,23 @@
 import { createHash } from 'node:crypto';
 import type { Batch, SourceMeta } from '../types.ts';
 import type { Store } from '../store.ts';
-import type { fetchJson } from '../http.ts';
+import type { fetchJson, fetchText } from '../http.ts';
 
 export interface IngestContext {
   store: Store;
   fetchJson: typeof fetchJson;
+  fetchText: typeof fetchText;
   env: Record<string, string | undefined>;
   now: () => Date;
   log: (msg: string) => void;
 }
 
+/** A batch plus non-fatal problems (e.g. 2 of 17 feeds failed), shown in the source status. */
+export type SourceResult = Batch & { warnings?: string[] };
+
 export interface SourceModule {
   meta: SourceMeta;
-  run(ctx: IngestContext): Promise<Batch>;
+  run(ctx: IngestContext): Promise<SourceResult>;
 }
 
 export const slug = (s: string): string =>

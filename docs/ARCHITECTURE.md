@@ -65,7 +65,7 @@ sources(id PK, name, homepage, description, last_run_at, last_status,
   the source published it. `ingested_at` is when SENTINEL stored it.
 - **Geography**: `geo_basis` records why a node has a location.
   - `coordinates`: the source supplies lat/lon (USGS, EONET).
-  - `publisher_country`: the source supplies the publishing outlet's country (GDELT).
+  - `publisher_country`: the publishing outlet's country (GDELT, or the curated feed registry).
     This is *not* where the event happened, and the UI labels it as publisher country.
   - `null`: no location. This applies to all vulnerabilities.
 - **Severity** is normalised to 0–1 so the map and feed can rank items consistently
@@ -95,7 +95,16 @@ records per-source status in `sources`, so one failing source never blocks the o
 After all sources run, `relate.ts` recomputes inferred edges.
 
 Order: KEV → NVD (KEV CVEs missing details, plus CVEs published in the last N days) →
-EPSS (for all stored CVEs) → USGS → EONET → GDELT → HN → inference.
+EPSS (for all stored CVEs) → USGS → EONET → curated feeds → GDELT → HN → inference.
+
+A source may return non-fatal `warnings` (e.g. 2 of 17 feeds failed). The source then stays
+`ok`, and the warnings are stored in `last_error` so the Sources panel shows them.
+
+**Curated feeds** (`sources/feeds.ts`, `sources/rss.ts`): a registry of RSS/Atom feeds. Each entry
+has the publisher's country and a `countryRef` page that confirms it. Items get
+`geo_basis = publisher_country` and carry the basis and reference in `attrs`. Items without a
+parseable date or link are dropped, and so are items older than 30 days or dated in the future.
+Articles use the same `news:<sha1(url)>` id as GDELT, so an article seen by both is stored once.
 
 ## Relationship inference (`relate.ts`)
 

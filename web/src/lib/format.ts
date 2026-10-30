@@ -26,6 +26,7 @@ export const CATEGORY_LABEL: Record<string, string> = {
   tempExtremes: 'Temperature extreme',
   waterColor: 'Water colour',
   'security-news': 'Security news',
+  advisory: 'Advisory',
   'tech-news': 'Tech news',
   ai: 'AI',
   tech: 'Tech',

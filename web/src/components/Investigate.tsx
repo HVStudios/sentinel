@@ -112,7 +112,22 @@ function DetailBody({ d }: { d: NodeDetail }) {
         )}
         {n.type === 'article' && (
           <>
-            <Fact label="Outlet">{a.domain}</Fact>
+            <Fact label="Outlet">{a.outlet ? `${a.outlet} (${a.domain})` : a.domain}</Fact>
+            <Fact label="Publisher country">
+              {a.publisherCountry && (
+                <span title={a.publisherCountryBasis}>
+                  {a.publisherCountry}
+                  {a.publisherCountryRef && (
+                    <>
+                      {' · '}
+                      <a href={a.publisherCountryRef} target="_blank" rel="noreferrer noopener">
+                        reference
+                      </a>
+                    </>
+                  )}
+                </span>
+              )}
+            </Fact>
             <Fact label="Discussion">
               {a.hnUrl && (
                 <a href={a.hnUrl} target="_blank" rel="noreferrer noopener">
