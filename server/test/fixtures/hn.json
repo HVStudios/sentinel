@@ -1,0 +1,118 @@
+{
+ "exhaustive": {
+  "nbHits": false,
+  "typo": true
+ },
+ "exhaustiveNbHits": false,
+ "exhaustiveTypo": true,
+ "hits": [
+  {
+   "_tags": [
+    "story",
+    "author_damontal",
+    "story_50307723",
+    "front_page"
+   ],
+   "author": "damontal",
+   "created_at": "2026-10-30T17:57:35Z",
+   "created_at_i": 1793383055,
+   "num_comments": 42,
+   "objectID": "50307723",
+   "points": 113,
+   "story_id": 50307723,
+   "title": "GitHub Incident with Actions, Pages, and Webhooks",
+   "updated_at": "2026-10-30T20:34:49Z",
+   "url": "https://www.githubstatus.com/incidents/pwxsjgnvrk6b"
+  },
+  {
+   "_tags": [
+    "story",
+    "author_petethomas",
+    "story_50307219",
+    "front_page"
+   ],
+   "author": "petethomas",
+   "created_at": "2026-10-30T17:27:25Z",
+   "created_at_i": 1793381245,
+   "num_comments": 121,
+   "objectID": "50307219",
+   "points": 176,
+   "story_id": 50307219,
+   "title": "Anthropic may not secure investment-grade rating after IPO, Blackstone says",
+   "updated_at": "2026-10-30T20:40:19Z",
+   "url": "https://www.ft.com/content/59383c7f-8d82-493f-bf01-d2e862a1018f"
+  },
+  {
+   "_tags": [
+    "story",
+    "author_DHowett",
+    "story_50307190",
+    "front_page"
+   ],
+   "author": "DHowett",
+   "created_at": "2026-10-30T17:25:15Z",
+   "created_at_i": 1793381115,
+   "num_comments": 34,
+   "objectID": "50307190",
+   "points": 143,
+   "story_id": 50307190,
+   "title": "My favourite PowerMac is a Nintendo Wii",
+   "updated_at": "2026-10-30T20:40:19Z",
+   "url": "https://virtuallyfun.com/2026/10/29/my-favourite-powermac-is-a-nintendo-wii/"
+  },
+  {
+   "_tags": [
+    "story",
+    "author_cdrnsf",
+    "story_50307183"
+   ],
+   "author": "cdrnsf",
+   "created_at": "2026-10-30T17:24:45Z",
+   "created_at_i": 1793381085,
+   "num_comments": 187,
+   "objectID": "50307183",
+   "points": 221,
+   "story_id": 50307183,
+   "title": "Proton's CEO Cancels AI 'Re-Interviews'",
+   "updated_at": "2026-10-30T20:40:19Z",
+   "url": "https://www.404media.co/protons-ceo-cancels-ai-re-interviews/"
+  },
+  {
+   "_tags": [
+    "story",
+    "author_dbreunig",
+    "story_50306442",
+    "show_hn",
+    "front_page"
+   ],
+   "author": "dbreunig",
+   "created_at": "2026-10-30T16:40:22Z",
+   "created_at_i": 1793378422,
+   "num_comments": 93,
+   "objectID": "50306442",
+   "points": 129,
+   "story_id": 50306442,
+   "title": "Show HN: A working Nintendo in ~1GB of Qwen weights",
+   "updated_at": "2026-10-30T20:40:03Z",
+   "url": "https://github.com/dbreunig/nesformer"
+  }
+ ],
+ "hitsPerPage": 5,
+ "nbHits": 179352,
+ "nbPages": 200,
+ "page": 0,
+ "params": "tags=story&hitsPerPage=5&numericFilters=points%3E100&advancedSyntax=true&analyticsTags=backend",
+ "processingTimeMS": 3,
+ "processingTimingsMS": {
+  "_request": {
+   "roundTrip": 22
+  },
+  "fetch": {
+   "scanning": 1,
+   "total": 2
+  },
+  "total": 3
+ },
+ "query": "",
+ "serverTimeMS": 4
+}
