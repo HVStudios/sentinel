@@ -86,6 +86,14 @@ describe('NVD parser', () => {
     expect(vendor?.title).toBe('Ivanti');
   });
 
+  it('skips malformed records without losing the rest of the page', () => {
+    const broken = { ...resp, vulnerabilities: [{ cve: { id: 'CVE-2099-0002' } as never }, ...resp.vulnerabilities, { cve: { ...resp.vulnerabilities[0]!.cve, id: 'CVE-2099-0003', configurations: [{}] } as never }] };
+    const batch = parseNvd(broken);
+    expect(batch.skipped).toEqual(['CVE-2099-0002']);
+    expect(batch.nodes.some((n) => n.id === 'cve:CVE-2099-0003')).toBe(true); // configuration without nodes is fine
+    expect(batch.nodes.some((n) => n.id === 'cve:CVE-2099-0002')).toBe(false);
+  });
+
   it('drops non-notable recent CVEs when asked', () => {
     const lowScore: NvdResponse = {
       ...resp,

@@ -30,7 +30,7 @@ describe('relationship inference', () => {
         { id: 'news:2', title: 'Ivantis everywhere; SAPPHIRE conference', summary: null },
         { id: 'news:3', title: 'SAP warns customers', summary: null },
       ],
-      [{ id: 'cve:CVE-2026-0002', summary: 'Can be chained with CVE-2026-0001 and CVE-2026-0002.' }],
+      [{ id: 'cve:CVE-2026-0002', summary: 'NVD text', attrs: { kev: { description: 'Can be chained with CVE-2026-0001 and CVE-2026-0002.' } } }],
       vendors,
       (id) => known.has(id),
     );
