@@ -10,115 +10,119 @@ Status values: `todo` · `in-progress` · `done (branch)`.
 ## P0 — MVP
 
 ### SEN-01 · Project scaffold, tooling and CI
-Priority: P0 · Labels: infra · Status: todo
+Priority: P0 · Labels: infra · Status: done (feature/sen-01-scaffold)
 
 npm workspaces (`server`, `web`), strict TypeScript, Vitest, GitHub Actions CI running
 typecheck, tests and build.
 
-- [ ] `npm install && npm test` passes on a fresh clone
-- [ ] CI workflow runs on push and pull_request
+- [x] `npm install && npm test` passes on a fresh clone
+- [x] CI workflow runs on push and pull_request
 
 ### SEN-02 · SQLite store and domain model
-Priority: P0 · Labels: backend, data · Status: todo
+Priority: P0 · Labels: backend, data · Status: done (feature/sen-02-store)
 
 Nodes, edges, provenance and sources tables using `node:sqlite`. Idempotent upserts,
 transactional batch writes, query helpers.
 
-- [ ] Upserting the same batch twice produces identical state
-- [ ] Every node has at least one provenance record
-- [ ] Unit tests with in-memory DB
+- [x] Upserting the same batch twice produces identical state
+- [x] Every node has at least one provenance record
+- [x] Unit tests with in-memory DB
 
 ### SEN-03 · Ingest CISA KEV
-Priority: P0 · Labels: backend, ingestion · Status: todo
+Priority: P0 · Labels: backend, ingestion · Status: done (feature/sen-03-ingest)
 
 Parse the KEV JSON feed into vulnerability, vendor, product and CWE nodes with
 reported edges.
 
-- [ ] Parser tested against recorded fixture
-- [ ] dateAdded → occurred_at; ransomware use, due date, required action kept
+- [x] Parser tested against recorded fixture
+- [x] dateAdded → occurred_at; ransomware use, due date, required action kept
 
 ### SEN-04 · NVD enrichment
-Priority: P0 · Labels: backend, ingestion · Status: todo
+Priority: P0 · Labels: backend, ingestion · Status: done (feature/sen-03-ingest)
 
 Fetch CVE details (CVSS v3.x/v4, CWE, references, description) for KEV CVEs that lack
 them and for recently published CVEs. Respect rate limits.
 
-- [ ] Rate limiter: ≤ 5 req/30 s without key, ≤ 50 with key
-- [ ] Parser tested against recorded fixture
+- [x] Rate limiter: ≤ 5 req/30 s without key, ≤ 50 with key
+- [x] Parser tested against recorded fixture
 
 ### SEN-05 · FIRST EPSS scores
-Priority: P0 · Labels: backend, ingestion · Status: todo
+Priority: P0 · Labels: backend, ingestion · Status: done (feature/sen-03-ingest)
 
 Batch-fetch EPSS score and percentile for stored CVEs.
 
-- [ ] Batches of ≤ 100 CVEs; score date kept
+- [x] Batches of ≤ 100 CVEs; score date kept
 
 ### SEN-06 · Geolocated world events (USGS, NASA EONET)
-Priority: P0 · Labels: backend, ingestion, geo · Status: todo
+Priority: P0 · Labels: backend, ingestion, geo · Status: done (feature/sen-03-ingest)
 
-- [ ] Coordinates taken verbatim from source; `geo_basis = coordinates`
-- [ ] Parsers tested against fixtures
+- [x] Coordinates taken verbatim from source; `geo_basis = coordinates`
+- [x] Parsers tested against fixtures
 
 ### SEN-07 · News and tech sources (GDELT, Hacker News)
-Priority: P0 · Labels: backend, ingestion · Status: todo
+Priority: P0 · Labels: backend, ingestion · Status: done (feature/sen-03-ingest)
 
-- [ ] GDELT publisher country stored as `country` with `geo_basis = publisher_country` (never as event location)
-- [ ] HN stories have no geography
-- [ ] Source failure is recorded and does not abort the run
+- [x] GDELT publisher country stored as `country` with `geo_basis = publisher_country` (never as event location)
+- [x] HN stories have no geography
+- [x] Source failure is recorded and does not abort the run
 
 ### SEN-08 · Relationship inference
-Priority: P0 · Labels: backend, analysis · Status: todo
+Priority: P0 · Labels: backend, analysis · Status: done (feature/sen-03-ingest)
 
-- [ ] CVE-ID mention → inferred edge, confidence 0.95
-- [ ] Vendor-name mention → inferred edge, confidence 0.6, with stop-list
-- [ ] Inferred edges recomputed each run; reported edges untouched
+- [x] CVE-ID mention → inferred edge, confidence 0.95
+- [x] Vendor-name mention → inferred edge, confidence 0.6, with stop-list
+- [x] Inferred edges recomputed each run; reported edges untouched
 
 ### SEN-09 · HTTP API
-Priority: P0 · Labels: backend, api · Status: todo
+Priority: P0 · Labels: backend, api · Status: done (feature/sen-04-api)
 
 Feed, map, timeline, node, graph, sources and ingest endpoints (see ARCHITECTURE.md).
 
-- [ ] Integration tests via Fastify `inject()`
-- [ ] Input validation for query params
+- [x] Integration tests via Fastify `inject()`
+- [x] Input validation for query params
 
 ### SEN-10 · Web shell and world map
-Priority: P0 · Labels: frontend, geo · Status: todo
+Priority: P0 · Labels: frontend, geo · Status: done (feature/sen-05-web)
 
-- [ ] Equal Earth map, zoom/pan, points at true coordinates
-- [ ] Publisher-country shading labelled as such; unmapped countries reported
-- [ ] Click point → opens investigation
+- [x] Equal Earth map, zoom/pan, points at true coordinates
+- [x] Publisher-country shading labelled as such; unmapped countries reported
+- [x] Click point → opens investigation
 
 ### SEN-11 · Event feed with filters
-Priority: P0 · Labels: frontend · Status: todo
+Priority: P0 · Labels: frontend · Status: done (feature/sen-05-web)
 
-- [ ] Category toggles, time window, text search
-- [ ] KEV / EPSS / CVSS / ransomware badges, source attribution and timestamps
+- [x] Category toggles, time window, text search
+- [x] KEV / EPSS / CVSS / ransomware badges, source attribution and timestamps
 
 ### SEN-12 · Investigation view and relationship graph
-Priority: P0 · Labels: frontend, analysis · Status: todo
+Priority: P0 · Labels: frontend, analysis · Status: done (feature/sen-05-web)
 
-- [ ] Facts, provenance and timestamps for any node
-- [ ] Force graph, reported solid vs inferred dashed with confidence on hover
-- [ ] Navigate by clicking graph nodes
+- [x] Facts, provenance and timestamps for any node
+- [x] Force graph, reported solid vs inferred dashed with confidence on hover
+- [x] Navigate by clicking graph nodes
 
 ### SEN-13 · Timeline
-Priority: P0 · Labels: frontend · Status: todo
+Priority: P0 · Labels: frontend · Status: done (feature/sen-05-web)
 
-- [ ] Stacked histogram by type; brush selects time window for map and feed
+- [x] Stacked histogram by type; brush selects time window for map and feed
 
 ### SEN-14 · Documentation
-Priority: P0 · Labels: docs · Status: todo
+Priority: P0 · Labels: docs · Status: done (feature/sen-05-web)
 
-- [ ] README: install, ingest, run, test
-- [ ] Backlog statuses reflect reality
+- [x] README: install, ingest, run, test
+- [x] Backlog statuses reflect reality
 
 ## P1 — Next
 
 ### SEN-15 · Scheduled refresh and ingest status panel
-Priority: P1 · Labels: backend, frontend · Status: todo
+Priority: P1 · Labels: backend, frontend · Status: in-progress
 
 Optional in-process interval refresh (`SENTINEL_REFRESH_MINUTES`) and a UI panel showing
 last run, counts and errors per source.
+
+- [x] Sources panel with last run, status, count and error; manual "Refresh all sources" (feature/sen-05-web)
+- [ ] Interval refresh via `SENTINEL_REFRESH_MINUTES`
+- [ ] Poll ingest status while running and refresh map and feed when it finishes
 
 ### SEN-16 · Vendor headquarters geography (Wikidata, attributed)
 Priority: P1 · Labels: geo, data · Status: todo
@@ -146,6 +150,21 @@ Track vendors, products or CVEs locally and highlight new related items.
 Priority: P1 · Labels: frontend, a11y · Status: todo
 
 Keyboard navigation for map and graph, ARIA labels, mobile layout, contrast audit.
+
+### SEN-22 · Reliable news source with publisher country
+Priority: P1 · Labels: ingestion, geo · Status: todo
+
+GDELT DOC 2.0 returned HTTP 429 or empty results for most requests during development. The
+pipeline already records the failure and carries on. Next steps: honour GDELT's
+one-request-per-5-seconds limit across runs (persist the last request time), add backoff
+across runs, and evaluate a second news source that gives the publisher country (for example
+curated RSS feeds whose outlet country is configured explicitly and attributed).
+
+### SEN-23 · Feed significance sort
+Priority: P1 · Labels: frontend, backend · Status: todo
+
+A few days of notable NVD CVEs (CVSS ≥ 7) can push other categories out of the chronological
+feed. Add a "most significant" ordering (severity, then time) and per-category quotas.
 
 ### SEN-21 · Story clustering over time
 Priority: P2 · Labels: analysis · Status: todo
