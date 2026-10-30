@@ -83,11 +83,57 @@ export interface TimeQuery {
   types?: NodeType[];
 }
 
+/**
+ * - `latest`: strictly chronological.
+ * - `mixed`: takes from each category in turn, newest first within each, so one busy
+ *   category cannot crowd out the others.
+ * - `top`: like `mixed`, but each category is ordered by severity/rank first.
+ */
+export type FeedSort = 'latest' | 'mixed' | 'top';
+export const FEED_SORTS: readonly FeedSort[] = ['latest', 'mixed', 'top'];
+
 export interface FeedQuery extends TimeQuery {
   q?: string;
   limit?: number;
-  /** Cursor from a previous page: `${occurredAt}|${id}`. */
+  sort?: FeedSort;
+  /** Cursor from a previous page: `${occurredAt}|${id}` for latest, `mix:type=offset,…` otherwise. */
   before?: string;
+}
+
+/** `mix:vulnerability=12,article=5` ⇄ per-type offsets. Unknown or malformed input starts over. */
+export const encodeMixCursor = (offsets: Record<string, number>): string =>
+  `mix:${Object.entries(offsets).map(([t, n]) => `${t}=${n}`).join(',')}`;
+export const decodeMixCursor = (cursor: string | undefined): Record<string, number> => {
+  const out: Record<string, number> = {};
+  if (!cursor?.startsWith('mix:')) return out;
+  for (const part of cursor.slice(4).split(',')) {
+    const [t, n] = part.split('=');
+    if (t && TIMED_TYPES.includes(t as NodeType) && /^\d+$/.test(n ?? '')) out[t] = Number(n);
+  }
+  return out;
+};
+
+/**
+ * Round-robin over per-type candidate lists (each already ordered and starting at that type's
+ * offset, with one extra row to detect more). Shared semantics with web/src/staticApi.ts.
+ */
+export function interleave<T>(lists: { type: string; rows: T[]; offset: number; hasMore: boolean }[], limit: number) {
+  const items: T[] = [];
+  const used = lists.map(() => 0);
+  for (let progressed = true; items.length < limit && progressed; ) {
+    progressed = false;
+    for (let i = 0; i < lists.length && items.length < limit; i++) {
+      const row = lists[i]!.rows[used[i]!];
+      if (row === undefined) continue;
+      items.push(row);
+      used[i]!++;
+      progressed = true;
+    }
+  }
+  const more = lists.some((l, i) => used[i]! < l.rows.length || l.hasMore);
+  const offsets: Record<string, number> = {};
+  lists.forEach((l, i) => { offsets[l.type] = l.offset + used[i]!; });
+  return { items, nextCursor: more ? encodeMixCursor(offsets) : null };
 }
 
 type Row = Record<string, SQLInputValue>;
@@ -311,27 +357,44 @@ export class Store {
     return clauses.join(' and ');
   }
 
+  private textWhere(q: FeedQuery, params: SQLInputValue[]): string {
+    if (!q.q) return '';
+    const like = `%${q.q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+    params.push(like, like, like);
+    return ` and (title like ? escape '\\' or summary like ? escape '\\' or id like ? escape '\\')`;
+  }
+
   feed(q: FeedQuery): { items: NodeRow[]; nextCursor: string | null } {
+    const limit = Math.min(Math.max(q.limit ?? 50, 1), 200);
+    if (q.sort === 'mixed' || q.sort === 'top') return this.feedMixed(q, limit);
     const params: SQLInputValue[] = [];
-    let where = this.timeWhere(q, params);
-    if (q.q) {
-      where += ` and (title like ? escape '\\' or summary like ? escape '\\' or id like ? escape '\\')`;
-      const like = `%${q.q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
-      params.push(like, like, like);
-    }
+    let where = this.timeWhere(q, params) + this.textWhere(q, params);
     if (q.before) {
       const sep = q.before.lastIndexOf('|');
       where += ' and (occurred_at < ? or (occurred_at = ? and id < ?))';
       const t = q.before.slice(0, sep);
       params.push(t, t, q.before.slice(sep + 1));
     }
-    const limit = Math.min(Math.max(q.limit ?? 50, 1), 200);
     const rows = this.db
       .prepare(`select * from nodes where ${where} order by occurred_at desc, id desc limit ?`)
       .all(...params, limit + 1) as Row[];
     const items = rows.slice(0, limit).map(toNode);
     const last = items.at(-1);
     return { items, nextCursor: rows.length > limit && last ? `${last.occurredAt}|${last.id}` : null };
+  }
+
+  private feedMixed(q: FeedQuery, limit: number) {
+    const types = TIMED_TYPES.filter((t) => !q.types?.length || q.types.includes(t));
+    const offsets = decodeMixCursor(q.before);
+    const order = q.sort === 'top' ? 'coalesce(severity, -1) desc, occurred_at desc, id desc' : 'occurred_at desc, id desc';
+    const lists = types.map((type) => {
+      const params: SQLInputValue[] = [];
+      const where = this.timeWhere({ ...q, types: [type] }, params) + this.textWhere(q, params);
+      const offset = offsets[type] ?? 0;
+      const rows = (this.db.prepare(`select * from nodes where ${where} order by ${order} limit ? offset ?`).all(...params, limit + 1, offset) as Row[]).map(toNode);
+      return { type, rows: rows.slice(0, limit), offset, hasMore: rows.length > limit };
+    });
+    return interleave(lists, limit);
   }
 
   mapData(q: TimeQuery): { points: NodeRow[]; countries: { country: string; count: number }[] } {

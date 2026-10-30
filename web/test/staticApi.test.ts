@@ -27,6 +27,13 @@ describe('static API', () => {
     expect(load).toHaveBeenCalledTimes(1);
   });
 
+  it('supports mixed and top feed orderings', async () => {
+    const api = createStaticApi(async () => snapshot);
+    const types = ['vulnerability', 'natural_event', 'article'] as ('vulnerability' | 'natural_event' | 'article')[];
+    expect((await api.feed({ types, sort: 'mixed' })).items.map((i) => i.type)).toEqual(['vulnerability', 'natural_event', 'article']);
+    expect((await api.feed({ types, sort: 'top' })).items.map((i) => i.id)).toEqual([kevCve.id, quake.id, article.id]);
+  });
+
   it('retries the download after a failure', async () => {
     const load = vi.fn().mockRejectedValueOnce(new Error('offline')).mockResolvedValue(snapshot);
     const api = createStaticApi(load);

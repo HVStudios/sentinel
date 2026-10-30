@@ -72,6 +72,8 @@ h3 { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: 
 .seg button { border: 0; border-radius: 0; background: transparent; color: var(--muted); padding: 5px 10px; }
 .seg button + button { border-left: 1px solid var(--line-2); }
 .seg button.on { background: var(--panel-2); color: var(--accent); }
+.seg-sm { margin-left: auto; }
+.seg-sm button { padding: 2px 8px; font-size: 12px; }
 .toggles { display: flex; gap: 6px; flex-wrap: wrap; }
 .toggle { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); background: transparent; }
 .toggle i { width: 9px; height: 9px; border-radius: 50%; background: var(--line-2); }

@@ -18,6 +18,10 @@ connect.
 - **Facts vs. inferences.** Relationships stated by a source are drawn as solid lines and
   labelled *reported*. Links SENTINEL derives from text (e.g. a headline mentioning a CVE ID or
   vendor) are dashed, labelled *inferred*, and carry a confidence and a rationale.
+- **A balanced feed.** By default the feed takes from vulnerabilities, world events and news in
+  turn, so a burst of new CVEs doesn't hide everything else. "Top" orders each category by
+  severity, with known-exploited CVEs first. Articles get a SENTINEL rank whose factors are
+  shown in the investigation view.
 - **No paid services, no LLM, no infrastructure.** One Node process and one SQLite file.
 
 See [docs/PRODUCT.md](docs/PRODUCT.md) for the product spec, [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)

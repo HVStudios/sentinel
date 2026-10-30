@@ -50,7 +50,53 @@ const matches = (q: string | undefined) => {
   return (n: SNode) => [n.title, n.summary ?? '', n.id].some((s) => s.toLowerCase().includes(needle));
 };
 
+/** `mix:vulnerability=12,article=5` ⇄ per-type offsets (same format as the server). */
+const encodeMixCursor = (offsets: Record<string, number>) =>
+  `mix:${Object.entries(offsets).map(([t, n]) => `${t}=${n}`).join(',')}`;
+const decodeMixCursor = (cursor: string | undefined): Record<string, number> => {
+  const out: Record<string, number> = {};
+  if (!cursor?.startsWith('mix:')) return out;
+  for (const part of cursor.slice(4).split(',')) {
+    const [t, n] = part.split('=');
+    if (t && (TIMED_TYPES as string[]).includes(t) && /^\d+$/.test(n ?? '')) out[t] = Number(n);
+  }
+  return out;
+};
+
+/** Newest first, then by rank (unranked last) for `top`, mirroring the server's ORDER BY. */
+const byRank = (a: SNode, b: SNode) =>
+  (b.severity ?? -1) - (a.severity ?? -1) || (a.occurredAt === b.occurredAt ? (a.id < b.id ? 1 : -1) : a.occurredAt! < b.occurredAt! ? 1 : -1);
+
 export function queryFeed(ix: Index, f: Filters, before?: string, limit = 50) {
+  const win = inWindow(f);
+  const m = matches(f.q);
+  if (f.sort === 'mixed' || f.sort === 'top') {
+    const offsets = decodeMixCursor(before);
+    const lists = TIMED_TYPES.filter((t) => !f.types.length || f.types.includes(t)).map((type) => {
+      let all = ix.timed.filter((n) => n.type === type && win(n) && m(n));
+      if (f.sort === 'top') all = all.sort(byRank);
+      const offset = offsets[type] ?? 0;
+      return { type, rows: all.slice(offset, offset + limit), offset, hasMore: all.length > offset + limit };
+    });
+    // Round-robin, identical to interleave() in server/src/store.ts.
+    const items: SNode[] = [];
+    const used = lists.map(() => 0);
+    for (let progressed = true; items.length < limit && progressed; ) {
+      progressed = false;
+      for (let i = 0; i < lists.length && items.length < limit; i++) {
+        const row = lists[i]!.rows[used[i]!];
+        if (row === undefined) continue;
+        items.push(row);
+        used[i]!++;
+        progressed = true;
+      }
+    }
+    const more = lists.some((l, i) => used[i]! < l.rows.length || l.hasMore);
+    const next: Record<string, number> = {};
+    lists.forEach((l, i) => { next[l.type] = l.offset + used[i]!; });
+    return { items, nextCursor: more ? encodeMixCursor(next) : null };
+  }
+
   let cut: ((n: SNode) => boolean) | null = null;
   if (before) {
     const sep = before.lastIndexOf('|');
@@ -58,8 +104,6 @@ export function queryFeed(ix: Index, f: Filters, before?: string, limit = 50) {
     const id = before.slice(sep + 1);
     cut = (n) => n.occurredAt! < t || (n.occurredAt === t && n.id < id);
   }
-  const win = inWindow(f);
-  const m = matches(f.q);
   const items: SNode[] = [];
   let more = false;
   for (const n of ix.timed) {

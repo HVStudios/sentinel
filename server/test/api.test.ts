@@ -55,6 +55,9 @@ describe('HTTP API', () => {
     expect((await get('/api/feed?limit=0')).status).toBe(400);
     expect((await get('/api/feed?from=yesterday')).status).toBe(400);
     expect((await get('/api/feed?drop=table')).status).toBe(400);
+    expect((await get('/api/feed?sort=mixed')).body.items.map((i: { id: string }) => i.id)).toEqual(['cve:CVE-2026-0001', 'quake:1', 'news:1']);
+    expect((await get('/api/feed?sort=top')).status).toBe(200);
+    expect((await get('/api/feed?sort=random')).status).toBe(400);
   });
 
   it('serves map points and publisher-country aggregates separately', async () => {

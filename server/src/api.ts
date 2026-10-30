@@ -1,5 +1,5 @@
 import Fastify, { type FastifyInstance } from 'fastify';
-import type { Store } from './store.ts';
+import { FEED_SORTS, type FeedSort, type Store } from './store.ts';
 import { TIMED_TYPES, type NodeType } from './types.ts';
 import { ingest, type IngestResult } from './ingest.ts';
 import { VERSION } from './version.ts';
@@ -37,7 +37,7 @@ export function buildApp(store: Store, opts: AppOptions = {}): FastifyInstance {
 
   app.get('/api/health', async () => ({ ok: true, version: VERSION, counts: store.counts() }));
 
-  app.get<{ Querystring: TimeQs & { q?: string; limit?: number; before?: string } }>(
+  app.get<{ Querystring: TimeQs & { q?: string; limit?: number; before?: string; sort?: FeedSort } }>(
     '/api/feed',
     {
       schema: {
@@ -49,13 +49,14 @@ export function buildApp(store: Store, opts: AppOptions = {}): FastifyInstance {
             q: { type: 'string', maxLength: 200 },
             limit: { type: 'integer', minimum: 1, maximum: 200, default: 50 },
             before: { type: 'string', maxLength: 300 },
+            sort: { type: 'string', enum: [...FEED_SORTS], default: 'latest' },
           },
         },
       },
     },
     async (req) => {
-      const { from, to, types, q, limit, before } = req.query;
-      return store.feed({ from: iso(from), to: iso(to), types: parseTypes(types), q: q?.trim() || undefined, limit, before });
+      const { from, to, types, q, limit, before, sort } = req.query;
+      return store.feed({ from: iso(from), to: iso(to), types: parseTypes(types), q: q?.trim() || undefined, limit, before, sort });
     },
   );
 

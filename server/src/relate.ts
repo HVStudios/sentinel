@@ -87,11 +87,57 @@ export function inferEdges(
   return edges;
 }
 
-/** Normalised vulnerability ranking: the strongest of KEV listing, CVSS and EPSS. */
+/**
+ * Normalised vulnerability ranking. Confirmed exploitation outranks theoretical severity:
+ * KEV-listed CVEs occupy 0.90–1.00 and everything else 0–0.89; within each band the
+ * stronger of CVSS/10 and EPSS decides.
+ */
 export function vulnerabilitySeverity(attrs: Record<string, unknown>): number {
   const cvss = (attrs.cvss as { score?: number } | null | undefined)?.score;
   const epss = (attrs.epss as { score?: number } | undefined)?.score;
-  return clamp01(Math.max(attrs.kev ? 0.75 : 0, cvss != null ? cvss / 10 : 0, epss ?? 0));
+  const strength = clamp01(Math.max(cvss != null ? cvss / 10 : 0, epss ?? 0));
+  return Math.round((attrs.kev ? 0.9 + 0.1 * strength : 0.89 * strength) * 1000) / 1000;
+}
+
+export interface ArticleRank {
+  score: number;
+  factors: string[];
+}
+
+const CATEGORY_BASE: Record<string, [number, string]> = {
+  advisory: [0.55, 'government advisory'],
+  'security-news': [0.45, 'security news'],
+  ai: [0.35, 'AI news'],
+  'tech-news': [0.3, 'tech news'],
+  tech: [0.3, 'tech news'],
+};
+
+/**
+ * SENTINEL's own ranking for articles, which have no source-provided severity. Every
+ * contribution is listed in `factors` so the UI can explain the number; it is a heuristic
+ * for ordering, not a fact about the article.
+ */
+export function articleRank(
+  article: Pick<NodeRow, 'category' | 'attrs'>,
+  links: { kevCves: number; cves: number },
+): ArticleRank {
+  const [base, label] = CATEGORY_BASE[article.category ?? ''] ?? [0.3, 'news'];
+  let score = base;
+  const factors = [`${label} (+${base.toFixed(2)})`];
+  const points = Number((article.attrs as { points?: number } | undefined)?.points ?? 0);
+  if (points > 0) {
+    const bonus = (Math.min(points, 1000) / 1000) * 0.3;
+    score += bonus;
+    factors.push(`${points} Hacker News points (+${bonus.toFixed(2)})`);
+  }
+  if (links.kevCves > 0) {
+    score += 0.25;
+    factors.push('mentions a CISA KEV-listed CVE (+0.25)');
+  } else if (links.cves > 0) {
+    score += 0.1;
+    factors.push('mentions a known CVE (+0.10)');
+  }
+  return { score: Math.round(clamp01(score) * 1000) / 1000, factors };
 }
 
 export function runInference(store: Store): { edges: number } {
@@ -106,9 +152,24 @@ export function runInference(store: Store): { edges: number } {
   );
   store.replaceInferredEdges(INFERENCE_SOURCE.id, edges);
 
+  const kev = new Set(vulns.filter((v) => v.attrs.kev).map((v) => v.id));
+  const links = new Map<string, { kevCves: number; cves: number }>();
+  for (const e of edges) {
+    if (!e.dst.startsWith('cve:') || e.rel !== 'mentions') continue;
+    const l = links.get(e.src) ?? { kevCves: 0, cves: 0 };
+    l.cves++;
+    if (kev.has(e.dst)) l.kevCves++;
+    links.set(e.src, l);
+  }
+
   const update = store.db.prepare('update nodes set severity = ? where id = ?');
+  const updateArticle = store.db.prepare(`update nodes set severity = ?, attrs = json_set(attrs, '$.rank', json(?)) where id = ?`);
   store.transaction(() => {
     for (const v of vulns) update.run(vulnerabilitySeverity(v.attrs), v.id);
+    for (const a of store.nodesByType('article')) {
+      const rank = articleRank(a, links.get(a.id) ?? { kevCves: 0, cves: 0 });
+      updateArticle.run(rank.score, JSON.stringify(rank), a.id);
+    }
   });
   return { edges: edges.length };
 }

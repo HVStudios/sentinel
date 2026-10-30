@@ -137,6 +137,13 @@ function DetailBody({ d }: { d: NodeDetail }) {
             </Fact>
           </>
         )}
+        <Fact label="SENTINEL rank">
+          {a.rank && (
+            <span title="A heuristic used to order the feed, not a fact reported by any source">
+              {Number(a.rank.score).toFixed(2)} <span className="muted">· {a.rank.factors.join(' · ')}</span>
+            </span>
+          )}
+        </Fact>
         <Fact label="Location">
           <span className={n.geoBasis ? '' : 'muted'}>{locationLabel(n)}</span>
         </Fact>
