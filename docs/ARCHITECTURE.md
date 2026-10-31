@@ -173,6 +173,8 @@ and the parity test covers all three orderings.
 - **End-to-end**: Playwright drives Chromium against the live server and the static Pages
   build (`e2e/`). Both use the same database, seeded offline from the shared fixture router
   (`server/test/fixtures/router.ts`), and the browser clock is frozen at the fixtures' date.
+  `e2e/a11y.spec.ts` adds an axe-core WCAG 2.2 A/AA audit, keyboard-only flows (roving focus
+  on the map and graph, focus return, modal focus trap) and phone-width layout checks.
 - **No network in tests**. Live fetching is exercised only by `npm run ingest`.
 
 ## Static deployment (GitHub Pages)

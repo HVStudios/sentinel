@@ -24,6 +24,9 @@ connect.
   turn, so a burst of new CVEs doesn't hide everything else. "Top" orders each category by
   severity, with known-exploited CVEs first. Articles get a SENTINEL rank whose factors are
   shown in the investigation view.
+- **Accessible.** Keyboard navigation throughout (the map and graph are single Tab stops with arrow
+  keys), focus management, WCAG 2.2 AA contrast, and a phone layout. An automated axe audit runs
+  in the end-to-end suite.
 - **No paid services, no LLM, no infrastructure.** One Node process and one SQLite file.
 
 See [docs/PRODUCT.md](docs/PRODUCT.md) for the product spec, [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
@@ -120,7 +123,8 @@ unit and integration tests, then the production build. CI (`.github/workflows/ci
   builds the live app and the static Pages build, and runs the same browser specs against both
   with a frozen clock. The specs cover loading without console errors, category and search
   filters, feed order, investigating a CVE and following the graph to product and vendor, deep
-  links, map points, vendor headquarters, timeline brushing, and the Sources panel. Run
+  links, map points, vendor headquarters, timeline brushing, the Sources panel, keyboard-only use,
+  an axe-core WCAG 2.2 A/AA audit (which must report zero violations), and a 375 px phone layout. Run
   `npx playwright install chromium` once first.
 - **Web (Vitest + Testing Library + jsdom):** formatting and geography helpers, the map
   (points, publisher-country shading, unmapped countries), feed, timeline brushing,

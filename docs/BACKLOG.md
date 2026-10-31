@@ -169,9 +169,16 @@ Priority: P1 · Labels: frontend, backend · Status: todo
 Track vendors, products or CVEs locally and highlight new related items.
 
 ### SEN-20 · Accessibility and responsive layout pass
-Priority: P1 · Labels: frontend, a11y · Status: todo
+Priority: P1 · Labels: frontend, a11y · Status: done (merged)
 
-Keyboard navigation for map and graph, ARIA labels, mobile layout, contrast audit.
+- [x] Automated WCAG 2.2 A/AA audit (axe-core) of main view, investigation and Sources dialog in both builds: zero violations
+- [x] Map and graph: group roles (were images containing buttons), one Tab stop each with arrow-key navigation, Enter to open, focus shows the hover tooltip, visible SVG focus styles
+- [x] Map zoom buttons (+, −, reset) and keyboard shortcuts
+- [x] Accessible names start with the visible label (WCAG 2.5.3); the current graph node is not a button
+- [x] Focus management: skip link, focus moves to the opened item's heading, Escape closes and returns focus (including to SVG markers), modal Sources dialog with focus trap
+- [x] Time presets expose their pressed state
+- [x] Contrast verified: every text colour ≥ 5.1:1 on every background
+- [x] Phone layout: page scrolls with natural section heights (the map used to collapse to a strip at 375 px); e2e asserts map size and no horizontal scroll
 
 ### SEN-22 · Reliable news source with publisher country
 Priority: P1 · Labels: ingestion, geo · Status: done (merged)

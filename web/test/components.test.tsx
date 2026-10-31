@@ -161,7 +161,7 @@ describe('Investigate', () => {
     expect(screen.getByText('inferred · 95%')).toBeTruthy();
     expect(screen.getByText('Text contains the exact identifier CVE-2026-111357.')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'CISA KEV' })).toBeTruthy();
-    await waitFor(() => expect(screen.getByRole('img', { name: 'Relationship graph' })).toBeTruthy());
+    await waitFor(() => expect(screen.getByRole('group', { name: 'Relationship graph' })).toBeTruthy());
 
     const rel = screen.getByText('Mentioned by').closest('.rel-group') as HTMLElement;
     fireEvent.click(within(rel).getByText('Ivanti flaw exploited'));

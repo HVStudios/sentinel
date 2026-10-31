@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { forceCollide, forceLink, forceManyBody, forceSimulation, forceX, forceY, type SimulationLinkDatum, type SimulationNodeDatum } from 'd3-force';
 import type { SEdge, SNode } from '../api.ts';
 import { TYPE_LABEL } from '../lib/format.ts';
+import { useRovingFocus } from '../lib/useRovingFocus.ts';
 
 const W = 520;
 const H = 340;
@@ -59,9 +60,15 @@ export function Graph({ nodes, edges, rootId, onSelect }: Props) {
   const vw = Math.max(Math.max(...xs) + pad - minX, W / 2);
   const vh = Math.max(Math.max(...ys) + pad - minY, H / 2);
 
+  // Neighbours are one Tab stop with arrow-key navigation; the current node is not a control.
+  const neighbours = useMemo(() => layout.nodes.filter((g) => g.id !== rootId), [layout, rootId]);
+  const indexOf = useMemo(() => new Map(neighbours.map((g, i) => [g.id, i])), [neighbours]);
+  const activate = useCallback((i: number) => neighbours[i] && onSelect(neighbours[i]!.id), [neighbours, onSelect]);
+  const roving = useRovingFocus<SVGGElement>(neighbours.length, activate);
+
   return (
     <div className="graph">
-      <svg viewBox={`${minX} ${minY} ${vw} ${vh}`} role="img" aria-label="Relationship graph">
+      <svg viewBox={`${minX} ${minY} ${vw} ${vh}`} role="group" aria-label="Relationship graph" aria-describedby="graph-help">
         {layout.links.map((l) => (
           <line
             key={`${l.edge.src}|${l.edge.dst}|${l.edge.rel}`}
@@ -85,10 +92,14 @@ export function Graph({ nodes, edges, rootId, onSelect }: Props) {
               transform={`translate(${g.x},${g.y})`}
               className={`gnode gnode-${g.node.type}${root ? ' root' : ''}`}
               onClick={() => !root && onSelect(g.id)}
-              role="button"
-              tabIndex={0}
-              aria-label={`${TYPE_LABEL[g.node.type]}: ${g.node.title}`}
-              onKeyDown={(e) => e.key === 'Enter' && !root && onSelect(g.id)}
+              {...(root
+                ? { role: 'img', 'aria-label': `${shortLabel(g.node)} (current): ${TYPE_LABEL[g.node.type]} ${g.node.title}` }
+                : {
+                    role: 'button',
+                    // The accessible name starts with the visible label (WCAG 2.5.3), then adds the full title.
+                    'aria-label': `${shortLabel(g.node)} — ${TYPE_LABEL[g.node.type]}: ${g.node.title}`,
+                    ...roving.itemProps(indexOf.get(g.id)!),
+                  })}
             >
               <circle r={root ? 11 : 7} />
               <text y={root ? 24 : 18} textAnchor="middle">
@@ -99,6 +110,9 @@ export function Graph({ nodes, edges, rootId, onSelect }: Props) {
           );
         })}
       </svg>
+      <p id="graph-help" className="sr-only">
+        Tab to the connected items, move between them with the arrow keys, and press Enter to investigate one.
+      </p>
       <div className="graph-legend">
         <span>
           <svg width="26" height="8" aria-hidden>

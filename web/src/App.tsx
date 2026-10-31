@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { TIMED_TYPES, type FeedSort, type Filters, type SNode, type TimedType } from './api.ts';
 import { api } from './apiClient.ts';
 import { relativeTime, TYPE_LABEL } from './lib/format.ts';
@@ -88,12 +88,22 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
     // Only react to new data; cursor and key are read as of that response.
   }, [feed.data]);
 
+  /** Where focus was before the investigation opened, so closing it can put focus back. */
+  const returnFocus = useRef<HTMLElement | SVGElement | null>(null);
+
   const select = (id: string) => {
+    // Map and graph markers are SVG elements, so accept those as well as HTML controls.
+    const active = document.activeElement;
+    if (!selected && (active instanceof HTMLElement || active instanceof SVGElement)) returnFocus.current = active;
     if (selected && selected !== id) setHistory((h) => [...h, selected]);
     setSelected(id);
     window.history.replaceState(null, '', `#/node/${encodeURIComponent(id)}`);
   };
   const close = () => {
+    const target = returnFocus.current;
+    returnFocus.current = null;
+    // After the panel unmounts, return focus to the trigger if it still exists, otherwise to the feed.
+    setTimeout(() => (target?.isConnected ? target : document.getElementById('feed'))?.focus());
     setSelected(null);
     setHistory([]);
     window.history.replaceState(null, '', window.location.pathname + window.location.search);
@@ -115,6 +125,17 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
 
   return (
     <div className={`app${selected ? ' has-inv' : ''}`}>
+      <a
+        className="skip-link"
+        href="#feed"
+        onClick={(e) => {
+          // Hash links are used for routing (#/node/…), so move focus without touching the URL.
+          e.preventDefault();
+          document.getElementById('feed')?.focus();
+        }}
+      >
+        Skip to feed
+      </a>
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark" aria-hidden>
@@ -136,6 +157,7 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
             <button
               key={p.id}
               className={preset === p.id && !brush ? 'on' : ''}
+              aria-pressed={preset === p.id && !brush}
               onClick={() => {
                 setPreset(p.id);
                 setBrush(null);
@@ -199,9 +221,9 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
           )}
         </section>
 
-        <section className="side">
+        <section className="side" id="feed" tabIndex={-1} aria-labelledby="feed-heading">
           <div className="stage-head">
-            <h2>Feed</h2>
+            <h2 id="feed-heading">Feed</h2>
             <span className="muted small">{pages.items.length ? `${pages.items.length}${pages.cursor ? '+' : ''} items` : ''}</span>
             <div className="seg seg-sm" role="group" aria-label="Feed order">
               {FEED_SORTS.map((o) => (
