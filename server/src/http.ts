@@ -23,6 +23,11 @@ const defaultSleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
 export type TextFetchOptions = FetchOptions & { accept?: string; method?: 'GET' | 'POST'; form?: Record<string, string> };
 
 export async function fetchText(url: string, opts: TextFetchOptions = {}): Promise<string> {
+  return (await fetchWithHeaders(url, opts)).text;
+}
+
+/** Like fetchText, but also returns the response headers (e.g. for `Link` pagination). */
+export async function fetchWithHeaders(url: string, opts: TextFetchOptions = {}): Promise<{ text: string; headers: Headers }> {
   const { timeoutMs = 30_000, retries = 2, headers = {}, fetchImpl = fetch, sleep = defaultSleep, accept = '*/*', method = 'GET', form } = opts;
   let lastErr: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -38,7 +43,7 @@ export async function fetchText(url: string, opts: TextFetchOptions = {}): Promi
         body: form ? new URLSearchParams(form).toString() : undefined,
         signal: AbortSignal.timeout(timeoutMs),
       });
-      if (res.ok) return await res.text();
+      if (res.ok) return { text: await res.text(), headers: res.headers };
       const err = new HttpError(res.status, `HTTP ${res.status} from ${new URL(url).host}`);
       if (res.status !== 429 && res.status < 500) throw err;
       lastErr = err;
@@ -51,6 +56,16 @@ export async function fetchText(url: string, opts: TextFetchOptions = {}): Promi
     }
   }
   throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
+}
+
+/** JSON body plus response headers. */
+export async function fetchJsonWithHeaders<T = unknown>(url: string, opts: TextFetchOptions = {}): Promise<{ body: T; headers: Headers }> {
+  const { text, headers } = await fetchWithHeaders(url, { accept: 'application/json', ...opts });
+  try {
+    return { body: JSON.parse(text) as T, headers };
+  } catch {
+    throw new HttpError(200, `Invalid JSON from ${new URL(url).host}: ${text.slice(0, 120)}`);
+  }
 }
 
 /** GET a JSON document (see fetchText for retry behaviour). */

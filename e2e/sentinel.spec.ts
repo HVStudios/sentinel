@@ -41,7 +41,7 @@ test('filters by category and search', async ({ page }) => {
   await expect(feedItems(page).first()).toBeVisible();
   // Only world events remain.
   for (const pill of await feed(page).locator('.pill').allTextContents()) {
-    expect(['EARTHQUAKE', 'WILDFIRE', 'SEVERE STORM', 'VOLCANO']).toContain(pill.toUpperCase());
+    expect(['EARTHQUAKE', 'WILDFIRE', 'SEVERE STORM', 'VOLCANO', 'FLOOD', 'DROUGHT']).toContain(pill.toUpperCase());
   }
   await category(page, /Vulnerability/).click();
   await category(page, /News & tech/).click();
@@ -144,4 +144,31 @@ test('lists sources with mode-appropriate actions', async ({ page }, info) => {
   } else {
     await expect(dialog.getByRole('button', { name: 'Refresh all sources' })).toBeVisible();
   }
+});
+
+test('shows GitHub advisories with affected packages', async ({ page }) => {
+  await open(page);
+  await page.getByLabel('Search').fill('electrum');
+  const item = feed(page).getByText(/Electrum: Malicious server/);
+  await expect(item).toBeVisible();
+  await expect(feed(page).locator('.badge', { hasText: 'GHSA' }).first()).toBeVisible();
+  await item.click();
+  const panel = investigation(page);
+  await expect(panel.getByRole('link', { name: 'GHSA-6jp4-8v48-cc5v' })).toBeVisible();
+  await expect(panel.getByText('pip electrum')).toBeVisible();
+  await expect(panel.getByText(/fixed in 4\.8\.3/)).toBeVisible();
+  await expect(panel.getByRole('group', { name: 'Relationship graph' }).getByRole('button', { name: /electrum \(pip\)/ })).toBeVisible();
+});
+
+test('shows GDACS alerts and does not pin multi-country droughts to a point', async ({ page }) => {
+  await open(page, '');
+  await page.getByRole('button', { name: '30d' }).click();
+  await page.getByLabel('Search').fill('Drought in Andorra');
+  await feed(page).getByText(/Drought in Andorra/).click();
+  const panel = investigation(page);
+  await expect(panel.getByText(/Not shown as a point: affects \d+ countries \(GDACS\)/)).toBeVisible();
+  await expect(panel.getByText('GDACS Orange', { exact: true })).toBeVisible();
+  await expect(panel.getByRole('link', { name: 'GDACS report' })).toBeVisible();
+  // It is in the feed but not on the map.
+  await expect(page.locator('g.point[data-id^="gdacs:DR"]')).toHaveCount(0);
 });

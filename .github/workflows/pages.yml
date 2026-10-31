@@ -43,6 +43,8 @@ jobs:
         run: npm run ingest
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+          # Raises the GitHub advisories API limit from 60 to 1,000 requests an hour; read-only use.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Save database
         if: always()
         uses: actions/cache/save@v4

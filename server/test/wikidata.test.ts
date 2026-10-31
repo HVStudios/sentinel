@@ -70,7 +70,7 @@ describe('Wikidata vendor source', () => {
     return store;
   };
   const ctx = (store: Store, fetchJson: IngestContext['fetchJson']): IngestContext => ({
-    store, fetchJson, fetchText: vi.fn(), env: {}, now: () => new Date(AT), log: () => {},
+    store, fetchJson, fetchText: vi.fn(), fetchJsonWithHeaders: vi.fn(), env: {}, now: () => new Date(AT), log: () => {},
   });
 
   it('enriches vendors, adds provenance for matches, and skips recently checked vendors', async () => {

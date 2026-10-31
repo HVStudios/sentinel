@@ -9,7 +9,7 @@ connect.
 
 ![SENTINEL main view](docs/screenshot.png)
 
-- **Real, attributed data.** CISA KEV, NIST NVD, FIRST EPSS, USGS, NASA EONET, curated news and advisory feeds, GDELT and Hacker News.
+- **Real, attributed data.** CISA KEV, NIST NVD, GitHub Security Advisories, FIRST EPSS, USGS, NASA EONET, GDACS, Wikidata, curated news and advisory feeds, GDELT and Hacker News.
   Every item links to its source and shows when it happened, when it was published and when it
   was ingested.
 - **Honest geography.** Points appear only where a source reports coordinates.
@@ -64,7 +64,7 @@ To refresh only some sources:
 npm run ingest -- -- --only cisa-kev,first-epss,usgs-earthquakes
 ```
 
-Source IDs: `cisa-kev`, `nvd`, `first-epss`, `wikidata-vendors`, `usgs-earthquakes`, `nasa-eonet`, `news-feeds`,
+Source IDs: `cisa-kev`, `nvd`, `github-advisories`, `first-epss`, `wikidata-vendors`, `usgs-earthquakes`, `nasa-eonet`, `gdacs`, `news-feeds`,
 `gdelt`, `hacker-news`. You can also refresh from the UI under **Sources → Refresh all sources**.
 
 ### Development
@@ -138,6 +138,7 @@ unit and integration tests, then the production build. CI (`.github/workflows/ci
 | `HOST` | `127.0.0.1` | Bind address. `POST /api/ingest` is only enabled on loopback. |
 | `SENTINEL_DB` | `data/sentinel.db` | SQLite file, relative to the repo root |
 | `NVD_API_KEY` | — | Optional free NVD key; raises the limit from 5 to 50 requests per 30 s |
+| `GITHUB_TOKEN` | — | Optional; raises the GitHub advisories API limit from 60 to 1,000 requests an hour (set automatically in GitHub Actions) |
 | `NVD_RECENT_DAYS` | `3` | Window for recently published CVEs (only CVSS ≥ 7 or KEV-listed CVEs are kept) |
 
 ## Data sources
@@ -147,8 +148,10 @@ unit and integration tests, then the production build. CI (`.github/workflows/ci
 | [CISA KEV](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) | Exploited CVEs, vendor/product, due dates, ransomware use | none |
 | [NIST NVD](https://nvd.nist.gov/developers) | CVSS, CWE, affected products (CPE), references | none |
 | [FIRST EPSS](https://www.first.org/epss/) | Exploit probability and percentile | none |
+| [GitHub Security Advisories](https://github.com/advisories) | Reviewed high/critical advisories for open-source packages (npm, PyPI, Go, crates.io…), affected version ranges and fixes | none |
 | [USGS](https://earthquake.usgs.gov/earthquakes/feed/) | Significant (month) and M4.5+ (week) earthquakes | source coordinates |
 | [NASA EONET](https://eonet.gsfc.nasa.gov/) | Open natural events (wildfires, storms, volcanoes…) | source point coordinates |
+| [GDACS](https://www.gdacs.org/) | Orange/Red disaster alerts of all types, plus Green cyclones and volcanoes; enriches matching USGS/EONET events with the alert level | epicentre, or centroid of the affected area; multi-country events (e.g. droughts) are not drawn as a point |
 | [Wikidata](https://www.wikidata.org/) | Vendor headquarters (city, country, coordinates), looked up by vendor name | vendor HQ only; the identity match is shown as inferred |
 | [Curated feeds](server/src/sources/feeds.ts) | 17 RSS/Atom feeds: security news, government advisories (CISA, NCSC UK, CERT-FR, Canadian Cyber Centre), tech and AI | publisher country only, configured per outlet with a reference link |
 | [GDELT DOC 2.0](https://www.gdeltproject.org/) | Security and tech/AI news (best effort, often rate-limited) | publisher country only |

@@ -18,6 +18,7 @@ const VENDOR_STOPLIST = new Set(
 );
 
 const CVE_RE = /\bCVE-\d{4}-\d{4,7}\b/gi;
+const GHSA_RE = /\bGHSA(?:-[23456789cfghjmpqrvwx]{4}){3}\b/gi;
 
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -43,6 +44,8 @@ export function buildVendorMatchers(vendors: Pick<NodeRow, 'id' | 'title'>[]): V
 }
 
 export const extractCves = (text: string): string[] => [...new Set((text.match(CVE_RE) ?? []).map((c) => c.toUpperCase()))];
+/** GitHub advisory IDs, normalised to `GHSA-xxxx-xxxx-xxxx` (lower-case body, as GitHub writes them). */
+export const extractGhsas = (text: string): string[] => [...new Set((text.match(GHSA_RE) ?? []).map((g) => `GHSA${g.slice(4).toLowerCase()}`))];
 
 /** Pure inference over the given nodes; `exists` reports whether a node id is in the store. */
 export function inferEdges(
@@ -50,6 +53,8 @@ export function inferEdges(
   vulnerabilities: Pick<NodeRow, 'id' | 'summary' | 'attrs'>[],
   vendors: VendorMatcher[],
   exists: (id: string) => boolean,
+  /** GHSA ID → node carrying it (a `ghsa:` node, or a CVE node enriched by GitHub). */
+  ghsaIndex: Map<string, string> = new Map(),
 ): SentinelEdge[] {
   const edges: SentinelEdge[] = [];
   const sourceId = INFERENCE_SOURCE.id;
@@ -61,6 +66,14 @@ export function inferEdges(
       edges.push({
         src: a.id, dst: cveNodeId(cve), rel: 'mentions', basis: 'inferred', confidence: CONFIDENCE.cveMention, sourceId,
         rationale: `Text contains the exact identifier ${cve}.`,
+      });
+    }
+    for (const g of extractGhsas(text)) {
+      const target = ghsaIndex.get(g);
+      if (!target || edges.some((e) => e.src === a.id && e.dst === target)) continue;
+      edges.push({
+        src: a.id, dst: target, rel: 'mentions', basis: 'inferred', confidence: CONFIDENCE.cveMention, sourceId,
+        rationale: `Text contains the exact identifier ${g}.`,
       });
     }
     for (const v of vendors) {
@@ -144,11 +157,17 @@ export function runInference(store: Store): { edges: number } {
   store.registerSource(INFERENCE_SOURCE);
   const vulns = store.nodesByType('vulnerability');
   const ids = new Set(vulns.map((v) => v.id));
+  const ghsaIndex = new Map<string, string>();
+  for (const v of vulns) {
+    const g = (v.attrs.ghsa as { id?: string } | undefined)?.id;
+    if (g) ghsaIndex.set(`GHSA${g.slice(4).toLowerCase()}`, v.id);
+  }
   const edges = inferEdges(
     store.nodesByType('article'),
     vulns,
     buildVendorMatchers(store.nodesByType('vendor')),
     (id) => ids.has(id),
+    ghsaIndex,
   );
   store.replaceInferredEdges(INFERENCE_SOURCE.id, edges);
 

@@ -38,6 +38,7 @@ export const POINT_COLORS: Record<string, string> = {
   wildfires: 'var(--c-fire)',
   severeStorms: 'var(--c-storm)',
   volcanoes: 'var(--c-volcano)',
+  floods: 'var(--c-flood)',
 };
 
 interface Props {
@@ -243,7 +244,10 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
             <i style={{ background: 'var(--c-event)' }} /> Other events
           </span>
         </div>
-        <div className="legend-note">Points: coordinates as reported by USGS / NASA EONET. Size = severity.</div>
+        <div className="legend-note">
+          Points: locations as reported by USGS, NASA EONET and GDACS (for GDACS floods and storms, the centroid of the affected area). Size = severity.
+          Events spread over many countries, such as droughts, are listed in the feed but not drawn as a point.
+        </div>
         {showCountries && (
           <div className="legend-note">
             <i className="swatch-news" /> Shading: news volume by <strong>publisher country</strong> (curated feeds and GDELT), not where events happened.

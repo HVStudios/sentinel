@@ -100,10 +100,26 @@ records per-source status in `sources`, so one failing source never blocks the o
 After all sources run, `relate.ts` recomputes inferred edges.
 
 Order: KEV → NVD (KEV CVEs missing details, plus CVEs published in the last N days) →
-EPSS (for all stored CVEs) → Wikidata vendor HQs → USGS → EONET → curated feeds → GDELT → HN → inference.
+GitHub advisories → EPSS (for all stored CVEs) → Wikidata vendor HQs → USGS → EONET → GDACS →
+curated feeds → GDELT → HN → inference.
 
 A source may return non-fatal `warnings` (e.g. 2 of 17 feeds failed). The source then stays
 `ok`, and the warnings are stored in `last_error` so the Sources panel shows them.
+
+**GitHub Security Advisories** (`sources/ghsa.ts`): reviewed high and critical advisories from the
+last 7 days, paged via the `Link` header. An advisory with a CVE enriches the existing CVE node
+(GitHub's facts only; KEV/NVD title and CVSS are kept) or creates it. One without a CVE becomes a
+`ghsa:` vulnerability node. Affected packages are product nodes `package:<ecosystem>/<name>`,
+with version ranges and fixes kept on the advisory. Articles that mention a GHSA ID get an
+inferred `mentions` edge, like CVE IDs.
+
+**GDACS** (`sources/gdacs.ts`): every Orange/Red alert from the last 30 days, plus Green cyclones
+and volcanoes. An event that is already on the map is enriched rather than duplicated: an
+earthquake within 2 minutes and 100 km of a USGS quake, or a cyclone whose name appears in an
+EONET storm title. Points are GDACS's epicentre or centroid of the affected area, labelled as
+such. Droughts, and events affecting more than three countries, get no point at all, because a
+centroid in one country would misrepresent a continent-wide event; their affected countries are
+listed instead.
 
 **Vendor de-duplication** (`dedupe.ts`): after any source that writes vendor nodes, duplicate
 spellings of one company are folded together. Rule 1 merges names that are identical once

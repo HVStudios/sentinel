@@ -116,6 +116,31 @@ function DetailBody({ d, headingRef }: { d: NodeDetail; headingRef: React.RefObj
             <Fact label="Ransomware use">{a.kev?.ransomware}</Fact>
             <Fact label="Required action">{a.kev?.requiredAction}</Fact>
             <Fact label="NVD status">{a.nvd?.status}</Fact>
+            <Fact label="GitHub advisory">
+              {a.ghsa && (
+                <span>
+                  <a href={a.ghsa.url} target="_blank" rel="noreferrer noopener">
+                    {a.ghsa.id}
+                  </a>{' '}
+                  ({a.ghsa.severity})
+                  {a.ghsa.packages?.length > 0 && (
+                    <ul className="pkg-list">
+                      {a.ghsa.packages.slice(0, 12).map((p: { ecosystem: string; name: string; vulnerable: string | null; patched: string | null }) => (
+                        <li key={`${p.ecosystem}/${p.name}`}>
+                          <code>
+                            {p.ecosystem} {p.name}
+                          </code>{' '}
+                          <span className="muted">
+                            {p.vulnerable ?? ''}
+                            {p.patched ? ` → fixed in ${p.patched}` : ' · no fix listed'}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </span>
+              )}
+            </Fact>
           </>
         )}
         {n.type === 'natural_event' && (
@@ -124,6 +149,23 @@ function DetailBody({ d, headingRef }: { d: NodeDetail; headingRef: React.RefObj
             <Fact label="Depth">{a.depthKm != null && `${Number(a.depthKm).toFixed(1)} km`}</Fact>
             <Fact label="First observed">{a.firstObserved && formatDate(a.firstObserved)}</Fact>
             <Fact label="Review status">{a.reviewStatus}</Fact>
+            <Fact label="GDACS alert">
+              {a.gdacs && (
+                <span>
+                  {a.gdacs.alertLevel}
+                  {a.gdacs.severity ? ` · ${a.gdacs.severity}` : ''}
+                  {a.gdacs.url && (
+                    <>
+                      {' · '}
+                      <a href={a.gdacs.url} target="_blank" rel="noreferrer noopener">
+                        GDACS report
+                      </a>
+                    </>
+                  )}
+                </span>
+              )}
+            </Fact>
+            <Fact label="Affected countries">{a.gdacs?.affectedCountries?.length > 0 && a.gdacs.affectedCountries.join(', ')}</Fact>
             <Fact label="Upstream">{a.upstreamSources?.map((s: { id: string }) => s.id).join(', ')}</Fact>
           </>
         )}

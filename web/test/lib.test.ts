@@ -30,6 +30,20 @@ describe('format helpers', () => {
     expect(locationLabel(vendor(0.55))).toBe('Possibly headquartered in Oslo, Norway (Wikidata alias match; not mapped)');
   });
 
+  it('labels GDACS centroids and events that are not drawn as a point', () => {
+    const tc = node({ id: 'gdacs:TC1', type: 'natural_event', title: 'TC', geoBasis: 'coordinates', lat: 16.4, lon: 81.8, attrs: { locationKind: 'centroid' } });
+    expect(locationLabel(tc)).toBe('16.40°, 81.80° (GDACS centroid of the affected area)');
+    const drought = node({ id: 'gdacs:DR1', type: 'natural_event', title: 'Drought', attrs: { gdacs: { affectedCountries: ['A', 'B', 'C', 'D'] } } });
+    expect(locationLabel(drought)).toBe('Not shown as a point: affects 4 countries (GDACS)');
+  });
+
+  it('badges GDACS alerts and GitHub advisories', () => {
+    expect(badgesFor(node({ id: 'g', type: 'natural_event', title: 'x', attrs: { gdacs: { alertLevel: 'Red' } } })).map((b) => [b.label, b.tone])).toEqual([['GDACS Red', 'critical']]);
+    const ghsa = badgesFor(node({ id: 'ghsa:x', type: 'vulnerability', title: 'x', attrs: { ghsa: { id: 'GHSA-x', severity: 'high', packages: [{ ecosystem: 'npm' }, { ecosystem: 'pip' }] }, cvss: { score: 8.1, version: '3.1', vector: 'v', source: 'GitHub' } } }));
+    expect(ghsa.map((b) => b.label)).toEqual(['CVSS 8.1', 'GHSA']);
+    expect(ghsa[1]!.title).toContain('npm, pip');
+  });
+
   it('derives risk badges from source facts', () => {
     expect(badgesFor(kevCve).map((b) => b.label)).toEqual(['KEV', 'Ransomware', 'CVSS 7.0', 'EPSS 0.3%']);
     expect(badgesFor(quake).map((b) => b.label)).toEqual(['M6.4', 'PAGER green']);

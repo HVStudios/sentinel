@@ -1,5 +1,5 @@
 import type { Store } from './store.ts';
-import { fetchJson, fetchText } from './http.ts';
+import { fetchJson, fetchJsonWithHeaders, fetchText } from './http.ts';
 import { runInference } from './relate.ts';
 import { mergeDuplicateVendors } from './dedupe.ts';
 import type { IngestContext, SourceModule } from './sources/common.ts';
@@ -12,9 +12,16 @@ import { gdeltSource } from './sources/gdelt.ts';
 import { hnSource } from './sources/hn.ts';
 import { rssSource } from './sources/rss.ts';
 import { wikidataSource } from './sources/wikidata.ts';
+import { gdacsSource } from './sources/gdacs.ts';
+import { ghsaSource } from './sources/ghsa.ts';
 
 /** Run order matters: NVD, EPSS and Wikidata enrich CVEs and vendors that KEV and NVD created. */
-export const SOURCES: SourceModule[] = [kevSource, nvdSource, epssSource, wikidataSource, usgsSource, eonetSource, rssSource, gdeltSource, hnSource];
+export const SOURCES: SourceModule[] = [
+  kevSource, nvdSource, ghsaSource, epssSource, wikidataSource,
+  // GDACS runs after USGS and EONET so it can enrich their events instead of duplicating them.
+  usgsSource, eonetSource, gdacsSource,
+  rssSource, gdeltSource, hnSource,
+];
 
 export interface IngestResult {
   source: string;
@@ -36,6 +43,7 @@ export async function ingest(store: Store, opts: IngestOptions = {}): Promise<{ 
     store,
     fetchJson,
     fetchText,
+    fetchJsonWithHeaders,
     env: process.env,
     now: () => new Date(),
     log: (m) => console.log(m),
