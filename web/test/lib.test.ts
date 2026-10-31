@@ -25,6 +25,9 @@ describe('format helpers', () => {
     expect(locationLabel(quake)).toBe('southeast of Easter Island · -36.41°, -98.05° (source coordinates)');
     expect(locationLabel(article)).toBe('Publisher in Germany (not the event location)');
     expect(locationLabel(kevCve)).toBe('No location reported by source');
+    const vendor = (confidence: number) => node({ id: 'vendor:x', type: 'vendor', title: 'X', attrs: { wikidata: { status: 'matched', confidence, hq: { label: 'Oslo', country: 'Norway' } } } });
+    expect(locationLabel(vendor(0.8))).toBe('Headquarters: Oslo, Norway (Wikidata)');
+    expect(locationLabel(vendor(0.55))).toBe('Possibly headquartered in Oslo, Norway (Wikidata alias match; not mapped)');
   });
 
   it('derives risk badges from source facts', () => {

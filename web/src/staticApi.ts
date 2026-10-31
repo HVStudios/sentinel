@@ -1,4 +1,4 @@
-import type { NodeDetail, SEdge, SNode, SourceStatus, TimedType } from './api.ts';
+import type { MapData, NodeDetail, SEdge, SNode, SourceStatus, TimedType, VendorHq } from './api.ts';
 import { TIMED_TYPES } from './api.ts';
 import type { Api, Filters, SourcesResponse } from './api.ts';
 
@@ -118,7 +118,38 @@ export function queryFeed(ix: Index, f: Filters, before?: string, limit = 50) {
   return { items, nextCursor: more && last ? `${last.occurredAt}|${last.id}` : null };
 }
 
-export function queryMap(ix: Index, f: Filters) {
+/** Same join and order as Store.vendorHeadquarters: vulnerability -affects-> product -made_by-> vendor. */
+function vendorHeadquarters(ix: Index, f: Filters): VendorHq[] {
+  if (f.types.length && !f.types.includes('vulnerability')) return [];
+  const win = inWindow({ ...f, types: ['vulnerability'] });
+  const vulnsByVendor = new Map<string, Set<string>>();
+  for (const v of ix.timed) {
+    if (!win(v)) continue;
+    for (const a of ix.adj.get(v.id) ?? []) {
+      if (a.rel !== 'affects' || a.src !== v.id) continue;
+      for (const m of ix.adj.get(a.dst) ?? []) {
+        if (m.rel !== 'made_by' || m.src !== a.dst) continue;
+        const set = vulnsByVendor.get(m.dst) ?? new Set<string>();
+        set.add(v.id);
+        vulnsByVendor.set(m.dst, set);
+      }
+    }
+  }
+  const out: VendorHq[] = [];
+  for (const [id, vulns] of vulnsByVendor) {
+    const n = ix.byId.get(id);
+    const wd = n?.attrs?.wikidata;
+    // Alias-only matches (confidence < 0.7) are not mapped, as on the server.
+    if (!n || wd?.status !== 'matched' || !(wd.confidence >= 0.7) || wd.hq?.lat == null || wd.hq?.lon == null) continue;
+    out.push({
+      id, title: n.title, lat: wd.hq.lat, lon: wd.hq.lon, hq: wd.hq.label, country: wd.hq.country,
+      qid: wd.qid, url: wd.url, matchedBy: wd.matchedBy, confidence: wd.confidence, vulnerabilities: vulns.size,
+    });
+  }
+  return out.sort((a, b) => b.vulnerabilities - a.vulnerabilities || (a.id < b.id ? -1 : 1)).slice(0, 500);
+}
+
+export function queryMap(ix: Index, f: Filters): MapData {
   const win = inWindow(f);
   const points: SNode[] = [];
   const counts = new Map<string, number>();
@@ -128,7 +159,7 @@ export function queryMap(ix: Index, f: Filters) {
     if (n.geoBasis === 'publisher_country' && n.country) counts.set(n.country, (counts.get(n.country) ?? 0) + 1);
   }
   const countries = [...counts].map(([country, count]) => ({ country, count })).sort((a, b) => b.count - a.count);
-  return { points, countries };
+  return { points, countries, vendors: vendorHeadquarters(ix, f) };
 }
 
 export function queryTimeline(ix: Index, f: Filters & { from: string; to: string }, buckets: number) {

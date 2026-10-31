@@ -20,13 +20,22 @@ export interface FetchOptions {
 const defaultSleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 /** GET a document as text with a timeout and exponential backoff on 429/5xx and network errors. */
-export async function fetchText(url: string, opts: FetchOptions & { accept?: string } = {}): Promise<string> {
-  const { timeoutMs = 30_000, retries = 2, headers = {}, fetchImpl = fetch, sleep = defaultSleep, accept = '*/*' } = opts;
+export type TextFetchOptions = FetchOptions & { accept?: string; method?: 'GET' | 'POST'; form?: Record<string, string> };
+
+export async function fetchText(url: string, opts: TextFetchOptions = {}): Promise<string> {
+  const { timeoutMs = 30_000, retries = 2, headers = {}, fetchImpl = fetch, sleep = defaultSleep, accept = '*/*', method = 'GET', form } = opts;
   let lastErr: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const res = await fetchImpl(url, {
-        headers: { 'user-agent': `sentinel/${VERSION} (+local research tool)`, accept, ...headers },
+        method,
+        headers: {
+          'user-agent': `sentinel/${VERSION} (+https://github.com/HVStudios/sentinel)`,
+          accept,
+          ...(form ? { 'content-type': 'application/x-www-form-urlencoded' } : {}),
+          ...headers,
+        },
+        body: form ? new URLSearchParams(form).toString() : undefined,
         signal: AbortSignal.timeout(timeoutMs),
       });
       if (res.ok) return await res.text();
@@ -45,8 +54,8 @@ export async function fetchText(url: string, opts: FetchOptions & { accept?: str
 }
 
 /** GET a JSON document (see fetchText for retry behaviour). */
-export async function fetchJson<T = unknown>(url: string, opts: FetchOptions = {}): Promise<T> {
-  const text = await fetchText(url, { ...opts, accept: 'application/json' });
+export async function fetchJson<T = unknown>(url: string, opts: TextFetchOptions = {}): Promise<T> {
+  const text = await fetchText(url, { accept: 'application/json', ...opts });
   try {
     return JSON.parse(text) as T;
   } catch {

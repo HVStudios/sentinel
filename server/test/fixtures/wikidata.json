@@ -1,0 +1,773 @@
+{
+ "head": {
+  "vars": [
+   "name",
+   "item",
+   "itemLabel",
+   "desc",
+   "hqLabel",
+   "countryLabel",
+   "coord"
+  ]
+ },
+ "results": {
+  "bindings": [
+   {
+    "item": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q312"
+    },
+    "desc": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "American multinational technology company based in Cupertino, California"
+    },
+    "name": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Apple Inc."
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(-122.041944444 37.3175)"
+    },
+    "itemLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Apple Inc."
+    },
+    "hqLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Cupertino"
+    },
+    "countryLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "United States"
+    }
+   },
+   {
+    "item": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2283"
+    },
+    "desc": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "American multinational technology corporation"
+    },
+    "name": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Microsoft"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(-122.123888888 47.669444444)"
+    },
+    "itemLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Microsoft"
+    },
+    "hqLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Redmond"
+    },
+    "countryLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "United States"
+    }
+   },
+   {
+    "item": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q18027021"
+    },
+    "desc": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "former manufacturer of electrical equipment"
+    },
+    "name": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Progress"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(9.18 48.7775)"
+    },
+    "itemLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Progress"
+    },
+    "hqLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Stuttgart"
+    },
+    "countryLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Germany"
+    }
+   },
+   {
+    "item": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q12054212"
+    },
+    "desc": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "company in the Czech Republic"
+    },
+    "name": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Siemens"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(14.421388888 50.0875)"
+    },
+    "itemLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Siemens"
+    },
+    "hqLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Prague"
+    },
+    "countryLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Czech Republic"
+    }
+   },
+   {
+    "item": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q31327320"
+    },
+    "desc": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Czech company, subsidiary of Microsoft Corporation"
+    },
+    "name": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Microsoft"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(14.421388888 50.0875)"
+    },
+    "itemLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Microsoft s.r.o."
+    },
+    "hqLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Prague"
+    },
+    "countryLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Czech Republic"
+    }
+   },
+   {
+    "item": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q30292006"
+    },
+    "desc": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "company in Madrid, Spain"
+    },
+    "name": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Oracle"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(-3.703333333 40.416944444)"
+    },
+    "itemLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Oracle"
+    },
+    "hqLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Madrid"
+    },
+    "countryLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Spain"
+    }
+   },
+   {
+    "item": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q5760704"
+    },
+    "desc": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Chinese video surveillance equipment company"
+    },
+    "name": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Hikvision"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(120.1675 30.25)"
+    },
+    "itemLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Hikvision"
+    },
+    "hqLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Hangzhou"
+    },
+    "countryLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "People's Republic of China"
+    }
+   },
+   {
+    "item": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q141276755"
+    },
+    "desc": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "former US company"
+    },
+    "name": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Cisco"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(-121.872777777 37.304166666)"
+    },
+    "itemLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Cisco"
+    },
+    "hqLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "San Jose"
+    },
+    "countryLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "United States"
+    }
+   },
+   {
+    "item": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q30272342"
+    },
+    "desc": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "company in Espoo, Finland"
+    },
+    "name": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Microsoft Corporation"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(24.655555555 60.205555555)"
+    },
+    "itemLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Microsoft (Finland)"
+    },
+    "hqLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Espoo"
+    },
+    "countryLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Finland"
+    }
+   },
+   {
+    "item": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q111211215"
+    },
+    "desc": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Progress Residential is a leading provider of professional property management services for tens of thousands of single-family rental homes across the U.S."
+    },
+    "name": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Progress"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(-111.926111111 33.493055555)"
+    },
+    "itemLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Progress Residential"
+    },
+    "hqLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Scottsdale"
+    },
+    "countryLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "United States"
+    }
+   },
+   {
+    "item": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q4042416"
+    },
+    "desc": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "American IT software company"
+    },
+    "name": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Ivanti"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(-111.960833333 40.561666666)"
+    },
+    "itemLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Ivanti"
+    },
+    "hqLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "South Jordan"
+    },
+    "countryLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "United States"
+    }
+   },
+   {
+    "item": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q1049080"
+    },
+    "desc": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "American multinational technology company"
+    },
+    "name": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Juniper Networks"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(-122.036944444 37.368888888)"
+    },
+    "itemLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Juniper Networks"
+    },
+    "hqLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Sunnyvale"
+    },
+    "countryLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "United States"
+    }
+   },
+   {
+    "item": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q28970984"
+    },
+    "desc": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Belgian company"
+    },
+    "name": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Siemens"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(4.3086 50.7631)"
+    },
+    "itemLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Siemens"
+    },
+    "hqLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Beersel"
+    },
+    "countryLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Belgium"
+    }
+   },
+   {
+    "item": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q213710"
+    },
+    "desc": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "UK international record label; imprint of Apple Corps Ltd."
+    },
+    "name": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Apple"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(-0.1275 51.507222222)"
+    },
+    "itemLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Apple Records"
+    },
+    "hqLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "London"
+    },
+    "countryLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "United Kingdom"
+    }
+   },
+   {
+    "item": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q591023"
+    },
+    "desc": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Political party in the Faroe Islands"
+    },
+    "name": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Progress"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(-6.77135 62.00981)"
+    },
+    "itemLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Progress"
+    },
+    "hqLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Tórshavn"
+    },
+    "countryLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Faroe Islands"
+    }
+   },
+   {
+    "item": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q173395"
+    },
+    "desc": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "American multinational technology company"
+    },
+    "name": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Cisco Systems"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(-121.872777777 37.304166666)"
+    },
+    "itemLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Cisco"
+    },
+    "hqLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "San Jose"
+    },
+    "countryLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "United States"
+    }
+   },
+   {
+    "item": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q173395"
+    },
+    "desc": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "American multinational technology company"
+    },
+    "name": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Cisco"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(-121.872777777 37.304166666)"
+    },
+    "itemLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Cisco"
+    },
+    "hqLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "San Jose"
+    },
+    "countryLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "United States"
+    }
+   },
+   {
+    "item": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q741046"
+    },
+    "desc": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "global software company"
+    },
+    "name": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Progress Software"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(-71.276666666 42.490555555)"
+    },
+    "itemLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Progress Software"
+    },
+    "hqLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Bedford"
+    },
+    "countryLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "United States"
+    }
+   },
+   {
+    "item": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q81230"
+    },
+    "desc": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "German multinational conglomerate company"
+    },
+    "name": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Siemens"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(11.575 48.1375)"
+    },
+    "itemLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Siemens"
+    },
+    "hqLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Munich"
+    },
+    "countryLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Germany"
+    }
+   },
+   {
+    "item": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q19900"
+    },
+    "desc": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "American multinational computer corporation"
+    },
+    "name": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Oracle"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(-97.733333333 30.3)"
+    },
+    "itemLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Oracle Corporation"
+    },
+    "hqLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Austin"
+    },
+    "countryLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "United States"
+    }
+   },
+   {
+    "item": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q19900"
+    },
+    "desc": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "American multinational computer corporation"
+    },
+    "name": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Oracle Corporation"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(-97.733333333 30.3)"
+    },
+    "itemLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Oracle Corporation"
+    },
+    "hqLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Austin"
+    },
+    "countryLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "United States"
+    }
+   }
+  ]
+ }
+}

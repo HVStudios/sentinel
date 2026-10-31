@@ -14,7 +14,9 @@ connect.
   was ingested.
 - **Honest geography.** Points appear only where a source reports coordinates.
   News is shaded by *publisher* country and labelled as such. Vulnerabilities are never placed
-  on the map, because KEV and NVD do not report a location.
+  on the map, because KEV and NVD do not report a location. The affected *vendors* can be shown
+  at their Wikidata headquarters, labelled as such, and only when the name match is
+  unambiguous.
 - **Facts vs. inferences.** Relationships stated by a source are drawn as solid lines and
   labelled *reported*. Links SENTINEL derives from text (e.g. a headline mentioning a CVE ID or
   vendor) are dashed, labelled *inferred*, and carry a confidence and a rationale.
@@ -59,7 +61,7 @@ To refresh only some sources:
 npm run ingest -- -- --only cisa-kev,first-epss,usgs-earthquakes
 ```
 
-Source IDs: `cisa-kev`, `nvd`, `first-epss`, `usgs-earthquakes`, `nasa-eonet`, `news-feeds`,
+Source IDs: `cisa-kev`, `nvd`, `first-epss`, `wikidata-vendors`, `usgs-earthquakes`, `nasa-eonet`, `news-feeds`,
 `gdelt`, `hacker-news`. You can also refresh from the UI under **Sources → Refresh all sources**.
 
 ### Development
@@ -137,6 +139,7 @@ production build. CI (`.github/workflows/ci.yml`) runs the same steps. Individua
 | [FIRST EPSS](https://www.first.org/epss/) | Exploit probability and percentile | none |
 | [USGS](https://earthquake.usgs.gov/earthquakes/feed/) | Significant (month) and M4.5+ (week) earthquakes | source coordinates |
 | [NASA EONET](https://eonet.gsfc.nasa.gov/) | Open natural events (wildfires, storms, volcanoes…) | source point coordinates |
+| [Wikidata](https://www.wikidata.org/) | Vendor headquarters (city, country, coordinates), looked up by vendor name | vendor HQ only; the identity match is shown as inferred |
 | [Curated feeds](server/src/sources/feeds.ts) | 17 RSS/Atom feeds: security news, government advisories (CISA, NCSC UK, CERT-FR, Canadian Cyber Centre), tech and AI | publisher country only, configured per outlet with a reference link |
 | [GDELT DOC 2.0](https://www.gdeltproject.org/) | Security and tech/AI news (best effort, often rate-limited) | publisher country only |
 | [Hacker News](https://hn.algolia.com/api) | Tech stories with ≥ 100 points | none |
@@ -166,6 +169,9 @@ scripts/       dev runner, GitHub issue creation from the backlog
 - **GDELT** often answers with HTTP 429 or empty results, locally and on GitHub's runners.
   Publisher-country shading therefore comes mainly from the curated feeds. To add a feed, add an
   entry to `server/src/sources/feeds.ts` with the outlet's country and a page that confirms it.
+- Wikidata matching is conservative: about a quarter of vendors get a mappable match. Many
+  misses are NVD's run-together vendor IDs ("paloaltonetworks"), which duplicate KEV's readable
+  names (backlog SEN-25).
 - Feed-level problems (e.g. one outlet timing out) keep the source "ok" and are listed as warnings
   in the Sources panel.
 - Vendor-name matching is deliberately conservative (case-sensitive, with a stop-list) and is

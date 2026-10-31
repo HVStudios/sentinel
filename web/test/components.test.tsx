@@ -54,6 +54,20 @@ describe('WorldMap', () => {
     expect(screen.getByText(/Vulnerabilities are not mapped/)).toBeTruthy();
   });
 
+  it('draws vendor headquarters as labelled diamonds only when enabled', () => {
+    const vendor = { id: 'vendor:ivanti', title: 'Ivanti', lat: 40.56, lon: -111.96, hq: 'South Jordan', country: 'United States', qid: 'Q4042416', url: 'https://www.wikidata.org/wiki/Q4042416', matchedBy: 'exact label', confidence: 0.8, vulnerabilities: 3 };
+    const onSelect = vi.fn();
+    const { container, rerender } = render(<WorldMap points={[]} countryCounts={[]} selectedId={null} onSelect={onSelect} showCountries={false} vendors={[vendor]} showVendors />);
+    const diamond = container.querySelector('[data-vendor="vendor:ivanti"]')!;
+    expect(diamond.getAttribute('aria-label')).toBe('Ivanti headquarters, South Jordan: 3 vulnerabilities in this window');
+    expect(screen.getByText(/not where vulnerabilities are exploited/)).toBeTruthy();
+    fireEvent.click(diamond);
+    expect(onSelect).toHaveBeenCalledWith('vendor:ivanti');
+    rerender(<WorldMap points={[]} countryCounts={[]} selectedId={null} onSelect={onSelect} showCountries={false} vendors={[vendor]} showVendors={false} />);
+    expect(container.querySelector('[data-vendor]')).toBeNull();
+    expect(screen.getByText(/Vulnerabilities are not mapped/)).toBeTruthy();
+  });
+
   it('hides shading when disabled', () => {
     const { container } = render(<WorldMap points={[]} countryCounts={[{ country: 'Germany', count: 3 }]} selectedId={null} onSelect={() => {}} showCountries={false} />);
     expect((container.querySelector('[data-country="Germany"]') as SVGPathElement).style.fill).toBe('');
@@ -97,6 +111,29 @@ describe('Investigate (articles)', () => {
     expect(screen.getByRole('link', { name: 'reference' }).getAttribute('href')).toBe('https://www.cyber.gc.ca/en/about-cyber-centre');
     expect(screen.getByText(/government advisory \(\+0\.55\) · mentions a CISA KEV-listed CVE/)).toBeTruthy();
     expect(screen.getByText('0.80', { exact: false })).toBeTruthy();
+  });
+});
+
+describe('Investigate (vendors)', () => {
+  const vendorNode = (wikidata: unknown) => ({ ...article, id: 'vendor:ivanti', type: 'vendor' as const, title: 'Ivanti', geoBasis: null, country: null, occurredAt: null, attrs: { wikidata } });
+  const show = (wikidata: unknown) => {
+    vi.stubGlobal('fetch', vi.fn((url: string) =>
+      url.startsWith('/api/nodes/') ? json({ node: vendorNode(wikidata), provenance: [], edges: [] }) : json({ nodes: [vendorNode(wikidata)], edges: [] }),
+    ));
+    render(<Investigate id="vendor:ivanti" onSelect={() => {}} onClose={() => {}} />);
+  };
+
+  it('shows the Wikidata headquarters with the identity match marked as inferred', async () => {
+    show({ status: 'matched', qid: 'Q4042416', label: 'Ivanti', description: 'American IT software company', url: 'https://www.wikidata.org/wiki/Q4042416', hq: { label: 'South Jordan', country: 'United States', lat: 40.56, lon: -111.96 }, matchedBy: 'exact label', confidence: 0.8, candidates: ['Q4042416'], checkedAt: 'x' });
+    expect(await screen.findByRole('link', { name: 'Wikidata Q4042416' })).toBeTruthy();
+    expect(screen.getByText('Headquarters: South Jordan, United States (Wikidata)')).toBeTruthy();
+    expect(screen.getByText('inferred · 80%')).toBeTruthy();
+  });
+
+  it('explains when a vendor is not placed on the map', async () => {
+    show({ status: 'ambiguous', qid: null, label: null, description: null, url: null, hq: null, matchedBy: null, confidence: null, candidates: ['Q1', 'Q2'], checkedAt: 'x' });
+    expect(await screen.findByText(/ambiguous \(2 candidates\), so it is not placed on the map/)).toBeTruthy();
+    expect(screen.getByText('No location reported by source')).toBeTruthy();
   });
 });
 
