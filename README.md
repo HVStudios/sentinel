@@ -169,9 +169,10 @@ scripts/       dev runner, GitHub issue creation from the backlog
 - **GDELT** often answers with HTTP 429 or empty results, locally and on GitHub's runners.
   Publisher-country shading therefore comes mainly from the curated feeds. To add a feed, add an
   entry to `server/src/sources/feeds.ts` with the outlet's country and a page that confirms it.
-- Wikidata matching is conservative: about a quarter of vendors get a mappable match. Many
-  misses are NVD's run-together vendor IDs ("paloaltonetworks"), which duplicate KEV's readable
-  names (backlog SEN-25).
+- Wikidata matching is conservative: about a quarter of vendors get a mappable match.
+- Duplicate vendor spellings (KEV's "Palo Alto Networks" vs NVD's "paloaltonetworks") are merged
+  by two conservative name rules, and the other spellings are listed as "Also known as". Pairs the
+  rules don't cover (e.g. "Aquasec" vs "Aqua Security") stay separate.
 - Feed-level problems (e.g. one outlet timing out) keep the source "ok" and are listed as warnings
   in the Sources panel.
 - Vendor-name matching is deliberately conservative (case-sensitive, with a stop-list) and is

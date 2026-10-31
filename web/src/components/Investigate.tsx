@@ -162,6 +162,14 @@ function DetailBody({ d }: { d: NodeDetail }) {
             )}
           </Fact>
         )}
+        {n.type === 'vendor' && Array.isArray(a.aliases) && a.aliases.length > 0 && (
+          <Fact label="Also known as">
+            <span title="Other spellings of this vendor (e.g. NVD CPE vendor IDs) merged into this node">
+              {a.aliases.map((x: { name: string; rule: string }) => x.name).join(', ')}
+              <span className="muted small"> · merged by name ({[...new Set(a.aliases.map((x: { rule: string }) => (x.rule === 'exact' ? 'same name without separators' : 'same name apart from a suffix')))].join('; ')})</span>
+            </span>
+          </Fact>
+        )}
         <Fact label="SENTINEL rank">
           {a.rank && (
             <span title="A heuristic used to order the feed, not a fact reported by any source">
