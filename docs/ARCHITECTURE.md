@@ -170,6 +170,9 @@ and the parity test covers all three orderings.
   country-name mapping.
 - **Integration**: store and API using an in-memory SQLite DB and Fastify `inject()`.
 - **UI**: component tests for the feed, filters, detail panel and map rendering (jsdom).
+- **End-to-end**: Playwright drives Chromium against the live server and the static Pages
+  build (`e2e/`). Both use the same database, seeded offline from the shared fixture router
+  (`server/test/fixtures/router.ts`), and the browser clock is frozen at the fixtures' date.
 - **No network in tests**. Live fetching is exercised only by `npm run ingest`.
 
 ## Static deployment (GitHub Pages)

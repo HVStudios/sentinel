@@ -1,28 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { readFileSync } from 'node:fs';
 import { ingest, SOURCES } from '../src/ingest.ts';
 import { Store } from '../src/store.ts';
-import { fetchJson, HttpError, RateLimiter } from '../src/http.ts';
+import { fetchJson, RateLimiter } from '../src/http.ts';
 import type { SourceModule } from '../src/sources/common.ts';
 
-const fixture = (name: string) => JSON.parse(readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf8'));
-
-/** Routes each source URL to its recorded fixture, so the whole pipeline runs offline. */
-const fakeFetch = (async (url: string) => {
-  const u = new URL(url);
-  if (u.host === 'www.cisa.gov') return fixture('kev.json');
-  if (u.host === 'services.nvd.nist.gov') return u.search.includes('hasKev') ? fixture('nvd.json') : { ...fixture('nvd.json'), vulnerabilities: [], totalResults: 0 };
-  if (u.host === 'api.first.org') return fixture('epss.json');
-  if (u.host === 'earthquake.usgs.gov') return fixture('usgs.json');
-  if (u.host === 'eonet.gsfc.nasa.gov') return fixture('eonet.json');
-  if (u.host === 'api.gdeltproject.org') throw new HttpError(429, 'HTTP 429 from api.gdeltproject.org');
-  if (u.host === 'hn.algolia.com') return fixture('hn.json');
-  if (u.host === 'query.wikidata.org') return fixture('wikidata.json');
-  throw new Error(`unexpected ${url}`);
-}) as typeof fetchJson;
-
-/** Every curated feed answers with the same recorded RSS document. */
-const fakeFetchText = (async () => readFileSync(new URL('./fixtures/rss-bleepingcomputer.xml', import.meta.url), 'utf8')) as unknown as typeof import('../src/http.ts').fetchText;
+import { fixtureFetchJson as fakeFetch, fixtureFetchText as fakeFetchText } from './fixtures/router.ts';
 
 describe('ingest pipeline', () => {
   it('runs all sources offline, isolates failures and records status', async () => {
