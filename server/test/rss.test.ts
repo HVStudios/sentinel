@@ -66,6 +66,11 @@ describe('feed → nodes', () => {
     expect(cat('Quarterly update', 'advisory')).toBe('advisory');
   });
 
+  it('drops sponsored posts', () => {
+    const doc = `<rss><channel><item><title>Anzeige: Monitor zum Bestpreis</title><link>https://example.org/ad</link><pubDate>Fri, 30 Oct 2026 10:00:00 GMT</pubDate></item></channel></rss>`;
+    expect(parseFeed(doc, feed(), NOW).nodes).toEqual([]);
+  });
+
   it('skips items older than 30 days or dated in the future', () => {
     expect(parseFeed(xml('rss-bleepingcomputer.xml'), feed(), new Date('2027-01-01T00:00:00Z')).nodes).toHaveLength(0);
     expect(parseFeed(xml('rss-bleepingcomputer.xml'), feed(), new Date('2026-10-01T00:00:00Z')).nodes).toHaveLength(0);

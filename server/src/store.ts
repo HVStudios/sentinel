@@ -251,6 +251,10 @@ export class Store {
    * "enrichment only, keep the stored title"; reference nodes keep the first title seen.
    */
   writeBatch(batch: Batch): void {
+    this.transaction(() => this.writeBatchInTransaction(batch));
+  }
+
+  private writeBatchInTransaction(batch: Batch): void {
     const now = this.now();
     const upsertNode = this.db.prepare(
       `insert into nodes (id, type, title, summary, url, category, occurred_at, published_at, updated_at,
@@ -290,7 +294,7 @@ export class Store {
          source_url = coalesce(excluded.source_url, provenance.source_url), fetched_at = excluded.fetched_at`,
     );
 
-    this.transaction(() => {
+    {
       for (const node of batch.nodes) {
         upsertNode.run(
           node.id, node.type, node.title, n(node.summary), n(node.url), n(node.category),
@@ -305,6 +309,31 @@ export class Store {
       for (const p of batch.provenance) {
         upsertProv.run(p.nodeId, p.sourceId, n(p.sourceUrl), now);
       }
+    }
+  }
+
+  edgesByRel(rels: string[]): EdgeRow[] {
+    return (this.db.prepare(`select * from edges where rel in (${rels.map(() => '?').join(', ')})`).all(...rels) as Row[]).map(toEdge);
+  }
+
+  /**
+   * Atomically replaces every story: old story nodes, their edges and member hints are removed,
+   * then the new set is written and each member gets `attrs.story` for the feed.
+   */
+  replaceStories(
+    nodes: SentinelNode[],
+    edges: SentinelEdge[],
+    sourceId: string,
+    memberHints: (readonly [string, { id: string; title: string; size: number }])[],
+  ): void {
+    this.transaction(() => {
+      this.db.prepare(`delete from edges where source_id = ?`).run(sourceId);
+      this.db.prepare(`delete from provenance where node_id in (select id from nodes where type = 'story')`).run();
+      this.db.prepare(`delete from nodes where type = 'story'`).run();
+      this.db.prepare(`update nodes set attrs = json_remove(attrs, '$.story') where json_extract(attrs, '$.story') is not null`).run();
+      this.writeBatchInTransaction({ nodes, edges, provenance: nodes.map((s) => ({ nodeId: s.id, sourceId })) });
+      const hint = this.db.prepare(`update nodes set attrs = json_set(attrs, '$.story', json(?)) where id = ?`);
+      for (const [id, story] of memberHints) hint.run(JSON.stringify(story), id);
     });
   }
 
@@ -608,6 +637,24 @@ export class Store {
         fetchedAt: r.fetched_at as string,
       })),
     };
+  }
+
+  /** Stories active in the window (first seen before `to`, last seen after `from`), most recent first. */
+  stories(q: { from?: string; to?: string; limit?: number }): NodeRow[] {
+    const clauses = [`type = 'story'`];
+    const params: SQLInputValue[] = [];
+    if (q.from) {
+      clauses.push('occurred_at >= ?');
+      params.push(q.from);
+    }
+    if (q.to) {
+      clauses.push(`json_extract(attrs, '$.firstSeen') <= ?`);
+      params.push(q.to);
+    }
+    const limit = Math.min(Math.max(q.limit ?? 50, 1), 200);
+    return (
+      this.db.prepare(`select * from nodes where ${clauses.join(' and ')} order by occurred_at desc, id desc limit ?`).all(...params, limit) as Row[]
+    ).map(toNode);
   }
 
   sources(): SourceRow[] {

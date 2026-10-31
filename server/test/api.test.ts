@@ -93,6 +93,18 @@ describe('HTTP API', () => {
     expect((await get('/api/graph/missing')).status).toBe(404);
   });
 
+  it('lists stories in the window', async () => {
+    store.writeBatch({
+      nodes: [{ id: 'story:1', type: 'story', title: 'A story', occurredAt: '2026-10-30T00:00:00.000Z', attrs: { firstSeen: '2026-10-28T00:00:00.000Z', size: 2 } }],
+      edges: [],
+      provenance: [],
+    });
+    expect((await get('/api/stories')).body.stories.map((s: { id: string }) => s.id)).toEqual(['story:1']);
+    expect((await get('/api/stories?from=2026-10-31T00:00:00Z')).body.stories).toEqual([]);
+    expect((await get('/api/stories?to=2026-10-27T00:00:00Z')).body.stories).toEqual([]);
+    expect((await get('/api/stories?limit=0')).status).toBe(400);
+  });
+
   it('lists sources', async () => {
     const { body } = await get('/api/sources');
     expect(body.sources[0]).toMatchObject({ id: 'test', name: 'Test' });

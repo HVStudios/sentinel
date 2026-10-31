@@ -64,7 +64,11 @@ export function Investigate({ id, onSelect, onClose, onBack }: Props) {
           !graph.loading && <div className="muted small">No known relationships yet.</div>
         )}
       </section>
-      {detail.data && <Relationships d={detail.data} onSelect={onSelect} />}
+      {detail.data?.node.type === 'story' ? (
+        <StoryTimeline d={detail.data} onSelect={onSelect} />
+      ) : (
+        detail.data && <Relationships d={detail.data} onSelect={onSelect} />
+      )}
       {detail.data && <Provenance d={detail.data} />}
     </aside>
   );
@@ -229,6 +233,17 @@ function DetailBody({ d, headingRef }: { d: NodeDetail; headingRef: React.RefObj
             </span>
           </Fact>
         )}
+        {n.type === 'story' && (
+          <>
+            <Fact label="First seen">{formatDate(a.firstSeen)}</Fact>
+            <Fact label="Last update">{formatDate(a.lastSeen)}</Fact>
+            <Fact label="Identifiers">{a.anchors?.length > 0 && a.anchors.join(', ')}</Fact>
+            <Fact label="Sources">{a.outlets?.join(', ')}</Fact>
+            <Fact label="How it was built">
+              <span className="muted">Grouped by SENTINEL from explicit links between items (listed below). This is an inference, not a report from any source.</span>
+            </Fact>
+          </>
+        )}
         <Fact label="SENTINEL rank">
           {a.rank && (
             <span title="A heuristic used to order the feed, not a fact reported by any source">
@@ -236,11 +251,15 @@ function DetailBody({ d, headingRef }: { d: NodeDetail; headingRef: React.RefObj
             </span>
           )}
         </Fact>
-        <Fact label="Location">
-          <span className={n.geoBasis ? '' : 'muted'}>{locationLabel(n)}</span>
-        </Fact>
-        <Fact label="Occurred">{n.occurredAt && `${formatDate(n.occurredAt)} (${relativeTime(n.occurredAt)})`}</Fact>
-        <Fact label="Published">{n.publishedAt && formatDate(n.publishedAt)}</Fact>
+        {n.type !== 'story' && (
+          <>
+            <Fact label="Location">
+              <span className={n.geoBasis ? '' : 'muted'}>{locationLabel(n)}</span>
+            </Fact>
+            <Fact label="Occurred">{n.occurredAt && `${formatDate(n.occurredAt)} (${relativeTime(n.occurredAt)})`}</Fact>
+            <Fact label="Published">{n.publishedAt && formatDate(n.publishedAt)}</Fact>
+          </>
+        )}
         <Fact label="Updated">{n.updatedAt && formatDate(n.updatedAt)}</Fact>
         <Fact label="Ingested">{formatDate(n.ingestedAt)}</Fact>
       </dl>
@@ -264,6 +283,8 @@ function DetailBody({ d, headingRef }: { d: NodeDetail; headingRef: React.RefObj
 }
 
 const REL_TEXT: Record<string, string> = {
+  'part_of|out': 'Part of story',
+  'part_of|in': 'Includes',
   'affects|out': 'Affects',
   'affects|in': 'Affected by',
   'made_by|out': 'Made by',
@@ -312,6 +333,34 @@ function Relationships({ d, onSelect }: { d: NodeDetail; onSelect: (id: string) 
           {edges.length > 40 && <div className="muted small">…and {edges.length - 40} more</div>}
         </div>
       ))}
+    </section>
+  );
+}
+
+/** A story's items in time order, each with the reason it belongs to the story. */
+function StoryTimeline({ d, onSelect }: { d: NodeDetail; onSelect: (id: string) => void }) {
+  const members = d.edges
+    .filter((e) => e.rel === 'part_of' && e.direction === 'in')
+    .sort((a, b) => (a.other.occurredAt ?? '').localeCompare(b.other.occurredAt ?? '') || a.other.id.localeCompare(b.other.id));
+  return (
+    <section className="inv-section">
+      <h3>How the story unfolded</h3>
+      <ol className="story-timeline">
+        {members.map((e) => (
+          <li key={e.other.id}>
+            <time dateTime={e.other.occurredAt ?? undefined}>{formatDate(e.other.occurredAt)}</time>
+            <div>
+              {e.other.type && <span className={`pill pill-${e.other.type}`}>{TYPE_LABEL[e.other.type]}</span>}{' '}
+              <button className="link-btn" onClick={() => onSelect(e.other.id)}>
+                {e.other.title}
+              </button>
+              <div className="rationale">
+                <span className="basis basis-inferred">inferred · {Math.round(e.confidence * 100)}%</span> {e.rationale}
+              </div>
+            </div>
+          </li>
+        ))}
+      </ol>
     </section>
   );
 }

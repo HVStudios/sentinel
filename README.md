@@ -24,6 +24,9 @@ connect.
   turn, so a burst of new CVEs doesn't hide everything else. "Top" orders each category by
   severity, with known-exploited CVEs first. Articles get a SENTINEL rank whose factors are
   shown in the investigation view.
+- **Stories.** Related CVEs, advisories and articles are grouped into stories that evolve over
+  time. They are linked only by shared identifiers, exploit chains, the same exploited product,
+  or near-identical headlines, with the reason shown for every item. No AI model is involved.
 - **Accessible.** Keyboard navigation throughout (the map and graph are single Tab stops with arrow
   keys), focus management, WCAG 2.2 AA contrast, and a phone layout. An automated axe audit runs
   in the end-to-end suite.
@@ -182,6 +185,8 @@ scripts/       dev runner, GitHub issue creation from the backlog
 - **GDELT** often answers with HTTP 429 or empty results, locally and on GitHub's runners.
   Publisher-country shading therefore comes mainly from the curated feeds. To add a feed, add an
   entry to `server/src/sources/feeds.ts` with the outlet's country and a page that confirms it.
+- Stories are deliberately conservative. Coverage that uses different words and no shared
+  identifier (e.g. two very differently phrased headlines) stays separate.
 - Wikidata matching is conservative: about a quarter of vendors get a mappable match.
 - Duplicate vendor spellings (KEV's "Palo Alto Networks" vs NVD's "paloaltonetworks") are merged
   by two conservative name rules, and the other spellings are listed as "Also known as". Pairs the

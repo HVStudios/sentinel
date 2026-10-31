@@ -2,6 +2,7 @@ import type { Store } from './store.ts';
 import { fetchJson, fetchJsonWithHeaders, fetchText } from './http.ts';
 import { runInference } from './relate.ts';
 import { mergeDuplicateVendors } from './dedupe.ts';
+import { runStories } from './stories.ts';
 import type { IngestContext, SourceModule } from './sources/common.ts';
 import { kevSource } from './sources/kev.ts';
 import { nvdSource } from './sources/nvd.ts';
@@ -80,5 +81,7 @@ export async function ingest(store: Store, opts: IngestOptions = {}): Promise<{ 
 
   const { edges } = runInference(store);
   ctx.log(`✓ inference: ${edges} inferred edges`);
+  const stories = runStories(store, ctx.now());
+  ctx.log(`✓ stories: ${stories.stories} stories with ${stories.members} items`);
   return { results, inferredEdges: edges };
 }

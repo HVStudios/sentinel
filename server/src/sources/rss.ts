@@ -48,6 +48,9 @@ export const plainText = (html: string): string =>
     .replace(/\s+/g, ' ')
     .trim();
 
+/** Sponsored posts some outlets mix into their feeds ("Anzeige:" is German for advertisement). */
+const SPONSORED = /^(anzeige|sponsored|advertisement|ad|promoted)\s*:/i;
+
 const truncate = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s);
 
 export interface FeedItem {
@@ -85,7 +88,7 @@ export function parseFeed(xml: string, feed: FeedConfig, now: Date): Batch {
   // Allow small clock skew, but never accept items dated in the future beyond a day.
   const maxDate = new Date(now.getTime() + 86_400_000).toISOString();
   const items = parseFeedXml(xml)
-    .filter((i) => i.published >= minDate && i.published <= maxDate)
+    .filter((i) => i.published >= minDate && i.published <= maxDate && !SPONSORED.test(i.title))
     .slice(0, MAX_ITEMS_PER_FEED);
   for (const it of items) {
     // Tech feeds mix topics, so classify by headline; security and advisory feeds keep their focus.

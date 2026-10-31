@@ -5,7 +5,8 @@ export type NodeType =
   | 'vendor'
   | 'product'
   | 'weakness'
-  | 'source';
+  | 'source'
+  | 'story';
 
 /** Node types that are bound to a point in time and appear in the feed, timeline and map. */
 export const TIMED_TYPES: readonly NodeType[] = ['vulnerability', 'natural_event', 'article'];

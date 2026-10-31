@@ -8,6 +8,7 @@ import { Timeline } from './components/Timeline.tsx';
 import { Feed } from './components/Feed.tsx';
 import { Investigate } from './components/Investigate.tsx';
 import { SourcesPanel } from './components/SourcesPanel.tsx';
+import { StoriesList } from './components/StoriesList.tsx';
 
 export const PRESETS = [
   { id: '24h', label: '24h', ms: 86_400_000 },
@@ -41,6 +42,7 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
   const [showCountries, setShowCountries] = useState(true);
   const [sort, setSort] = useState<FeedSort>('mixed');
   const [showVendors, setShowVendors] = useState(true);
+  const [view, setView] = useState<'feed' | 'stories'>('feed');
   // Recomputed when the preset changes, so the window slides forward on re-selection.
   const [anchor, setAnchor] = useState(() => now().getTime());
 
@@ -118,6 +120,9 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
 
   const toggleType = (t: TimedType) =>
     setTypes((cur) => (cur.includes(t) ? (cur.length > 1 ? cur.filter((x) => x !== t) : cur) : [...cur, t]));
+
+  const storyWindow = brush ?? windowRange;
+  const stories = useFetch((s) => api.stories(storyWindow, s), view === 'stories' ? JSON.stringify(storyWindow) : null);
 
   const snapshot = useFetch((s) => api.sources(s), api.mode === 'static' ? 'snapshot' : null);
 
@@ -223,25 +228,41 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
 
         <section className="side" id="feed" tabIndex={-1} aria-labelledby="feed-heading">
           <div className="stage-head">
-            <h2 id="feed-heading">Feed</h2>
-            <span className="muted small">{pages.items.length ? `${pages.items.length}${pages.cursor ? '+' : ''} items` : ''}</span>
-            <div className="seg seg-sm" role="group" aria-label="Feed order">
-              {FEED_SORTS.map((o) => (
-                <button key={o.id} className={sort === o.id ? 'on' : ''} title={o.title} aria-pressed={sort === o.id} onClick={() => setSort(o.id)}>
-                  {o.label}
-                </button>
-              ))}
+            <h2 id="feed-heading">{view === 'feed' ? 'Feed' : 'Stories'}</h2>
+            <div className="seg seg-sm seg-view" role="group" aria-label="Side panel view">
+              <button className={view === 'feed' ? 'on' : ''} aria-pressed={view === 'feed'} onClick={() => setView('feed')}>
+                Feed
+              </button>
+              <button className={view === 'stories' ? 'on' : ''} aria-pressed={view === 'stories'} onClick={() => setView('stories')}>
+                Stories
+              </button>
             </div>
+            {view === 'feed' && (
+              <>
+                <span className="muted small">{pages.items.length ? `${pages.items.length}${pages.cursor ? '+' : ''} items` : ''}</span>
+                <div className="seg seg-sm" role="group" aria-label="Feed order">
+                  {FEED_SORTS.map((o) => (
+                    <button key={o.id} className={sort === o.id ? 'on' : ''} title={o.title} aria-pressed={sort === o.id} onClick={() => setSort(o.id)}>
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
-          <Feed
-            items={pages.key === feedKey ? pages.items : []}
-            loading={feed.loading}
-            error={feed.error}
-            hasMore={pages.key === feedKey && Boolean(pages.cursor)}
-            selectedId={selected}
-            onSelect={select}
-            onMore={() => pages.cursor && setCursor(pages.cursor)}
-          />
+          {view === 'feed' ? (
+            <Feed
+              items={pages.key === feedKey ? pages.items : []}
+              loading={feed.loading}
+              error={feed.error}
+              hasMore={pages.key === feedKey && Boolean(pages.cursor)}
+              selectedId={selected}
+              onSelect={select}
+              onMore={() => pages.cursor && setCursor(pages.cursor)}
+            />
+          ) : (
+            <StoriesList stories={stories.data?.stories ?? []} loading={stories.loading} error={stories.error} selectedId={selected} onSelect={select} />
+          )}
         </section>
 
         {selected && <Investigate key={selected} id={selected} onSelect={select} onClose={close} onBack={history.length ? back : undefined} />}

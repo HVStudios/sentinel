@@ -232,6 +232,14 @@ export function queryGraph(ix: Index, id: string, depth = 1, limit = 60) {
   return { nodes: [...seen.values()], edges: [...edges.values()] };
 }
 
+/** Same filter and order as Store.stories. */
+export function queryStories(ix: Index, f: { from?: string; to?: string }, limit = 100): SNode[] {
+  return ix.snap.nodes
+    .filter((n) => n.type === 'story' && (!f.from || n.occurredAt! >= f.from) && (!f.to || (n.attrs.firstSeen as string) <= f.to))
+    .sort((a, b) => (a.occurredAt === b.occurredAt ? (a.id < b.id ? 1 : -1) : a.occurredAt! < b.occurredAt! ? 1 : -1))
+    .slice(0, limit);
+}
+
 export function createStaticApi(load: () => Promise<Snapshot>): Api {
   let index: Promise<Index> | null = null;
   const ix = () => (index ??= load().then(indexSnapshot).catch((err) => {
@@ -249,6 +257,7 @@ export function createStaticApi(load: () => Promise<Snapshot>): Api {
       const { snap } = await ix();
       return { sources: snap.sources, ingest: { running: false, last: null }, generatedAt: snap.generatedAt };
     },
+    stories: async (f) => ({ stories: queryStories(await ix(), f) }),
     startIngest: async () => {
       throw new Error('This is a static snapshot; it is refreshed automatically by GitHub Actions.');
     },

@@ -4,6 +4,7 @@ import { Feed } from '../src/components/Feed.tsx';
 import { WorldMap } from '../src/components/WorldMap.tsx';
 import { Investigate } from '../src/components/Investigate.tsx';
 import { Timeline } from '../src/components/Timeline.tsx';
+import { StoriesList } from '../src/components/StoriesList.tsx';
 import { article, detail, kevCve, quake } from './fixtures.ts';
 
 afterEach(() => {
@@ -74,6 +75,25 @@ describe('WorldMap', () => {
   });
 });
 
+describe('StoriesList', () => {
+  it('lists stories with size, identifiers and time span', () => {
+    const story = { ...kevCve, id: 'story:1', type: 'story' as const, title: 'Ivanti chain', occurredAt: '2026-10-30T00:00:00.000Z', attrs: { size: 3, anchors: ['CVE-1', 'CVE-2', 'CVE-3', 'CVE-4'], outlets: ['CISA KEV', 'SecurityWeek'], firstSeen: '2026-10-28T00:00:00.000Z', lastSeen: '2026-10-30T00:00:00.000Z' } };
+    const onSelect = vi.fn();
+    render(<StoriesList stories={[story]} loading={false} selectedId={null} onSelect={onSelect} />);
+    expect(screen.getByText('Story · 3 items')).toBeTruthy();
+    expect(screen.getByText('CVE-3')).toBeTruthy();
+    expect(screen.getByText('+1')).toBeTruthy();
+    expect(screen.getByText(/2 sources/)).toBeTruthy();
+    fireEvent.click(screen.getByText('Ivanti chain'));
+    expect(onSelect).toHaveBeenCalledWith('story:1');
+  });
+
+  it('explains an empty window', () => {
+    render(<StoriesList stories={[]} loading={false} selectedId={null} onSelect={() => {}} />);
+    expect(screen.getByText('No stories in this window.')).toBeTruthy();
+  });
+});
+
 describe('Timeline', () => {
   it('renders stacked bars and reports a brushed range', () => {
     const onBrush = vi.fn();
@@ -111,6 +131,24 @@ describe('Investigate (articles)', () => {
     expect(screen.getByRole('link', { name: 'reference' }).getAttribute('href')).toBe('https://www.cyber.gc.ca/en/about-cyber-centre');
     expect(screen.getByText(/government advisory \(\+0\.55\) · mentions a CISA KEV-listed CVE/)).toBeTruthy();
     expect(screen.getByText('0.80', { exact: false })).toBeTruthy();
+  });
+});
+
+describe('Investigate (stories)', () => {
+  it('shows members in time order with the reason each joined', async () => {
+    const story = { ...kevCve, id: 'story:1', type: 'story' as const, title: 'Ivanti chain', category: 'story', attrs: { size: 2, anchors: ['CVE-2026-111357'], outlets: ['CISA KEV'], firstSeen: '2026-10-28T00:00:00.000Z', lastSeen: '2026-10-30T00:00:00.000Z' } };
+    const member = (id: string, title: string, at: string, rationale: string) => ({
+      src: id, dst: 'story:1', rel: 'part_of', basis: 'inferred' as const, confidence: 0.9, rationale, sourceId: 'sentinel-stories', observedAt: '', direction: 'in' as const,
+      other: { id, type: 'vulnerability' as const, title, occurredAt: at },
+    });
+    const d = { node: story, provenance: [], edges: [member('cve:B', 'Second', '2026-10-30T00:00:00.000Z', 'Reason B.'), member('cve:A', 'First', '2026-10-28T00:00:00.000Z', 'Reason A.')] };
+    vi.stubGlobal('fetch', vi.fn((url: string) => (url.startsWith('/api/nodes/') ? json(d) : json({ nodes: [story], edges: [] }))));
+    render(<Investigate id="story:1" onSelect={() => {}} onClose={() => {}} />);
+    expect(await screen.findByRole('heading', { name: 'How the story unfolded' })).toBeTruthy();
+    const items = screen.getAllByRole('listitem').filter((li) => li.closest('.story-timeline'));
+    expect(items.map((li) => within(li).getByRole('button').textContent)).toEqual(['First', 'Second']);
+    expect(screen.getByText('Reason A.')).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Relationships' })).toBeNull();
   });
 });
 

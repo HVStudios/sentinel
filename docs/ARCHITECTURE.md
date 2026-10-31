@@ -159,6 +159,25 @@ Articles use the same `news:<sha1(url)>` id as GDELT, so an article seen by both
 Inferred edges are deleted and recomputed on every run, so they stay consistent with
 the current data. The same step recomputes vulnerability severity and article ranks.
 
+## Stories
+
+`stories.ts` groups related vulnerabilities and articles from the last 30 days into stories,
+without an LLM. Items join only through explicit, explainable links:
+
+| Link | Rule | Confidence |
+|---|---|---|
+| mention | an article mentions a CVE/GHSA identifier. An article naming several vulnerabilities links them only if KEV or GitHub lists them for the same product, so catalog roundups ("CISA adds two known exploited vulnerabilities") can't bridge unrelated stories | 0.9 |
+| reference | a CVE's description references another CVE (exploit chains) | 0.9 |
+| product | two KEV-listed CVEs share KEV's own product within 7 days. NVD's CPE data is not used here because it also lists platforms such as Fedora or Debian | 0.7 |
+| headline | two *news* headlines within 48 hours share at least 3 words and an IDF-weighted overlap of 0.3 or more. Advisory feeds are excluded, because their templated titles would chain together | 0.6 |
+
+Vendor-name mentions alone never join a story. Clusters (union-find) with at least two items
+become `story` nodes. Each member gets an inferred `part_of` edge whose rationale is the link
+that attached it, plus an `attrs.story` hint for the feed. Story ids derive from the earliest
+member, so they stay stable as stories grow. Titles prefer an English news headline, then a KEV
+vulnerability name, then an English advisory. Everything is rebuilt on each run.
+`GET /api/stories` lists stories active in a window, and the static engine mirrors it.
+
 ## Feed ordering
 
 A chronological feed is dominated by whichever category publishes most (a few days of NVD

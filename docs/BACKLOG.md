@@ -219,7 +219,10 @@ nodes for one company.
 - [x] Runs after every source that writes vendors, so Wikidata and the graph see one node per company; idempotent
 
 ### SEN-21 · Story clustering over time
-Priority: P2 · Labels: analysis · Status: todo
+Priority: P2 · Labels: analysis · Status: done (merged)
 
-Group related articles and vulnerabilities into evolving "stories" (shared CVE, vendor,
-time proximity), without an LLM.
+- [x] Stories from explicit links: identifier mentions, CVE references, same KEV product within 7 days, IDF-weighted news headline overlap within 48 hours; no vendor-only links
+- [x] Guards found on live data: catalog roundups don't bridge stories; NVD platform products ignored; advisory title templates excluded; sponsored feed posts dropped
+- [x] Story nodes with inferred `part_of` edges and per-member reasons; stable ids; readable titles
+- [x] Stories view, story timeline in the investigation panel, "Story · N" chip in the feed; static parity; e2e and axe coverage
+
