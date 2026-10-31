@@ -138,6 +138,23 @@ export function buildApp(store: Store, opts: AppOptions = {}): FastifyInstance {
     async (req) => ({ stories: store.stories({ from: iso(req.query.from), to: iso(req.query.to), limit: req.query.limit }) }),
   );
 
+  app.get<{ Params: { id: string }; Querystring: { limit?: number } }>(
+    '/api/related/:id',
+    {
+      schema: {
+        querystring: {
+          type: 'object',
+          additionalProperties: false,
+          properties: { limit: { type: 'integer', minimum: 1, maximum: 200, default: 50 } },
+        },
+      },
+    },
+    async (req, reply) => {
+      if (!store.getNode(req.params.id)) return reply.code(404).send({ error: 'not found' });
+      return { items: store.related(req.params.id, req.query.limit).map((r) => ({ ...r.node, via: r.via })) };
+    },
+  );
+
   app.get('/api/sources', async () => ({ sources: store.sources(), ingest: { running: Boolean(running), last: lastIngest } }));
 
   if (opts.allowIngest) {

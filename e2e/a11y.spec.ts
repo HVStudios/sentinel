@@ -42,6 +42,16 @@ test('stories view has no WCAG A/AA violations', async ({ page }) => {
   expect(await audit(page)).toEqual([]);
 });
 
+test('watchlist view has no WCAG A/AA violations', async ({ page }) => {
+  await page.addInitScript(() =>
+    localStorage.setItem('sentinel.watchlist.v1', JSON.stringify([{ id: 'vendor:ivanti', type: 'vendor', title: 'Ivanti', addedAt: '2026-10-29T00:00:00.000Z', lastSeenAt: '2026-10-29T00:00:00.000Z' }])),
+  );
+  await open(page);
+  await page.getByRole('group', { name: 'Side panel view' }).getByRole('button', { name: /Watchlist/ }).click();
+  await expect(page.getByRole('region', { name: 'Watchlist items' }).getByText('New', { exact: true }).first()).toBeVisible();
+  expect(await audit(page)).toEqual([]);
+});
+
 test.describe('phone width', () => {
   test.use({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
 

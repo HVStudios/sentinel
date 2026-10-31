@@ -3,7 +3,7 @@ import { ingest } from '../src/ingest.ts';
 import { Store } from '../src/store.ts';
 import { buildSnapshot } from '../src/snapshot.ts';
 import { RateLimiter } from '../src/http.ts';
-import { indexSnapshot, queryFeed, queryGraph, queryMap, queryNode, queryStories, queryTimeline, type Snapshot } from '../../web/src/staticApi.ts';
+import { indexSnapshot, queryFeed, queryGraph, queryMap, queryNode, queryRelated, queryStories, queryTimeline, type Snapshot } from '../../web/src/staticApi.ts';
 import type { TimedType } from '../../web/src/api.ts';
 import { vi } from 'vitest';
 
@@ -61,6 +61,15 @@ describe('static snapshot engine parity', () => {
     expect(store.mapData({ types: all }).vendors.length).toBeGreaterThan(0);
     const tq = { types: all, from: '2026-09-01T00:00:00.000Z', to: '2026-11-01T00:00:00.000Z' };
     expect(queryTimeline(ix, tq, 61).series).toEqual(store.timeline({ ...tq, buckets: 61 }).series);
+  });
+
+  it('finds identical related items for watched nodes', () => {
+    const ids_ = ['vendor:ivanti', 'product:ivanti/connect-secure', 'cve:CVE-2026-111357', ...store.stories({}).map((s) => s.id)];
+    for (const id of ids_) {
+      const srv = store.related(id).map((r) => `${r.node.id}|${r.via}`);
+      expect(queryRelated(ix, id).map((r) => `${r.node.id}|${r.via}`), id).toEqual(srv);
+    }
+    expect(store.related('vendor:ivanti').length).toBeGreaterThan(0);
   });
 
   it('lists identical stories', () => {

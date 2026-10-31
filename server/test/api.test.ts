@@ -105,6 +105,16 @@ describe('HTTP API', () => {
     expect((await get('/api/stories?limit=0')).status).toBe(400);
   });
 
+  it('lists items related to a watched node, with the reason', async () => {
+    const { body } = await get('/api/related/vendor:acme');
+    expect(body.items.map((i: { id: string; via: string }) => [i.id, i.via])).toEqual([
+      ['news:1', 'mentions Acme'],
+      ['cve:CVE-2026-0001', 'affects Acme Router'],
+    ]);
+    expect((await get('/api/related/nope')).status).toBe(404);
+    expect((await get('/api/related/vendor:acme?limit=0')).status).toBe(400);
+  });
+
   it('lists sources', async () => {
     const { body } = await get('/api/sources');
     expect(body.sources[0]).toMatchObject({ id: 'test', name: 'Test' });

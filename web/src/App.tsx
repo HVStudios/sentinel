@@ -9,6 +9,8 @@ import { Feed } from './components/Feed.tsx';
 import { Investigate } from './components/Investigate.tsx';
 import { SourcesPanel } from './components/SourcesPanel.tsx';
 import { StoriesList } from './components/StoriesList.tsx';
+import { WatchlistView } from './components/WatchlistView.tsx';
+import { useWatchData, useWatchlist } from './lib/watchlist.ts';
 
 export const PRESETS = [
   { id: '24h', label: '24h', ms: 86_400_000 },
@@ -42,7 +44,9 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
   const [showCountries, setShowCountries] = useState(true);
   const [sort, setSort] = useState<FeedSort>('mixed');
   const [showVendors, setShowVendors] = useState(true);
-  const [view, setView] = useState<'feed' | 'stories'>('feed');
+  const [view, setView] = useState<'feed' | 'stories' | 'watchlist'>('feed');
+  const watchlist = useWatchlist(now);
+  const watchData = useWatchData(watchlist.watches);
   // Recomputed when the preset changes, so the window slides forward on re-selection.
   const [anchor, setAnchor] = useState(() => now().getTime());
 
@@ -228,13 +232,26 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
 
         <section className="side" id="feed" tabIndex={-1} aria-labelledby="feed-heading">
           <div className="stage-head">
-            <h2 id="feed-heading">{view === 'feed' ? 'Feed' : 'Stories'}</h2>
+            <h2 id="feed-heading">{{ feed: 'Feed', stories: 'Stories', watchlist: 'Watchlist' }[view]}</h2>
             <div className="seg seg-sm seg-view" role="group" aria-label="Side panel view">
               <button className={view === 'feed' ? 'on' : ''} aria-pressed={view === 'feed'} onClick={() => setView('feed')}>
                 Feed
               </button>
               <button className={view === 'stories' ? 'on' : ''} aria-pressed={view === 'stories'} onClick={() => setView('stories')}>
                 Stories
+              </button>
+              <button
+                className={view === 'watchlist' ? 'on' : ''}
+                aria-pressed={view === 'watchlist'}
+                onClick={() => setView('watchlist')}
+              >
+                <span aria-hidden="true">★ </span>Watchlist
+                {watchData.totalNew > 0 && (
+                  <span className="count-badge">
+                    {watchData.totalNew}
+                    <span className="sr-only"> new</span>
+                  </span>
+                )}
               </button>
             </div>
             {view === 'feed' && (
@@ -259,13 +276,32 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
               selectedId={selected}
               onSelect={select}
               onMore={() => pages.cursor && setCursor(pages.cursor)}
+              watchHits={watchData.hits}
             />
-          ) : (
+          ) : view === 'stories' ? (
             <StoriesList stories={stories.data?.stories ?? []} loading={stories.loading} error={stories.error} selectedId={selected} onSelect={select} />
+          ) : (
+            <WatchlistView
+              statuses={watchData.statuses}
+              totalNew={watchData.totalNew}
+              onSelect={select}
+              onMarkSeen={watchlist.markSeen}
+              onRemove={watchlist.remove}
+            />
           )}
         </section>
 
-        {selected && <Investigate key={selected} id={selected} onSelect={select} onClose={close} onBack={history.length ? back : undefined} />}
+        {selected && (
+          <Investigate
+            key={selected}
+            id={selected}
+            onSelect={select}
+            onClose={close}
+            onBack={history.length ? back : undefined}
+            watched={watchlist.isWatched(selected)}
+            onToggleWatch={watchlist.toggle}
+          />
+        )}
       </main>
 
       {showSources && <SourcesPanel onClose={() => setShowSources(false)} />}

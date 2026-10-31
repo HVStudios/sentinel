@@ -193,3 +193,45 @@ test('groups related items into stories and explains why', async ({ page }) => {
   await panel.locator('.story-timeline').getByRole('button', { name: /Generation of Predictable Numbers/ }).click();
   await expect(panel.getByText('Part of story')).toBeVisible();
 });
+
+const seedWatch = (page: Page, lastSeenAt: string) =>
+  page.addInitScript((at) => {
+    if (!sessionStorage.getItem('seeded')) {
+      localStorage.setItem('sentinel.watchlist.v1', JSON.stringify([{ id: 'vendor:ivanti', type: 'vendor', title: 'Ivanti', addedAt: at, lastSeenAt: at }]));
+      sessionStorage.setItem('seeded', '1');
+    }
+  }, lastSeenAt);
+const viewButton = (page: Page, name: RegExp) => page.getByRole('group', { name: 'Side panel view' }).getByRole('button', { name });
+
+test('watches a vendor from its investigation and keeps it across reloads', async ({ page }) => {
+  await open(page, '#/node/vendor%3Aivanti');
+  const panel = investigation(page);
+  const watch = panel.getByRole('button', { name: 'Watch' });
+  await watch.click();
+  await expect(panel.getByRole('button', { name: 'Watching' })).toHaveAttribute('aria-pressed', 'true');
+  await viewButton(page, /Watchlist/).click();
+  const list = page.getByRole('region', { name: 'Watchlist items' });
+  await expect(list.getByRole('button', { name: 'Ivanti', exact: true })).toBeVisible();
+  await expect(list.getByText(/affects Ivanti Connect Secure/).first()).toBeVisible();
+  // Just added: nothing is new yet.
+  await expect(list.getByText(/\d+ new/)).toHaveCount(0);
+  await page.reload();
+  await viewButton(page, /Watchlist/).click();
+  await expect(page.getByRole('region', { name: 'Watchlist items' }).getByRole('button', { name: 'Ivanti', exact: true })).toBeVisible();
+});
+
+test('highlights items that are new since the last check, and clears them', async ({ page }) => {
+  await seedWatch(page, '2026-10-29T00:00:00.000Z');
+  await open(page);
+  // Related feed items carry the watch chip, and the tab shows a count.
+  await expect(feed(page).locator('.watch-chip', { hasText: 'Ivanti' }).first()).toBeVisible();
+  const tab = viewButton(page, /Watchlist/);
+  await expect(tab).toContainText(/\d+ new/);
+  await tab.click();
+  const list = page.getByRole('region', { name: 'Watchlist items' });
+  await expect(list.getByText(/^\d+ new$/)).toBeVisible();
+  await expect(list.getByText('New', { exact: true }).first()).toBeVisible();
+  await list.getByRole('button', { name: 'Mark all as seen' }).click();
+  await expect(list.getByText('New', { exact: true })).toHaveCount(0);
+  await expect(tab).not.toContainText('new');
+});

@@ -27,6 +27,9 @@ connect.
 - **Stories.** Related CVEs, advisories and articles are grouped into stories that evolve over
   time. They are linked only by shared identifiers, exploit chains, the same exploited product,
   or near-identical headlines, with the reason shown for every item. No AI model is involved.
+- **Watchlists.** Watch a vendor, product, vulnerability or story (★). New related items are
+  counted and highlighted in the feed. The watchlist is stored only in your browser, so it also
+  works on the static site.
 - **Accessible.** Keyboard navigation throughout (the map and graph are single Tab stops with arrow
   keys), focus management, WCAG 2.2 AA contrast, and a phone layout. An automated axe audit runs
   in the end-to-end suite.
@@ -172,6 +175,7 @@ server/src/
   ingest.ts    orchestration with per-source failure isolation
   api.ts       Fastify routes          main.ts  server entry
   snapshot.ts  static export for GitHub Pages (npm run export)
+shared/        related.ts: what a watched item relates to (used by server and static build)
 web/src/
   components/  WorldMap, Timeline, Feed, Investigate, Graph, SourcesPanel
   staticApi.ts client-side query engine over snapshot.json (static mode)

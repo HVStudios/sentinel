@@ -114,6 +114,8 @@ export interface Api {
   graph(id: string, depth: number, signal?: AbortSignal): Promise<{ nodes: SNode[]; edges: SEdge[] }>;
   sources(signal?: AbortSignal): Promise<SourcesResponse>;
   stories(f: Pick<Filters, 'from' | 'to'>, signal?: AbortSignal): Promise<{ stories: SNode[] }>;
+  /** Timed items related to a watched node, each with `via` explaining the link. */
+  related(id: string, signal?: AbortSignal): Promise<{ items: (SNode & { via: string })[] }>;
   startIngest(): Promise<void>;
 }
 
@@ -132,6 +134,7 @@ export const httpApi: Api = {
   graph: (id, depth, signal) =>
     get<{ nodes: SNode[]; edges: SEdge[] }>(`/api/graph/${encodeURIComponent(id)}${qs({ depth, limit: 60 })}`, signal),
   sources: (signal?: AbortSignal) => get<SourcesResponse>('/api/sources', signal),
+  related: (id, signal) => get<{ items: (SNode & { via: string })[] }>(`/api/related/${encodeURIComponent(id)}`, signal),
   stories: (f, signal) => get<{ stories: SNode[] }>(`/api/stories${qs({ from: f.from, to: f.to, limit: 100 })}`, signal),
   startIngest: async () => {
     const res = await fetch('/api/ingest', { method: 'POST' });
