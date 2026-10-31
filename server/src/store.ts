@@ -527,7 +527,7 @@ export class Store {
       this.db
         .prepare(
           `select country, count(*) as count from nodes where ${this.timeWhere(q, p2)}
-           and geo_basis = 'publisher_country' and country is not null group by country order by count desc`,
+           and geo_basis = 'publisher_country' and country is not null group by country order by count desc, country`,
         )
         .all(...p2) as Row[]
     ).map((r) => ({ country: r.country as string, count: Number(r.count) }));

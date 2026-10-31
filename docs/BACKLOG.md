@@ -151,9 +151,12 @@ Never place a vulnerability itself on the map.
 - [x] Map layer: diamonds for vendors behind vulnerabilities in the window, sized by count, with legend and toggle; same layer in the static build (parity-tested)
 
 ### SEN-17 · End-to-end tests (Playwright)
-Priority: P1 · Labels: testing · Status: todo
+Priority: P1 · Labels: testing · Status: done (merged)
 
-Seeded DB fixture, smoke flows: load → filter → open investigation → navigate graph.
+- [x] Offline seeded database from the shared fixture router; frozen browser clock
+- [x] Same specs against the live server and the static Pages build (`/sentinel/`)
+- [x] Flows: load without console errors, filters and search, feed order, investigation → graph → product → vendor → back, deep link, map point, vendor HQ, timeline brush, Sources panel
+- [x] CI job with report artifact on failure
 
 ### SEN-18 · Additional sources
 Priority: P1 · Labels: ingestion · Status: todo

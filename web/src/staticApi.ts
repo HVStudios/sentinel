@@ -158,7 +158,8 @@ export function queryMap(ix: Index, f: Filters): MapData {
     if (n.geoBasis === 'coordinates' && n.lat != null && n.lon != null && points.length < 2000) points.push(n);
     if (n.geoBasis === 'publisher_country' && n.country) counts.set(n.country, (counts.get(n.country) ?? 0) + 1);
   }
-  const countries = [...counts].map(([country, count]) => ({ country, count })).sort((a, b) => b.count - a.count);
+  // Ties by name in code-unit order, matching SQLite's BINARY collation on the server.
+  const countries = [...counts].map(([country, count]) => ({ country, count })).sort((a, b) => b.count - a.count || (a.country < b.country ? -1 : a.country > b.country ? 1 : 0));
   return { points, countries, vendors: vendorHeadquarters(ix, f) };
 }
 

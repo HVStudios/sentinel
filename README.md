@@ -106,8 +106,8 @@ cd web && VITE_BASE=/sentinel/ npx vite preview
 npm run check
 ```
 
-`check` runs strict TypeScript checks for both workspaces, then all tests, then the
-production build. CI (`.github/workflows/ci.yml`) runs the same steps. Individual steps:
+`check` runs strict TypeScript checks for both workspaces (and the e2e specs), then all
+unit and integration tests, then the production build. CI (`.github/workflows/ci.yml`) runs the same steps. Individual steps:
 `npm run typecheck`, `npm test`, `npm run build`.
 
 - **Server (Vitest):** source parsers against real recorded payloads in `server/test/fixtures/`,
@@ -116,6 +116,12 @@ production build. CI (`.github/workflows/ci.yml`) runs the same steps. Individua
   integration via Fastify `inject()`.
 - **Static parity:** the snapshot engine used on GitHub Pages is checked against the SQL queries
   on the same ingested data.
+- **End-to-end (Playwright):** `npm run e2e` seeds an offline database from the recorded fixtures,
+  builds the live app and the static Pages build, and runs the same browser specs against both
+  with a frozen clock. The specs cover loading without console errors, category and search
+  filters, feed order, investigating a CVE and following the graph to product and vendor, deep
+  links, map points, vendor headquarters, timeline brushing, and the Sources panel. Run
+  `npx playwright install chromium` once first.
 - **Web (Vitest + Testing Library + jsdom):** formatting and geography helpers, the map
   (points, publisher-country shading, unmapped countries), feed, timeline brushing,
   investigation panel (reported vs inferred), and app-level filtering and navigation.

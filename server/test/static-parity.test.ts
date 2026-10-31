@@ -1,24 +1,13 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
 import { ingest } from '../src/ingest.ts';
 import { Store } from '../src/store.ts';
 import { buildSnapshot } from '../src/snapshot.ts';
-import { RateLimiter, HttpError, type fetchJson } from '../src/http.ts';
+import { RateLimiter } from '../src/http.ts';
 import { indexSnapshot, queryFeed, queryGraph, queryMap, queryNode, queryTimeline, type Snapshot } from '../../web/src/staticApi.ts';
 import type { TimedType } from '../../web/src/api.ts';
 import { vi } from 'vitest';
 
-const fixture = (name: string) => JSON.parse(readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf8'));
-const fakeFetch = (async (url: string) => {
-  const host = new URL(url).host;
-  const map: Record<string, string> = {
-    'www.cisa.gov': 'kev.json', 'api.first.org': 'epss.json', 'earthquake.usgs.gov': 'usgs.json',
-    'eonet.gsfc.nasa.gov': 'eonet.json', 'hn.algolia.com': 'hn.json', 'api.gdeltproject.org': 'gdelt.json', 'query.wikidata.org': 'wikidata.json',
-  };
-  if (host === 'services.nvd.nist.gov') return url.includes('hasKev') ? fixture('nvd.json') : { ...fixture('nvd.json'), vulnerabilities: [], totalResults: 0 };
-  if (map[host]) return fixture(map[host]);
-  throw new HttpError(404, url);
-}) as typeof fetchJson;
+import { fixtureFetchJson as fakeFetch, fixtureFetchText } from './fixtures/router.ts';
 
 /** The static (GitHub Pages) engine must answer exactly like the SQL-backed server. */
 describe('static snapshot engine parity', () => {
@@ -27,7 +16,7 @@ describe('static snapshot engine parity', () => {
 
   beforeAll(async () => {
     vi.spyOn(RateLimiter.prototype, 'acquire').mockResolvedValue();
-    await ingest(store, { ctx: { fetchJson: fakeFetch, fetchText: (async () => readFileSync(new URL('./fixtures/atom-cccs.xml', import.meta.url), 'utf8')) as never, env: {}, log: () => {}, now: () => new Date('2026-10-30T20:00:00Z') } });
+    await ingest(store, { ctx: { fetchJson: fakeFetch, fetchText: fixtureFetchText, env: {}, log: () => {}, now: () => new Date('2026-10-30T20:00:00Z') } });
     vi.restoreAllMocks();
     // Round-trip through JSON exactly like the deployed snapshot file.
     ix = indexSnapshot(JSON.parse(JSON.stringify(buildSnapshot(store))) as Snapshot);
