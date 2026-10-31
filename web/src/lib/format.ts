@@ -8,12 +8,14 @@ export const TYPE_LABEL: Record<NodeType, string> = {
   product: 'Product',
   weakness: 'Weakness (CWE)',
   source: 'Source',
+  story: 'Story',
 };
 
 export const CATEGORY_LABEL: Record<string, string> = {
   kev: 'Known exploited',
   cve: 'New CVE',
   ghsa: 'GitHub advisory',
+  story: 'Grouped by SENTINEL',
   earthquake: 'Earthquake',
   wildfires: 'Wildfire',
   severeStorms: 'Severe storm',

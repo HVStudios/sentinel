@@ -34,6 +34,14 @@ test('sources dialog has no WCAG A/AA violations', async ({ page }) => {
   expect(await audit(page)).toEqual([]);
 });
 
+test('stories view has no WCAG A/AA violations', async ({ page }) => {
+  await open(page);
+  await page.getByRole('group', { name: 'Side panel view' }).getByRole('button', { name: 'Stories' }).click();
+  await page.getByRole('region', { name: 'Story list' }).getByRole('button').first().click();
+  await expect(page.getByRole('heading', { name: 'How the story unfolded' })).toBeVisible();
+  expect(await audit(page)).toEqual([]);
+});
+
 test.describe('phone width', () => {
   test.use({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
 

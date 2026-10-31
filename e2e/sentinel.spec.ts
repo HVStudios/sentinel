@@ -172,3 +172,24 @@ test('shows GDACS alerts and does not pin multi-country droughts to a point', as
   // It is in the feed but not on the map.
   await expect(page.locator('g.point[data-id^="gdacs:DR"]')).toHaveCount(0);
 });
+
+test('groups related items into stories and explains why', async ({ page }) => {
+  await open(page);
+  // Feed items that belong to a story carry a chip.
+  await expect(feed(page).locator('.story-chip').first()).toBeVisible();
+  await page.getByRole('group', { name: 'Side panel view' }).getByRole('button', { name: 'Stories' }).click();
+  await expect(page.getByRole('heading', { name: 'Stories' })).toBeVisible();
+  const stories = page.getByRole('region', { name: 'Story list' });
+  await expect(stories.getByText(/not by an AI model/)).toBeVisible();
+  const story = stories.getByRole('button', { name: /Ivanti Connect Secure/ });
+  await expect(story).toContainText('Story · 2 items');
+  await expect(story).toContainText('CVE-2026-111357');
+  await story.click();
+  const panel = investigation(page);
+  await expect(panel.getByRole('heading', { name: 'How the story unfolded' })).toBeVisible();
+  await expect(panel.getByText(/references CVE-2026-111357 \(e\.g\. an exploit chain\)/).first()).toBeVisible();
+  await expect(panel.getByText(/This is an inference, not a report from any source/)).toBeVisible();
+  // Members link back to their own investigation, which shows the story.
+  await panel.locator('.story-timeline').getByRole('button', { name: /Generation of Predictable Numbers/ }).click();
+  await expect(panel.getByText('Part of story')).toBeVisible();
+});

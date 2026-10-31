@@ -3,7 +3,7 @@ import { ingest } from '../src/ingest.ts';
 import { Store } from '../src/store.ts';
 import { buildSnapshot } from '../src/snapshot.ts';
 import { RateLimiter } from '../src/http.ts';
-import { indexSnapshot, queryFeed, queryGraph, queryMap, queryNode, queryTimeline, type Snapshot } from '../../web/src/staticApi.ts';
+import { indexSnapshot, queryFeed, queryGraph, queryMap, queryNode, queryStories, queryTimeline, type Snapshot } from '../../web/src/staticApi.ts';
 import type { TimedType } from '../../web/src/api.ts';
 import { vi } from 'vitest';
 
@@ -61,6 +61,12 @@ describe('static snapshot engine parity', () => {
     expect(store.mapData({ types: all }).vendors.length).toBeGreaterThan(0);
     const tq = { types: all, from: '2026-09-01T00:00:00.000Z', to: '2026-11-01T00:00:00.000Z' };
     expect(queryTimeline(ix, tq, 61).series).toEqual(store.timeline({ ...tq, buckets: 61 }).series);
+  });
+
+  it('lists identical stories', () => {
+    for (const f of [{}, { from: '2026-10-29T00:00:00.000Z' }, { to: '2026-10-29T00:00:00.000Z' }]) {
+      expect(ids(queryStories(ix, f))).toEqual(ids(store.stories({ ...f, limit: 100 })));
+    }
   });
 
   it('returns identical node details and graphs', () => {

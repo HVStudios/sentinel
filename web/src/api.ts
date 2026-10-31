@@ -1,4 +1,4 @@
-export type NodeType = 'vulnerability' | 'natural_event' | 'article' | 'vendor' | 'product' | 'weakness' | 'source';
+export type NodeType = 'vulnerability' | 'natural_event' | 'article' | 'vendor' | 'product' | 'weakness' | 'source' | 'story';
 export type TimedType = 'vulnerability' | 'natural_event' | 'article';
 export const TIMED_TYPES: TimedType[] = ['vulnerability', 'natural_event', 'article'];
 
@@ -113,6 +113,7 @@ export interface Api {
   node(id: string, signal?: AbortSignal): Promise<NodeDetail>;
   graph(id: string, depth: number, signal?: AbortSignal): Promise<{ nodes: SNode[]; edges: SEdge[] }>;
   sources(signal?: AbortSignal): Promise<SourcesResponse>;
+  stories(f: Pick<Filters, 'from' | 'to'>, signal?: AbortSignal): Promise<{ stories: SNode[] }>;
   startIngest(): Promise<void>;
 }
 
@@ -131,6 +132,7 @@ export const httpApi: Api = {
   graph: (id, depth, signal) =>
     get<{ nodes: SNode[]; edges: SEdge[] }>(`/api/graph/${encodeURIComponent(id)}${qs({ depth, limit: 60 })}`, signal),
   sources: (signal?: AbortSignal) => get<SourcesResponse>('/api/sources', signal),
+  stories: (f, signal) => get<{ stories: SNode[] }>(`/api/stories${qs({ from: f.from, to: f.to, limit: 100 })}`, signal),
   startIngest: async () => {
     const res = await fetch('/api/ingest', { method: 'POST' });
     if (!res.ok && res.status !== 409) throw new Error(`Refresh unavailable (${res.status})`);

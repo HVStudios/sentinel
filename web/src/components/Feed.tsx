@@ -39,6 +39,11 @@ export function Feed({ items, loading, error, hasMore, selectedId, onSelect, onM
                 ))}
                 {n.type === 'vulnerability' && <span className="feed-id">{n.attrs.cveId}</span>}
                 {n.type !== 'vulnerability' && sourceDomain(n) && <span className="feed-id">{sourceDomain(n)}</span>}
+                {n.attrs.story && (
+                  <span className="story-chip" title={`Part of the story “${n.attrs.story.title}” (${n.attrs.story.size} related items)`}>
+                    Story · {n.attrs.story.size}
+                  </span>
+                )}
                 {n.geoBasis === 'publisher_country' && n.country && (
                   <span className="feed-id" title="Country of the publishing outlet, not of the event">
                     publisher: {n.country}

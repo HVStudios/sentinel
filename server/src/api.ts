@@ -124,6 +124,20 @@ export function buildApp(store: Store, opts: AppOptions = {}): FastifyInstance {
     },
   );
 
+  app.get<{ Querystring: { from?: string; to?: string; limit?: number } }>(
+    '/api/stories',
+    {
+      schema: {
+        querystring: {
+          type: 'object',
+          additionalProperties: false,
+          properties: { from: isoDate, to: isoDate, limit: { type: 'integer', minimum: 1, maximum: 200, default: 50 } },
+        },
+      },
+    },
+    async (req) => ({ stories: store.stories({ from: iso(req.query.from), to: iso(req.query.to), limit: req.query.limit }) }),
+  );
+
   app.get('/api/sources', async () => ({ sources: store.sources(), ingest: { running: Boolean(running), last: lastIngest } }));
 
   if (opts.allowIngest) {
