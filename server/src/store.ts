@@ -77,6 +77,22 @@ export interface SourceRow extends SourceMeta {
   lastDurationMs: number | null;
 }
 
+/** A vendor headquarters marker: where the vendor is based (Wikidata), not where anything happened. */
+export interface VendorHq {
+  id: string;
+  title: string;
+  lat: number;
+  lon: number;
+  hq: string;
+  country: string | null;
+  qid: string;
+  url: string;
+  matchedBy: string;
+  confidence: number;
+  /** Distinct vulnerabilities in the query window affecting this vendor's products. */
+  vulnerabilities: number;
+}
+
 export interface TimeQuery {
   from?: string;
   to?: string;
@@ -397,7 +413,52 @@ export class Store {
     return interleave(lists, limit);
   }
 
-  mapData(q: TimeQuery): { points: NodeRow[]; countries: { country: string; count: number }[] } {
+  /** Number of distinct vulnerabilities affecting each vendor's products (all time). */
+  vendorVulnerabilityCounts(): Map<string, number> {
+    const rows = this.db
+      .prepare(
+        `select m.dst as vendor, count(distinct a.src) as c from edges a
+         join edges m on m.src = a.dst and m.rel = 'made_by' where a.rel = 'affects' group by m.dst`,
+      )
+      .all() as Row[];
+    return new Map(rows.map((r) => [r.vendor as string, Number(r.c)]));
+  }
+
+  /**
+   * Vendors behind the vulnerabilities in the window (vulnerability -affects-> product -made_by-> vendor)
+   * that have a Wikidata headquarters with coordinates, matched by label (confidence ≥ 0.7;
+   * alias-only matches are not mapped, see sources/wikidata.ts).
+   */
+  vendorHeadquarters(q: TimeQuery): VendorHq[] {
+    if (q.types?.length && !q.types.includes('vulnerability')) return [];
+    const params: SQLInputValue[] = [];
+    const where = this.timeWhere({ ...q, types: ['vulnerability'] }, params);
+    const rows = this.db
+      .prepare(
+        `with vulns as (select id from nodes where ${where})
+         select v.*, count(distinct vu.id) as vuln_count
+         from vulns vu
+         join edges a on a.src = vu.id and a.rel = 'affects'
+         join edges m on m.src = a.dst and m.rel = 'made_by'
+         join nodes v on v.id = m.dst
+         where json_extract(v.attrs, '$.wikidata.status') = 'matched'
+           and json_extract(v.attrs, '$.wikidata.confidence') >= 0.7
+           and json_extract(v.attrs, '$.wikidata.hq.lat') is not null
+           and json_extract(v.attrs, '$.wikidata.hq.lon') is not null
+         group by v.id order by vuln_count desc, v.id limit 500`,
+      )
+      .all(...params) as Row[];
+    return rows.map((r) => {
+      const n = toNode(r);
+      const wd = n.attrs.wikidata as { qid: string; url: string; matchedBy: string; confidence: number; hq: { label: string; country: string | null; lat: number; lon: number } };
+      return {
+        id: n.id, title: n.title, lat: wd.hq.lat, lon: wd.hq.lon, hq: wd.hq.label, country: wd.hq.country,
+        qid: wd.qid, url: wd.url, matchedBy: wd.matchedBy, confidence: wd.confidence, vulnerabilities: Number(r.vuln_count),
+      };
+    });
+  }
+
+  mapData(q: TimeQuery): { points: NodeRow[]; countries: { country: string; count: number }[]; vendors: VendorHq[] } {
     const p1: SQLInputValue[] = [];
     const points = (
       this.db
@@ -416,7 +477,7 @@ export class Store {
         )
         .all(...p2) as Row[]
     ).map((r) => ({ country: r.country as string, count: Number(r.count) }));
-    return { points, countries };
+    return { points, countries, vendors: this.vendorHeadquarters(q) };
   }
 
   /** Histogram of timed nodes in `buckets` equal-width bins over [from, to]. */

@@ -17,6 +17,7 @@ const fakeFetch = (async (url: string) => {
   if (u.host === 'eonet.gsfc.nasa.gov') return fixture('eonet.json');
   if (u.host === 'api.gdeltproject.org') throw new HttpError(429, 'HTTP 429 from api.gdeltproject.org');
   if (u.host === 'hn.algolia.com') return fixture('hn.json');
+  if (u.host === 'query.wikidata.org') return fixture('wikidata.json');
   throw new Error(`unexpected ${url}`);
 }) as typeof fetchJson;
 
@@ -50,6 +51,9 @@ describe('ingest pipeline', () => {
     expect(log4j.title).toContain('Log4j');
     expect(log4j.severity).toBe(1);
     expect(store.provenanceFor(log4j.id).map((p) => p.id).sort()).toEqual(['cisa-kev', 'first-epss', 'nvd']);
+
+    // Vendor headquarters come from Wikidata, with provenance.
+    expect(store.getNode('vendor:ivanti')!.attrs).toHaveProperty('wikidata.hq.label', 'South Jordan');
 
     // Vulnerabilities are never geolocated; natural events are.
     expect(store.mapData({}).points.every((p) => p.type === 'natural_event')).toBe(true);

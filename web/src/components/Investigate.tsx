@@ -137,6 +137,31 @@ function DetailBody({ d }: { d: NodeDetail }) {
             </Fact>
           </>
         )}
+        {n.type === 'vendor' && a.wikidata && (
+          <Fact label="Headquarters">
+            {a.wikidata.status === 'matched' ? (
+              <span>
+                {a.wikidata.hq?.label}
+                {a.wikidata.hq?.country ? `, ${a.wikidata.hq.country}` : ''} ·{' '}
+                <a href={a.wikidata.url} target="_blank" rel="noreferrer noopener">
+                  Wikidata {a.wikidata.qid}
+                </a>
+                <div className="muted small">
+                  {a.wikidata.label}
+                  {a.wikidata.description ? ` (${a.wikidata.description})` : ''}. Identity matched by {a.wikidata.matchedBy}:{' '}
+                  <span className="basis basis-inferred">inferred · {Math.round(a.wikidata.confidence * 100)}%</span>
+                  {a.wikidata.confidence < 0.7 && ' Possible match only, so it is not placed on the map.'}
+                </div>
+              </span>
+            ) : (
+              <span className="muted">
+                {a.wikidata.status === 'ambiguous'
+                  ? `Wikidata lookup ambiguous (${a.wikidata.candidates.length} candidates), so it is not placed on the map`
+                  : 'No unambiguous Wikidata match, so it is not placed on the map'}
+              </span>
+            )}
+          </Fact>
+        )}
         <Fact label="SENTINEL rank">
           {a.rank && (
             <span title="A heuristic used to order the feed, not a fact reported by any source">

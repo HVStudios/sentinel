@@ -177,6 +177,37 @@ describe('Store', () => {
     expect(map.countries).toEqual([{ country: 'Germany', count: 1 }]);
   });
 
+  it('places vendor headquarters for vulnerabilities in the window only', () => {
+    store.writeBatch(batch());
+    const wd = { status: 'matched', qid: 'Q1', url: 'https://www.wikidata.org/wiki/Q1', matchedBy: 'exact label', confidence: 0.8, hq: { label: 'Oslo', country: 'Norway', lat: 59.9, lon: 10.7 } };
+    store.writeBatch({
+      nodes: [
+        { id: 'vendor:acme', type: 'vendor', title: '', attrs: { wikidata: wd } },
+        { id: 'product:acme/router', type: 'product', title: 'Acme Router' },
+        { id: 'vendor:nohq', type: 'vendor', title: 'No HQ', attrs: { wikidata: { status: 'none', candidates: [], checkedAt: 'x' } } },
+        { id: 'product:nohq/x', type: 'product', title: 'X' },
+      ],
+      edges: [
+        { src: 'cve:CVE-2024-0001', dst: 'product:acme/router', rel: 'affects', basis: 'reported', confidence: 1, sourceId: 'test' },
+        { src: 'product:acme/router', dst: 'vendor:acme', rel: 'made_by', basis: 'reported', confidence: 1, sourceId: 'test' },
+        { src: 'cve:CVE-2024-0001', dst: 'product:nohq/x', rel: 'affects', basis: 'reported', confidence: 1, sourceId: 'test' },
+        { src: 'product:nohq/x', dst: 'vendor:nohq', rel: 'made_by', basis: 'reported', confidence: 1, sourceId: 'test' },
+      ],
+      provenance: [],
+    });
+    expect(store.mapData({}).vendors).toEqual([
+      { id: 'vendor:acme', title: 'Acme', lat: 59.9, lon: 10.7, hq: 'Oslo', country: 'Norway', qid: 'Q1', url: 'https://www.wikidata.org/wiki/Q1', matchedBy: 'exact label', confidence: 0.8, vulnerabilities: 1 },
+    ]);
+    expect(store.mapData({ from: '2024-05-03T00:00:00.000Z' }).vendors).toEqual([]);
+    // Alias-only matches are not mapped.
+    store.writeBatch({ nodes: [{ id: 'vendor:acme', type: 'vendor', title: '', attrs: { wikidata: { ...wd, matchedBy: 'alias', confidence: 0.55 } } }], edges: [], provenance: [] });
+    expect(store.mapData({}).vendors).toEqual([]);
+    store.writeBatch({ nodes: [{ id: 'vendor:acme', type: 'vendor', title: '', attrs: { wikidata: wd } }], edges: [], provenance: [] });
+    expect(store.mapData({ types: ['natural_event'] }).vendors).toEqual([]);
+    // The vulnerability itself is still never placed on the map.
+    expect(store.mapData({}).points.some((p) => p.type === 'vulnerability')).toBe(false);
+  });
+
   it('buckets the timeline per type', () => {
     store.writeBatch(batch());
     const tl = store.timeline({ from: '2024-05-01T00:00:00.000Z', to: '2024-05-04T00:00:00.000Z', buckets: 3 });

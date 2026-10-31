@@ -6,7 +6,7 @@ import { feature, mesh } from 'topojson-client';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { GeometryCollection, Topology } from 'topojson-specification';
 import world from 'world-atlas/countries-110m.json';
-import type { SNode } from '../api.ts';
+import type { SNode, VendorHq } from '../api.ts';
 import { createCountryResolver } from '../lib/countries.ts';
 import { categoryLabel, relativeTime } from '../lib/format.ts';
 
@@ -45,12 +45,17 @@ interface Props {
   selectedId: string | null;
   onSelect: (id: string) => void;
   showCountries: boolean;
+  /** Vendor headquarters (Wikidata) for vulnerabilities in the window. */
+  vendors?: VendorHq[];
+  showVendors?: boolean;
 }
 
-export function WorldMap({ points, countryCounts, selectedId, onSelect, showCountries }: Props) {
+export function WorldMap({ points, countryCounts, selectedId, onSelect, showCountries, vendors = [], showVendors = false }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [transform, setTransform] = useState<ZoomTransform>(zoomIdentity);
   const [hover, setHover] = useState<{ node: SNode; x: number; y: number } | null>(null);
+  const [hoverVendor, setHoverVendor] = useState<{ v: VendorHq; x: number; y: number } | null>(null);
+  const maxVulns = Math.max(1, ...vendors.map((v) => v.vulnerabilities));
 
   useEffect(() => {
     if (!svgRef.current) return;
@@ -143,6 +148,32 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
               </g>
             );
           })}
+          {showVendors &&
+            vendors.map((v) => {
+              const xy = projection([v.lon, v.lat]);
+              if (!xy) return null;
+              const r = (3 + 6 * Math.sqrt(v.vulnerabilities / maxVulns)) / Math.sqrt(k);
+              return (
+                <g
+                  key={v.id}
+                  transform={`translate(${xy[0]},${xy[1]}) rotate(45)`}
+                  className={`vendor-hq${v.id === selectedId ? ' selected' : ''}`}
+                  data-vendor={v.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelect(v.id);
+                  }}
+                  onMouseEnter={(e) => setHoverVendor({ v, x: e.clientX, y: e.clientY })}
+                  onMouseLeave={() => setHoverVendor(null)}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`${v.title} headquarters, ${v.hq}: ${v.vulnerabilities} vulnerabilities in this window`}
+                  onKeyDown={(e) => e.key === 'Enter' && onSelect(v.id)}
+                >
+                  <rect x={-r} y={-r} width={2 * r} height={2 * r} strokeWidth={1 / Math.sqrt(k)} />
+                </g>
+              );
+            })}
         </g>
       </svg>
 
@@ -169,7 +200,14 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
             )}
           </div>
         )}
-        <div className="legend-note muted">Vulnerabilities are not mapped: KEV and NVD do not report locations.</div>
+        {showVendors ? (
+          <div className="legend-note">
+            <i className="swatch-vendor" /> Diamonds: <strong>vendor headquarters</strong> (Wikidata) for vulnerabilities in this window, sized by
+            count. They show where the vendor is based, not where vulnerabilities are exploited.
+          </div>
+        ) : (
+          <div className="legend-note muted">Vulnerabilities are not mapped: KEV and NVD do not report locations.</div>
+        )}
       </div>
 
       {transform.k > 1 && (
@@ -179,6 +217,18 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
         >
           Reset view
         </button>
+      )}
+
+      {hoverVendor && (
+        <div className="map-tooltip" style={{ left: hoverVendor.x + 12, top: hoverVendor.y + 12 }} role="tooltip">
+          <div className="tt-cat tt-vendor">Vendor headquarters · Wikidata</div>
+          <div className="tt-title">{hoverVendor.v.title}</div>
+          <div className="tt-meta">
+            {hoverVendor.v.hq}
+            {hoverVendor.v.country ? `, ${hoverVendor.v.country}` : ''} · {hoverVendor.v.vulnerabilities} vulnerabilit
+            {hoverVendor.v.vulnerabilities === 1 ? 'y' : 'ies'} in window
+          </div>
+        </div>
       )}
 
       {hover && (

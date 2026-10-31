@@ -40,6 +40,7 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
   const [showSources, setShowSources] = useState(false);
   const [showCountries, setShowCountries] = useState(true);
   const [sort, setSort] = useState<FeedSort>('mixed');
+  const [showVendors, setShowVendors] = useState(true);
   // Recomputed when the preset changes, so the window slides forward on re-selection.
   const [anchor, setAnchor] = useState(() => now().getTime());
 
@@ -173,6 +174,9 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
             <label className="small check">
               <input type="checkbox" checked={showCountries} onChange={(e) => setShowCountries(e.target.checked)} /> Publisher-country shading
             </label>
+            <label className="small check check-tight">
+              <input type="checkbox" checked={showVendors} onChange={(e) => setShowVendors(e.target.checked)} /> Vendor HQs
+            </label>
           </div>
           <WorldMap
             points={map.data?.points ?? []}
@@ -180,6 +184,8 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
             selectedId={selected}
             onSelect={select}
             showCountries={showCountries}
+            vendors={map.data?.vendors ?? []}
+            showVendors={showVendors && types.includes('vulnerability')}
           />
           {timeline.data && (
             <Timeline

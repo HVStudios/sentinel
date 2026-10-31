@@ -95,6 +95,7 @@ h3 { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: 
   display: flex; flex-direction: column; overflow: hidden;
 }
 .stage-head { display: flex; align-items: baseline; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.check-tight { margin-left: 0 !important; }
 .check { margin-left: auto; display: inline-flex; gap: 6px; align-items: center; color: var(--muted); }
 
 /* Map */
@@ -128,6 +129,13 @@ h3 { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: 
 .tt-cat { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--c-event); }
 .tt-title { font-weight: 600; }
 .tt-meta { color: var(--muted); font-size: 12px; }
+
+/* Vendor headquarters (Wikidata) */
+.vendor-hq { cursor: pointer; }
+.vendor-hq rect { fill: var(--c-vendor); fill-opacity: 0.75; stroke: #0a1220; }
+.vendor-hq:hover rect, .vendor-hq.selected rect { stroke: #fff; fill-opacity: 1; }
+.swatch-vendor { display: inline-block; width: 8px; height: 8px; background: var(--c-vendor); transform: rotate(45deg); margin: 0 4px 1px 2px; }
+.tt-vendor { color: var(--c-vendor); }
 
 /* Timeline */
 .timeline { border-top: 1px solid var(--line); padding: 8px 14px 10px; }

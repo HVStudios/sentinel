@@ -64,6 +64,12 @@ export function locationLabel(n: Pick<SNode, 'geoBasis' | 'lat' | 'lon' | 'count
     return `${place}${n.lat.toFixed(2)}°, ${n.lon.toFixed(2)}° (source coordinates)`;
   }
   if (n.geoBasis === 'publisher_country' && n.country) return `Publisher in ${n.country} (not the event location)`;
+  const wd = n.attrs?.wikidata;
+  if (n.type === 'vendor' && wd?.status === 'matched' && wd.hq) {
+    const where = `${wd.hq.label}${wd.hq.country ? `, ${wd.hq.country}` : ''}`;
+    // Alias-only identity matches are too uncertain to place on the map.
+    return wd.confidence >= 0.7 ? `Headquarters: ${where} (Wikidata)` : `Possibly headquartered in ${where} (Wikidata alias match; not mapped)`;
+  }
   return 'No location reported by source';
 }
 

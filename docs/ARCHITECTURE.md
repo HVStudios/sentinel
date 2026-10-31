@@ -100,10 +100,22 @@ records per-source status in `sources`, so one failing source never blocks the o
 After all sources run, `relate.ts` recomputes inferred edges.
 
 Order: KEV → NVD (KEV CVEs missing details, plus CVEs published in the last N days) →
-EPSS (for all stored CVEs) → USGS → EONET → curated feeds → GDELT → HN → inference.
+EPSS (for all stored CVEs) → Wikidata vendor HQs → USGS → EONET → curated feeds → GDELT → HN → inference.
 
 A source may return non-fatal `warnings` (e.g. 2 of 17 feeds failed). The source then stays
 `ok`, and the warnings are stored in `last_error` so the Sources panel shows them.
+
+**Vendor headquarters** (`sources/wikidata.ts`): vendors are looked up on the Wikidata SPARQL
+endpoint by name and a few variants ("Inc.", "Corporation", "Networks", "Systems", "Software").
+Only items with a headquarters (P159) whose English description marks them as a technology
+organisation count, which is what keeps "Apple" from resolving to Apple Records. Resolution
+rules: single candidate → the one exact-label match → several candidates sharing one
+headquarters → otherwise ambiguous. The vendor-to-item identity is *inferred*
+(confidence 0.8 exact label, 0.7 name variant, 0.55 alias only); the headquarters city,
+country and coordinates are *reported* by Wikidata, with the item URL as provenance. Only
+label matches (≥ 0.7) are mapped, because about 1 in 6 alias matches were wrong in testing.
+Runs are time-boxed (2 minutes, most-affected vendors first, no retries), and the Pages
+workflow caches the database, so lookups accumulate and are re-checked every 30 days.
 
 **Curated feeds** (`sources/feeds.ts`, `sources/rss.ts`): a registry of RSS/Atom feeds. Each entry
 has the publisher's country and a `countryRef` page that confirms it. Items get
@@ -137,7 +149,7 @@ and the parity test covers all three orderings.
 |---|---|
 | `GET /api/health` | Liveness and DB counts. |
 | `GET /api/feed?from&to&types&q&sort&limit&before` | Time-bound nodes with cursor pagination. `sort` is `latest` (chronological), `mixed` (one category at a time, newest first within each) or `top` (one category at a time, by severity/rank). |
-| `GET /api/map?from&to&types` | `{ points[], countries[] }`: geolocated nodes and publisher-country aggregates. |
+| `GET /api/map?from&to&types` | `{ points[], countries[], vendors[] }`: geolocated nodes, publisher-country aggregates, and Wikidata headquarters of vendors behind vulnerabilities in the window. |
 | `GET /api/timeline?from&to&types` | Histogram buckets per node type. |
 | `GET /api/nodes/:id` | Node, provenance and adjacent edges. |
 | `GET /api/graph/:id?depth=1..2&limit` | Neighbourhood subgraph. |

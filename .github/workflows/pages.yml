@@ -30,11 +30,25 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      # Keep the database between runs so slow enrichment (Wikidata vendor lookups) accumulates
+      # and is only re-checked every 30 days. A cache miss just means a fresh database.
+      - name: Restore database
+        uses: actions/cache/restore@v4
+        with:
+          path: data/sentinel.db
+          key: sentinel-db-${{ github.run_id }}
+          restore-keys: sentinel-db-
       - name: Ingest public sources
         # Exits non-zero only if every source fails; partial data is still published.
         run: npm run ingest
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+      - name: Save database
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data/sentinel.db
+          key: sentinel-db-${{ github.run_id }}
       - run: npm run export
       - name: Build static site
         run: npm run build -w web

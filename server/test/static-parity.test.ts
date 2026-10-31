@@ -13,7 +13,7 @@ const fakeFetch = (async (url: string) => {
   const host = new URL(url).host;
   const map: Record<string, string> = {
     'www.cisa.gov': 'kev.json', 'api.first.org': 'epss.json', 'earthquake.usgs.gov': 'usgs.json',
-    'eonet.gsfc.nasa.gov': 'eonet.json', 'hn.algolia.com': 'hn.json', 'api.gdeltproject.org': 'gdelt.json',
+    'eonet.gsfc.nasa.gov': 'eonet.json', 'hn.algolia.com': 'hn.json', 'api.gdeltproject.org': 'gdelt.json', 'query.wikidata.org': 'wikidata.json',
   };
   if (host === 'services.nvd.nist.gov') return url.includes('hasKev') ? fixture('nvd.json') : { ...fixture('nvd.json'), vulnerabilities: [], totalResults: 0 };
   if (map[host]) return fixture(map[host]);
@@ -66,7 +66,10 @@ describe('static snapshot engine parity', () => {
       const st = queryMap(ix, f);
       expect(ids(st.points)).toEqual(ids(srv.points));
       expect(st.countries).toEqual(srv.countries);
+      expect(st.vendors).toEqual(srv.vendors);
     }
+    // The fixtures include Wikidata matches, so the vendor layer is actually exercised.
+    expect(store.mapData({ types: all }).vendors.length).toBeGreaterThan(0);
     const tq = { types: all, from: '2026-09-01T00:00:00.000Z', to: '2026-11-01T00:00:00.000Z' };
     expect(queryTimeline(ix, tq, 61).series).toEqual(store.timeline({ ...tq, buckets: 61 }).series);
   });

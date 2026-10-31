@@ -10,9 +10,10 @@ import { eonetSource } from './sources/eonet.ts';
 import { gdeltSource } from './sources/gdelt.ts';
 import { hnSource } from './sources/hn.ts';
 import { rssSource } from './sources/rss.ts';
+import { wikidataSource } from './sources/wikidata.ts';
 
-/** Run order matters: NVD and EPSS enrich CVEs that KEV created. */
-export const SOURCES: SourceModule[] = [kevSource, nvdSource, epssSource, usgsSource, eonetSource, rssSource, gdeltSource, hnSource];
+/** Run order matters: NVD, EPSS and Wikidata enrich CVEs and vendors that KEV and NVD created. */
+export const SOURCES: SourceModule[] = [kevSource, nvdSource, epssSource, wikidataSource, usgsSource, eonetSource, rssSource, gdeltSource, hnSource];
 
 export interface IngestResult {
   source: string;

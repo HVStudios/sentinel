@@ -139,11 +139,16 @@ last run, counts and errors per source.
 - [ ] Poll ingest status while running and refresh map and feed when it finishes
 
 ### SEN-16 · Vendor headquarters geography (Wikidata, attributed)
-Priority: P1 · Labels: geo, data · Status: todo
+Priority: P1 · Labels: geo, data · Status: done (merged)
 
-Resolve vendor → Wikidata entity → HQ country, only on an unambiguous match. Store it as
-an inferred relationship with the Wikidata QID as provenance and show it on the map as
-"vendor HQ (Wikidata)". Never place a vulnerability itself on the map.
+Resolve vendor → Wikidata entity → headquarters, show it on the map as "vendor HQ (Wikidata)".
+Never place a vulnerability itself on the map.
+
+- [x] `wikidata-vendors` source: name + variant lookup over SPARQL, candidates must be described as technology organisations
+- [x] Resolution rules (single candidate → exact label → shared HQ → otherwise ambiguous); identity stored as inferred with confidence (exact label 0.8, name variant 0.7, alias 0.55)
+- [x] Only label matches (≥ 0.7) are mapped; alias matches are shown in the investigation as possible matches
+- [x] Bounded runtime (2-minute budget, no retries, most-affected vendors first); database cached between Pages runs so lookups accumulate and refresh every 30 days
+- [x] Map layer: diamonds for vendors behind vulnerabilities in the window, sized by count, with legend and toggle; same layer in the static build (parity-tested)
 
 ### SEN-17 · End-to-end tests (Playwright)
 Priority: P1 · Labels: testing · Status: todo
@@ -186,6 +191,15 @@ A few days of notable NVD CVEs (CVSS ≥ 7) pushed other categories out of the c
 - [x] Explained article rank (category, HN points, mentions of KEV-listed or known CVEs), shown as "SENTINEL rank"
 - [x] KEV-listed CVEs always outrank unexploited ones
 - [x] Same behaviour in the static (Pages) build, covered by the parity test
+
+### SEN-25 · Merge duplicate vendor nodes
+Priority: P1 · Labels: data · Status: todo
+
+KEV names vendors in readable form ("Palo Alto Networks", "D-Link"), while NVD CPE IDs run them
+together ("paloaltonetworks", "dlink"). That creates two vendor nodes for one company. The
+CPE-derived duplicates rarely match on Wikidata, and they split relationships in the graph.
+Add an alias step, e.g. merge when the slug without separators is equal, plus a small
+curated alias table, keeping both names as provenance.
 
 ### SEN-21 · Story clustering over time
 Priority: P2 · Labels: analysis · Status: todo
