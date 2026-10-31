@@ -76,11 +76,11 @@ test('investigates a vulnerability and follows the graph', async ({ page }) => {
   await expect(page).toHaveURL(/#\/node\/cve%3ACVE-2026-111357$/);
 
   // Graph → product → vendor, then back.
-  const graph = panel.getByRole('img', { name: 'Relationship graph' });
+  const graph = panel.getByRole('group', { name: 'Relationship graph' });
   await expect(graph).toBeVisible();
-  await panel.getByRole('button', { name: /^Product: Ivanti Connect Secure$/ }).press('Enter');
+  await panel.getByRole('button', { name: /^Connect Secure — Product: Ivanti Connect Secure$/ }).press('Enter');
   await expect(panel.getByRole('heading', { name: 'Ivanti Connect Secure' })).toBeVisible();
-  await panel.getByRole('button', { name: 'Vendor: Ivanti' }).press('Enter');
+  await panel.getByRole('button', { name: 'Ivanti — Vendor: Ivanti' }).press('Enter');
   await expect(panel.getByRole('heading', { name: 'Ivanti', exact: true })).toBeVisible();
   await expect(panel.getByRole('link', { name: 'Wikidata Q4042416' })).toBeVisible();
   await expect(panel.getByText('Headquarters: South Jordan, United States (Wikidata)')).toBeVisible();

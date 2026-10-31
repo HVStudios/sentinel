@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { geoEqualEarth, geoGraticule10, geoPath } from 'd3-geo';
 import { select } from 'd3-selection';
 import { zoom, zoomIdentity, type ZoomTransform } from 'd3-zoom';
@@ -9,6 +9,7 @@ import world from 'world-atlas/countries-110m.json';
 import type { SNode, VendorHq } from '../api.ts';
 import { createCountryResolver } from '../lib/countries.ts';
 import { categoryLabel, relativeTime } from '../lib/format.ts';
+import { useRovingFocus } from '../lib/useRovingFocus.ts';
 
 const W = 960;
 const H = 500;
@@ -52,6 +53,7 @@ interface Props {
 
 export function WorldMap({ points, countryCounts, selectedId, onSelect, showCountries, vendors = [], showVendors = false }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
+  const zoomRef = useRef<ReturnType<typeof zoom<SVGSVGElement, unknown>> | null>(null);
   const [transform, setTransform] = useState<ZoomTransform>(zoomIdentity);
   const [hover, setHover] = useState<{ node: SNode; x: number; y: number } | null>(null);
   const [hoverVendor, setHoverVendor] = useState<{ v: VendorHq; x: number; y: number } | null>(null);
@@ -68,6 +70,7 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
       ])
       .on('zoom', (e: { transform: ZoomTransform }) => setTransform(e.transform));
     svg.call(z);
+    zoomRef.current = z;
     return () => {
       svg.on('.zoom', null);
     };
@@ -96,9 +99,56 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
 
   const k = transform.k;
 
+  const zoomBy = (factor: number | null) => {
+    const svg = svgRef.current;
+    const z = zoomRef.current;
+    if (!svg || !z) return;
+    if (factor === null) select(svg).call(z.transform, zoomIdentity);
+    else select(svg).call(z.scaleBy, factor);
+  };
+
+  // Keyboard order: every marker (events and vendor HQs) from west to east.
+  const vendorMarkers = useMemo(
+    () =>
+      (showVendors ? vendors : [])
+        .map((v) => ({ v, xy: projection([v.lon, v.lat]) }))
+        .filter((x): x is { v: VendorHq; xy: [number, number] } => x.xy !== null),
+    [vendors, showVendors],
+  );
+  const order = useMemo(() => {
+    const all = [...projected.map((x) => ({ id: x.p.id, x: x.xy[0] })), ...vendorMarkers.map((x) => ({ id: x.v.id, x: x.xy[0] }))];
+    all.sort((a, b) => a.x - b.x || (a.id < b.id ? -1 : 1));
+    return { ids: all.map((m) => m.id), index: new Map(all.map((m, i) => [m.id, i])) };
+  }, [projected, vendorMarkers]);
+  const activate = useCallback((i: number) => order.ids[i] && onSelect(order.ids[i]!), [order, onSelect]);
+  const roving = useRovingFocus<SVGGElement>(order.ids.length, activate);
+
+  /** Shows the tooltip next to a focused marker, so keyboard users see what mouse users see on hover. */
+  const tooltipAt = (el: Element) => {
+    const r = el.getBoundingClientRect();
+    return { x: r.right, y: r.top };
+  };
+  const onMapKey = (e: React.KeyboardEvent) => {
+    if (e.key === '+' || e.key === '=') zoomBy(1.5);
+    else if (e.key === '-') zoomBy(1 / 1.5);
+    else if (e.key === '0') zoomBy(null);
+    else if (e.key === 'Escape') (e.target as HTMLElement).blur();
+  };
+
   return (
     <div className="map-wrap">
-      <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} className="world-map" role="img" aria-label="World map of geolocated events">
+      <p id="map-help" className="sr-only">
+        One Tab stop for all markers: arrow keys move from west to east, Enter opens the selected marker, plus and minus zoom, 0 resets.
+      </p>
+      <svg
+        ref={svgRef}
+        viewBox={`0 0 ${W} ${H}`}
+        className="world-map"
+        role="group"
+        aria-label="World map of geolocated events"
+        aria-describedby="map-help"
+        onKeyDown={onMapKey}
+      >
         <defs>
           <radialGradient id="glow">
             <stop offset="0%" stopColor="#fff" stopOpacity="0.9" />
@@ -138,20 +188,21 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
                 }}
                 onMouseEnter={(e) => setHover({ node: p, x: e.clientX, y: e.clientY })}
                 onMouseLeave={() => setHover(null)}
-                tabIndex={0}
+                {...roving.itemProps(order.index.get(p.id)!)}
+                onFocus={(e) => {
+                  roving.itemProps(order.index.get(p.id)!).onFocus();
+                  setHover({ node: p, ...tooltipAt(e.currentTarget) });
+                }}
+                onBlur={() => setHover(null)}
                 role="button"
-                aria-label={p.title}
-                onKeyDown={(e) => e.key === 'Enter' && onSelect(p.id)}
+                aria-label={`${categoryLabel(p.category) || 'Event'}: ${p.title}, ${relativeTime(p.occurredAt)}`}
               >
                 {(p.severity ?? 0) > 0.55 && <circle r={r * 2.4} className="pulse" style={{ fill: POINT_COLORS[p.category ?? ''] ?? 'var(--c-event)' }} />}
                 <circle r={r} style={{ fill: POINT_COLORS[p.category ?? ''] ?? 'var(--c-event)' }} strokeWidth={(selected ? 2 : 0.8) / Math.sqrt(k)} />
               </g>
             );
           })}
-          {showVendors &&
-            vendors.map((v) => {
-              const xy = projection([v.lon, v.lat]);
-              if (!xy) return null;
+          {vendorMarkers.map(({ v, xy }) => {
               const r = (3 + 6 * Math.sqrt(v.vulnerabilities / maxVulns)) / Math.sqrt(k);
               return (
                 <g
@@ -165,15 +216,19 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
                   }}
                   onMouseEnter={(e) => setHoverVendor({ v, x: e.clientX, y: e.clientY })}
                   onMouseLeave={() => setHoverVendor(null)}
-                  tabIndex={0}
+                  {...roving.itemProps(order.index.get(v.id)!)}
+                  onFocus={(e) => {
+                    roving.itemProps(order.index.get(v.id)!).onFocus();
+                    setHoverVendor({ v, ...tooltipAt(e.currentTarget) });
+                  }}
+                  onBlur={() => setHoverVendor(null)}
                   role="button"
                   aria-label={`${v.title} headquarters, ${v.hq}: ${v.vulnerabilities} vulnerabilities in this window`}
-                  onKeyDown={(e) => e.key === 'Enter' && onSelect(v.id)}
                 >
                   <rect x={-r} y={-r} width={2 * r} height={2 * r} strokeWidth={1 / Math.sqrt(k)} />
                 </g>
               );
-            })}
+          })}
         </g>
       </svg>
 
@@ -210,14 +265,17 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
         )}
       </div>
 
-      {transform.k > 1 && (
-        <button
-          className="map-reset"
-          onClick={() => svgRef.current && select(svgRef.current).call(zoom<SVGSVGElement, unknown>().transform, zoomIdentity)}
-        >
-          Reset view
+      <div className="map-zoom" role="group" aria-label="Map zoom">
+        <button type="button" onClick={() => zoomBy(1.5)} aria-label="Zoom in">
+          +
         </button>
-      )}
+        <button type="button" onClick={() => zoomBy(1 / 1.5)} aria-label="Zoom out" disabled={transform.k <= 1}>
+          −
+        </button>
+        <button type="button" onClick={() => zoomBy(null)} aria-label="Reset map view" disabled={transform.k <= 1}>
+          ⟲
+        </button>
+      </div>
 
       {hoverVendor && (
         <div className="map-tooltip" style={{ left: hoverVendor.x + 12, top: hoverVendor.y + 12 }} role="tooltip">

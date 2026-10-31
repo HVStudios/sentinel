@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { NodeDetail } from '../api.ts';
 import { api } from '../apiClient.ts';
 import { badgesFor, categoryLabel, formatDate, locationLabel, relativeTime, TYPE_LABEL } from '../lib/format.ts';
@@ -16,9 +16,24 @@ export function Investigate({ id, onSelect, onClose, onBack }: Props) {
   const [depth, setDepth] = useState(1);
   const detail = useFetch((s) => api.node(id, s), id);
   const graph = useFetch((s) => api.graph(id, depth, s), `${id}|${depth}`);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  // Move focus to the new item's heading so keyboard and screen-reader users land on what they opened.
+  useEffect(() => {
+    if (detail.data?.node.id === id) headingRef.current?.focus();
+  }, [detail.data, id]);
 
   return (
-    <aside className="investigate" aria-label="Investigation">
+    <aside
+      className="investigate"
+      aria-label="Investigation"
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') {
+          e.stopPropagation();
+          onClose();
+        }
+      }}
+    >
       <div className="inv-bar">
         {onBack && (
           <button className="ghost" onClick={onBack} aria-label="Back">
@@ -31,7 +46,7 @@ export function Investigate({ id, onSelect, onClose, onBack }: Props) {
         </button>
       </div>
       {detail.error && <div className="error">Could not load {id}: {detail.error.message}</div>}
-      {detail.data && <DetailBody d={detail.data} />}
+      {detail.data && <DetailBody d={detail.data} headingRef={headingRef} />}
       <section className="inv-section">
         <div className="inv-section-head">
           <h3>Connections</h3>
@@ -65,7 +80,7 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function DetailBody({ d }: { d: NodeDetail }) {
+function DetailBody({ d, headingRef }: { d: NodeDetail; headingRef: React.RefObject<HTMLHeadingElement | null> }) {
   const n = d.node;
   const a = n.attrs ?? {};
   return (
@@ -74,7 +89,9 @@ function DetailBody({ d }: { d: NodeDetail }) {
         <span className={`pill pill-${n.type}`}>{TYPE_LABEL[n.type]}</span>
         {n.category && <span className="muted">{categoryLabel(n.category)}</span>}
       </div>
-      <h2>{n.title}</h2>
+      <h2 ref={headingRef} tabIndex={-1}>
+        {n.title}
+      </h2>
       <div className="feed-foot">
         {badgesFor(n).map((b) => (
           <span key={b.label} className={`badge tone-${b.tone}`} title={b.title}>

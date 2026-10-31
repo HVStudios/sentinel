@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api } from '../apiClient.ts';
 import { formatDate, relativeTime } from '../lib/format.ts';
 import { useFetch } from '../lib/useFetch.ts';
@@ -7,6 +7,32 @@ export function SourcesPanel({ onClose }: { onClose: () => void }) {
   const [tick, setTick] = useState(0);
   const [msg, setMsg] = useState<string | null>(null);
   const { data, error } = useFetch((s) => api.sources(s), String(tick));
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  // Modal behaviour: focus moves in, Tab stays inside, Escape closes, focus returns to the opener.
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    dialogRef.current?.querySelector<HTMLElement>('button')?.focus();
+    return () => opener?.focus();
+  }, []);
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.stopPropagation();
+      onClose();
+      return;
+    }
+    if (e.key !== 'Tab' || !dialogRef.current) return;
+    const focusable = [...dialogRef.current.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])')];
+    const first = focusable[0];
+    const last = focusable.at(-1);
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last?.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first?.focus();
+    }
+  };
 
   const refresh = async () => {
     try {
@@ -20,7 +46,7 @@ export function SourcesPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" role="dialog" aria-label="Data sources" onClick={(e) => e.stopPropagation()}>
+      <div ref={dialogRef} className="modal" role="dialog" aria-modal="true" aria-label="Data sources" onClick={(e) => e.stopPropagation()} onKeyDown={onKeyDown}>
         <div className="inv-bar">
           <h3>Data sources</h3>
           <button className="ghost" onClick={onClose} aria-label="Close">
