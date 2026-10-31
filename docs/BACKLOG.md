@@ -167,9 +167,13 @@ Priority: P1 · Labels: ingestion · Status: done (merged)
 - [x] EPSS skips non-CVE advisories; e2e coverage for both sources
 
 ### SEN-19 · Watchlists and saved investigations
-Priority: P1 · Labels: frontend, backend · Status: todo
+Priority: P1 · Labels: frontend, backend · Status: done (merged)
 
-Track vendors, products or CVEs locally and highlight new related items.
+- [x] Watch vendors, products, vulnerabilities, weaknesses and stories from the investigation panel; stored in localStorage, synced across tabs, robust to blocked storage
+- [x] Related items per type via explicit links (`shared/related.ts`, used by both the server and the static engine), each with the reason it relates
+- [x] "New since last check" based on when SENTINEL first ingested an item; per-watch and global "mark as seen"
+- [x] Watchlist tab with new-item count, ★ chips on related feed items
+- [x] Unit, parity, e2e and axe tests
 
 ### SEN-20 · Accessibility and responsive layout pass
 Priority: P1 · Labels: frontend, a11y · Status: done (merged)

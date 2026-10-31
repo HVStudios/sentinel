@@ -178,6 +178,25 @@ member, so they stay stable as stories grow. Titles prefer an English news headl
 vulnerability name, then an English advisory. Everything is rebuilt on each run.
 `GET /api/stories` lists stories active in a window, and the static engine mirrors it.
 
+## Watchlists
+
+Watchlists live only in the viewer's browser (`web/src/lib/watchlist.ts`, localStorage, synced
+across tabs). There are no accounts, which also keeps the static Pages build fully functional.
+A watch records when it was last checked. A related item is *new* when SENTINEL first ingested
+it (`ingested_at`) after that time.
+
+"Related" is defined per type in `shared/related.ts`, a module shared by the server
+(`GET /api/related/:id`) and the static engine. Each rule follows an explicit link and returns
+the path as `via`:
+
+| Watched | Related items |
+|---|---|
+| vendor | vulnerabilities affecting its products; articles mentioning it |
+| product | its vulnerabilities; articles mentioning them |
+| vulnerability | articles mentioning it; CVEs it references or that reference it |
+| weakness | vulnerabilities with that CWE |
+| story | its members |
+
 ## Feed ordering
 
 A chronological feed is dominated by whichever category publishes most (a few days of NVD
@@ -196,6 +215,8 @@ and the parity test covers all three orderings.
 | `GET /api/timeline?from&to&types` | Histogram buckets per node type. |
 | `GET /api/nodes/:id` | Node, provenance and adjacent edges. |
 | `GET /api/graph/:id?depth=1..2&limit` | Neighbourhood subgraph. |
+| `GET /api/stories?from&to&limit` | Stories active in the window, most recent first. |
+| `GET /api/related/:id?limit` | Timed items related to a watched node, each with `via` (the link that relates it). |
 | `GET /api/sources` | Source metadata and last-run status. |
 | `POST /api/ingest` | Triggers a refresh (single-flight). Only bound when the server listens on localhost. |
 

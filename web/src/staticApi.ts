@@ -1,6 +1,7 @@
 import type { MapData, NodeDetail, SEdge, SNode, SourceStatus, TimedType, VendorHq } from './api.ts';
 import { TIMED_TYPES } from './api.ts';
 import type { Api, Filters, SourcesResponse } from './api.ts';
+import { relatedItems } from '../../shared/related.ts';
 
 /** Mirrors server/src/snapshot.ts. */
 export interface Snapshot {
@@ -240,6 +241,9 @@ export function queryStories(ix: Index, f: { from?: string; to?: string }, limit
     .slice(0, limit);
 }
 
+export const queryRelated = (ix: Index, id: string, limit = 50) =>
+  relatedItems<SNode>({ node: (x) => ix.byId.get(x), edges: (x) => ix.adj.get(x) ?? [] }, id, limit);
+
 export function createStaticApi(load: () => Promise<Snapshot>): Api {
   let index: Promise<Index> | null = null;
   const ix = () => (index ??= load().then(indexSnapshot).catch((err) => {
@@ -258,6 +262,11 @@ export function createStaticApi(load: () => Promise<Snapshot>): Api {
       return { sources: snap.sources, ingest: { running: false, last: null }, generatedAt: snap.generatedAt };
     },
     stories: async (f) => ({ stories: queryStories(await ix(), f) }),
+    related: async (id) => {
+      const i = await ix();
+      if (!i.byId.has(id)) throw new Error(`404 Not Found for ${id}`);
+      return { items: queryRelated(i, id).map((r) => ({ ...r.node, via: r.via })) };
+    },
     startIngest: async () => {
       throw new Error('This is a static snapshot; it is refreshed automatically by GitHub Actions.');
     },

@@ -9,9 +9,11 @@ interface Props {
   selectedId: string | null;
   onSelect: (id: string) => void;
   onMore: () => void;
+  /** Feed item id → titles of watched items it relates to. */
+  watchHits?: Map<string, string[]>;
 }
 
-export function Feed({ items, loading, error, hasMore, selectedId, onSelect, onMore }: Props) {
+export function Feed({ items, loading, error, hasMore, selectedId, onSelect, onMore, watchHits }: Props) {
   return (
     <section className="feed" aria-label="Event feed">
       {error && <div className="error">Could not load the feed: {error.message}</div>}
@@ -39,6 +41,12 @@ export function Feed({ items, loading, error, hasMore, selectedId, onSelect, onM
                 ))}
                 {n.type === 'vulnerability' && <span className="feed-id">{n.attrs.cveId}</span>}
                 {n.type !== 'vulnerability' && sourceDomain(n) && <span className="feed-id">{sourceDomain(n)}</span>}
+                {watchHits?.get(n.id) && (
+                  <span className="watch-chip" title={`Related to your watchlist: ${watchHits.get(n.id)!.join(', ')}`}>
+                    ★ {watchHits.get(n.id)![0]}
+                    {watchHits.get(n.id)!.length > 1 ? ` +${watchHits.get(n.id)!.length - 1}` : ''}
+                  </span>
+                )}
                 {n.attrs.story && (
                   <span className="story-chip" title={`Part of the story “${n.attrs.story.title}” (${n.attrs.story.size} related items)`}>
                     Story · {n.attrs.story.size}

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import type { NodeDetail } from '../api.ts';
+import type { NodeDetail, SNode } from '../api.ts';
+import { WATCHABLE } from '../lib/watchlist.ts';
 import { api } from '../apiClient.ts';
 import { badgesFor, categoryLabel, formatDate, locationLabel, relativeTime, TYPE_LABEL } from '../lib/format.ts';
 import { useFetch } from '../lib/useFetch.ts';
@@ -10,9 +11,11 @@ interface Props {
   onSelect: (id: string) => void;
   onClose: () => void;
   onBack?: () => void;
+  watched?: boolean;
+  onToggleWatch?: (node: SNode) => void;
 }
 
-export function Investigate({ id, onSelect, onClose, onBack }: Props) {
+export function Investigate({ id, onSelect, onClose, onBack, watched = false, onToggleWatch }: Props) {
   const [depth, setDepth] = useState(1);
   const detail = useFetch((s) => api.node(id, s), id);
   const graph = useFetch((s) => api.graph(id, depth, s), `${id}|${depth}`);
@@ -41,6 +44,17 @@ export function Investigate({ id, onSelect, onClose, onBack }: Props) {
           </button>
         )}
         <span className="muted">Investigation</span>
+        {onToggleWatch && detail.data && WATCHABLE.includes(detail.data.node.type) && (
+          <button
+            className={`ghost watch-toggle${watched ? ' on' : ''}`}
+            aria-pressed={watched}
+            onClick={() => onToggleWatch(detail.data!.node)}
+            title={watched ? 'Remove from your watchlist' : 'Add to your watchlist (stored in this browser)'}
+          >
+            <span aria-hidden="true">{watched ? '★ ' : '☆ '}</span>
+            {watched ? 'Watching' : 'Watch'}
+          </button>
+        )}
         <button className="ghost" onClick={onClose} aria-label="Close investigation">
           ✕
         </button>
