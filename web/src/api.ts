@@ -95,7 +95,13 @@ const timeParams = (f: Filters) => ({ from: f.from, to: f.to, types: f.types.joi
 
 export interface SourcesResponse {
   sources: SourceStatus[];
-  ingest: { running: boolean; last: { startedAt: string; finishedAt?: string; error?: string } | null };
+  ingest: {
+    running: boolean;
+    last: { startedAt: string; finishedAt?: string; error?: string; trigger?: 'manual' | 'scheduled' } | null;
+    /** Live server only: automatic refresh interval and next run. */
+    refreshMinutes?: number | null;
+    nextRunAt?: string | null;
+  };
   /** Set in static mode: when the snapshot was exported. */
   generatedAt?: string;
 }

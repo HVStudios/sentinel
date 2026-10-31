@@ -70,6 +70,12 @@ To refresh only some sources:
 npm run ingest -- -- --only cisa-kev,first-epss,usgs-earthquakes
 ```
 
+To keep a local server current on its own:
+
+```bash
+SENTINEL_REFRESH_MINUTES=60 npm start
+```
+
 Source IDs: `cisa-kev`, `nvd`, `github-advisories`, `first-epss`, `wikidata-vendors`, `usgs-earthquakes`, `nasa-eonet`, `gdacs`, `news-feeds`,
 `gdelt`, `hacker-news`. You can also refresh from the UI under **Sources → Refresh all sources**.
 
@@ -144,6 +150,7 @@ unit and integration tests, then the production build. CI (`.github/workflows/ci
 | `HOST` | `127.0.0.1` | Bind address. `POST /api/ingest` is only enabled on loopback. |
 | `SENTINEL_DB` | `data/sentinel.db` | SQLite file, relative to the repo root |
 | `NVD_API_KEY` | — | Optional free NVD key; raises the limit from 5 to 50 requests per 30 s |
+| `SENTINEL_REFRESH_MINUTES` | off | Refresh all sources in the background every N minutes (an empty database is refreshed at startup). Open pages reload their data when a refresh finishes. |
 | `GITHUB_TOKEN` | — | Optional; raises the GitHub advisories API limit from 60 to 1,000 requests an hour (set automatically in GitHub Actions) |
 | `NVD_RECENT_DAYS` | `3` | Window for recently published CVEs (only CVSS ≥ 7 or KEV-listed CVEs are kept) |
 

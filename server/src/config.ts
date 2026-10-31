@@ -8,4 +8,5 @@ export const config = {
   host: process.env.HOST ?? '127.0.0.1',
   dbPath: resolve(repoRoot, process.env.SENTINEL_DB ?? 'data/sentinel.db'),
   webDist: resolve(repoRoot, 'web/dist'),
+  refreshMinutes: Math.max(0, Number(process.env.SENTINEL_REFRESH_MINUTES ?? 0) || 0),
 };

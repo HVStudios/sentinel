@@ -10,6 +10,8 @@ export interface AppOptions {
   runIngest?: (store: Store) => Promise<{ results: IngestResult[] }>;
   logger?: boolean;
   now?: () => Date;
+  /** Refresh all sources in the background every N minutes (0 or unset: off). */
+  refreshMinutes?: number;
 }
 
 const isoDate = { type: 'string', format: 'date-time' } as const;
@@ -33,7 +35,36 @@ export function buildApp(store: Store, opts: AppOptions = {}): FastifyInstance {
   const app = Fastify({ logger: opts.logger ?? false, ajv: { customOptions: { removeAdditional: false } } });
   const now = opts.now ?? (() => new Date());
   let running: Promise<unknown> | null = null;
-  let lastIngest: { startedAt: string; finishedAt?: string; results?: IngestResult[]; error?: string } | null = null;
+  let lastIngest: { startedAt: string; finishedAt?: string; results?: IngestResult[]; error?: string; trigger: 'manual' | 'scheduled' } | null = null;
+  let nextRunAt: string | null = null;
+  const run = opts.runIngest ?? ((s: Store) => ingest(s));
+
+  /** Single-flight: a refresh never overlaps another, whether started by hand or by the timer. */
+  const startIngest = (trigger: 'manual' | 'scheduled'): boolean => {
+    if (running) return false;
+    const current: NonNullable<typeof lastIngest> = { startedAt: now().toISOString(), trigger };
+    lastIngest = current;
+    running = run(store)
+      .then((r) => { current.results = r.results; })
+      .catch((err: Error) => { current.error = err.message; })
+      .finally(() => { current.finishedAt = now().toISOString(); running = null; });
+    return true;
+  };
+
+  const refreshMs = (opts.refreshMinutes ?? 0) * 60_000;
+  if (refreshMs > 0) {
+    const schedule = () => { nextRunAt = new Date(now().getTime() + refreshMs).toISOString(); };
+    schedule();
+    const timer = setInterval(() => {
+      startIngest('scheduled');
+      schedule();
+    }, refreshMs);
+    timer.unref?.();
+    app.addHook('onClose', async () => clearInterval(timer));
+    // An empty database is refreshed right away instead of waiting for the first interval.
+    const counts = store.counts();
+    if (Object.entries(counts).every(([k, v]) => k === 'edges' || v === 0)) startIngest('scheduled');
+  }
 
   app.get('/api/health', async () => ({ ok: true, version: VERSION, counts: store.counts() }));
 
@@ -155,19 +186,15 @@ export function buildApp(store: Store, opts: AppOptions = {}): FastifyInstance {
     },
   );
 
-  app.get('/api/sources', async () => ({ sources: store.sources(), ingest: { running: Boolean(running), last: lastIngest } }));
+  app.get('/api/sources', async () => ({
+    sources: store.sources(),
+    ingest: { running: Boolean(running), last: lastIngest, refreshMinutes: opts.refreshMinutes || null, nextRunAt },
+  }));
 
   if (opts.allowIngest) {
-    const run = opts.runIngest ?? ((s: Store) => ingest(s));
     app.post('/api/ingest', async (_req, reply) => {
-      if (running) return reply.code(409).send({ error: 'ingest already running', last: lastIngest });
-      lastIngest = { startedAt: now().toISOString() };
-      const current = lastIngest;
-      running = run(store)
-        .then((r) => { current.results = r.results; })
-        .catch((err: Error) => { current.error = err.message; })
-        .finally(() => { current.finishedAt = now().toISOString(); running = null; });
-      return reply.code(202).send({ started: true, startedAt: current.startedAt });
+      if (!startIngest('manual')) return reply.code(409).send({ error: 'ingest already running', last: lastIngest });
+      return reply.code(202).send({ started: true, startedAt: lastIngest!.startedAt });
     });
   }
 

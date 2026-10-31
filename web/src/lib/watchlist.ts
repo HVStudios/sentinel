@@ -94,7 +94,7 @@ export interface WatchStatus {
 }
 
 /** Fetches related items for every watch and works out which are new since each was last checked. */
-export function useWatchData(watches: Watch[]) {
+export function useWatchData(watches: Watch[], dataVersion = '') {
   const [data, setData] = useState<Record<string, { items: RelatedItem[]; error?: string }>>({});
   const ids = watches.map((w) => w.id).join('\n');
 
@@ -111,7 +111,7 @@ export function useWatchData(watches: Watch[]) {
       }),
     ).then((entries) => !ctrl.signal.aborted && setData(Object.fromEntries(entries)));
     return () => ctrl.abort();
-  }, [ids]);
+  }, [ids, dataVersion]);
 
   return useMemo(() => {
     const statuses: WatchStatus[] = watches.map((watch) => {

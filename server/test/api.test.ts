@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import { buildApp } from '../src/api.ts';
 import { Store } from '../src/store.ts';
@@ -137,5 +137,72 @@ describe('HTTP API', () => {
     expect(status.ingest.running).toBe(false);
     expect(status.ingest.last.finishedAt).toBeTruthy();
     await ingestApp.close();
+  });
+});
+
+describe('scheduled refresh', () => {
+  afterEach(() => vi.useRealTimers());
+  const flush = () => new Promise((r) => setImmediate(r));
+
+  it('refreshes on the interval, never overlapping, and reports the schedule', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'], now: new Date('2026-10-31T00:00:00Z') });
+    const store = new Store();
+    seed(store);
+    let release: () => void = () => {};
+    const runIngest = vi.fn(() => new Promise<{ results: [] }>((r) => { release = () => r({ results: [] }); }));
+    const app = buildApp(store, { refreshMinutes: 10, runIngest });
+
+    let status = (await app.inject({ method: 'GET', url: '/api/sources' })).json().ingest;
+    expect(status).toMatchObject({ running: false, refreshMinutes: 10, nextRunAt: '2026-10-31T00:10:00.000Z' });
+    expect(runIngest).not.toHaveBeenCalled(); // data exists, so no immediate run
+
+    vi.advanceTimersByTime(10 * 60_000);
+    expect(runIngest).toHaveBeenCalledTimes(1);
+    status = (await app.inject({ method: 'GET', url: '/api/sources' })).json().ingest;
+    expect(status).toMatchObject({ running: true, last: { trigger: 'scheduled' }, nextRunAt: '2026-10-31T00:20:00.000Z' });
+
+    // Still running at the next tick: skipped rather than started twice.
+    vi.advanceTimersByTime(10 * 60_000);
+    expect(runIngest).toHaveBeenCalledTimes(1);
+    release();
+    await flush();
+    status = (await app.inject({ method: 'GET', url: '/api/sources' })).json().ingest;
+    expect(status.running).toBe(false);
+    expect(status.last.finishedAt).toBe('2026-10-31T00:20:00.000Z');
+
+    vi.advanceTimersByTime(10 * 60_000);
+    expect(runIngest).toHaveBeenCalledTimes(2);
+    await app.close();
+    vi.advanceTimersByTime(60 * 60_000);
+    expect(runIngest).toHaveBeenCalledTimes(2); // timer cleared on close
+  });
+
+  it('refreshes an empty database immediately', async () => {
+    const runIngest = vi.fn(async () => ({ results: [] }));
+    const app = buildApp(new Store(), { refreshMinutes: 60, runIngest });
+    expect(runIngest).toHaveBeenCalledTimes(1);
+    await flush();
+    expect((await app.inject({ method: 'GET', url: '/api/sources' })).json().ingest.last.trigger).toBe('scheduled');
+    await app.close();
+  });
+
+  it('is off by default', async () => {
+    const runIngest = vi.fn(async () => ({ results: [] }));
+    const app = buildApp(new Store(), { runIngest });
+    expect(runIngest).not.toHaveBeenCalled();
+    expect((await app.inject({ method: 'GET', url: '/api/sources' })).json().ingest).toMatchObject({ refreshMinutes: null, nextRunAt: null });
+    await app.close();
+  });
+
+  it('shares single-flight with the manual endpoint', async () => {
+    let release: () => void = () => {};
+    const runIngest = vi.fn(() => new Promise<{ results: [] }>((r) => { release = () => r({ results: [] }); }));
+    const app = buildApp(new Store(), { refreshMinutes: 60, runIngest, allowIngest: true }); // empty DB → already running
+    expect((await app.inject({ method: 'POST', url: '/api/ingest' })).statusCode).toBe(409);
+    release();
+    await flush();
+    expect((await app.inject({ method: 'POST', url: '/api/ingest' })).statusCode).toBe(202);
+    expect((await app.inject({ method: 'GET', url: '/api/sources' })).json().ingest.last.trigger).toBe('manual');
+    await app.close();
   });
 });
