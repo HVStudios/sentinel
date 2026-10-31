@@ -40,7 +40,9 @@ export function parseKev(feed: KevFeed): Batch {
     b.provenance.push({ nodeId: node.id, sourceId: meta.id, sourceUrl: meta.homepage });
   };
 
-  for (const v of feed.vulnerabilities) {
+  for (const raw of feed.vulnerabilities) {
+    // KEV occasionally has stray whitespace in names ("Array Networks ").
+    const v = { ...raw, vendorProject: raw.vendorProject.trim(), product: raw.product.trim() };
     const id = cveNodeId(v.cveID);
     const notes = (v.notes ?? '')
       .split(';')

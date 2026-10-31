@@ -258,8 +258,9 @@ export class Store {
        values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        on conflict (id) do update set
          type = excluded.type,
-         title = case when excluded.title = '' or nodes.type in ('vendor', 'product', 'weakness')
-           then nodes.title else excluded.title end,
+         title = case when excluded.title = '' then nodes.title
+           when nodes.type in ('vendor', 'product', 'weakness') then trim(nodes.title)
+           else excluded.title end,
          summary = coalesce(excluded.summary, nodes.summary),
          url = coalesce(excluded.url, nodes.url),
          category = coalesce(excluded.category, nodes.category),
@@ -322,6 +323,59 @@ export class Store {
        values (?, ?, ?, ?, ?, ?, ?, ?) on conflict (src, dst, rel) do nothing`,
     );
     for (const e of edges) stmt.run(e.src, e.dst, e.rel, e.basis, e.confidence, n(e.rationale), e.sourceId, now);
+  }
+
+  idsWithProvenance(sourceId: string): string[] {
+    return (this.db.prepare('select node_id from provenance where source_id = ?').all(sourceId) as Row[]).map((r) => r.node_id as string);
+  }
+
+  /** Copies a node under a new id and title (no-op if the target exists). Call inside a transaction. */
+  copyNode(fromId: string, toId: string, title: string): void {
+    this.db
+      .prepare(
+        `insert or ignore into nodes (id, type, title, summary, url, category, occurred_at, published_at, updated_at, ingested_at,
+           lat, lon, country, geo_basis, severity, attrs)
+         select ?, type, ?, summary, url, category, occurred_at, published_at, updated_at, ingested_at,
+           lat, lon, country, geo_basis, severity, attrs from nodes where id = ?`,
+      )
+      .run(toId, title, fromId);
+  }
+
+  /**
+   * Folds node `fromId` into `toId`: edges and provenance move over (duplicates and self-loops
+   * dropped), attrs merge with the surviving node's values winning, an optional alias is recorded,
+   * and `fromId` is deleted. Call inside a transaction.
+   */
+  mergeNode(fromId: string, toId: string, opts: { alias?: { id: string; name: string; rule: string } } = {}): void {
+    if (fromId === toId) return;
+    const swap = `case when src = ?1 then ?2 else src end`;
+    const swapDst = `case when dst = ?1 then ?2 else dst end`;
+    this.db
+      .prepare(
+        `insert or ignore into edges (src, dst, rel, basis, confidence, rationale, source_id, observed_at)
+         select ${swap}, ${swapDst}, rel, basis, confidence, rationale, source_id, observed_at
+         from edges where (src = ?1 or dst = ?1) and ${swap} <> ${swapDst}`,
+      )
+      .run(fromId, toId);
+    this.db.prepare('delete from edges where src = ? or dst = ?').run(fromId, fromId);
+    this.db
+      .prepare(
+        `insert or ignore into provenance (node_id, source_id, source_url, fetched_at)
+         select ?, source_id, source_url, fetched_at from provenance where node_id = ?`,
+      )
+      .run(toId, fromId);
+    this.db.prepare('delete from provenance where node_id = ?').run(fromId);
+    const from = this.getNode(fromId);
+    const into = this.getNode(toId);
+    if (from && into) {
+      const aliases = [...((into.attrs.aliases as { id: string }[] | undefined) ?? []), ...((from.attrs.aliases as { id: string }[] | undefined) ?? [])];
+      if (opts.alias && !aliases.some((a) => a.id === opts.alias!.id)) aliases.push(opts.alias);
+      const attrs: Record<string, unknown> = { ...from.attrs, ...into.attrs, ...(aliases.length ? { aliases } : {}) };
+      // Enrichment computed for the duplicate (e.g. a Wikidata lookup of a run-together name) is not carried over.
+      if (!into.attrs.wikidata) delete attrs.wikidata;
+      this.db.prepare('update nodes set attrs = ? where id = ?').run(JSON.stringify(attrs), toId);
+    }
+    this.db.prepare('delete from nodes where id = ?').run(fromId);
   }
 
   getNode(id: string): NodeRow | undefined {

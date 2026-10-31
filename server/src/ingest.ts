@@ -1,6 +1,7 @@
 import type { Store } from './store.ts';
 import { fetchJson, fetchText } from './http.ts';
 import { runInference } from './relate.ts';
+import { mergeDuplicateVendors } from './dedupe.ts';
 import type { IngestContext, SourceModule } from './sources/common.ts';
 import { kevSource } from './sources/kev.ts';
 import { nvdSource } from './sources/nvd.ts';
@@ -49,6 +50,12 @@ export async function ingest(store: Store, opts: IngestOptions = {}): Promise<{ 
     try {
       const { warnings, ...batch } = await source.run(ctx);
       store.writeBatch(batch);
+      // NVD re-creates run-together vendor names on every run; fold them into the KEV-named vendors
+      // right away so later sources (e.g. Wikidata) see one node per company.
+      if (batch.nodes.some((n) => n.type === 'vendor')) {
+        const merged = mergeDuplicateVendors(store);
+        if (merged.vendors) ctx.log(`  merged ${merged.vendors} duplicate vendors (${merged.products} products re-homed)`);
+      }
       const r: IngestResult = { source: source.meta.id, status: 'ok', count: batch.nodes.length, durationMs: Date.now() - started };
       // Partial problems keep the source "ok" but stay visible in its status.
       if (warnings?.length) r.error = warnings.join('; ');

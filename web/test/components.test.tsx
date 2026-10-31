@@ -130,6 +130,16 @@ describe('Investigate (vendors)', () => {
     expect(screen.getByText('inferred · 80%')).toBeTruthy();
   });
 
+  it('lists merged alternative spellings', async () => {
+    vi.stubGlobal('fetch', vi.fn((url: string) => {
+      const node = { ...vendorNode(null), title: 'Palo Alto Networks', attrs: { aliases: [{ id: 'vendor:paloaltonetworks', name: 'Paloaltonetworks', rule: 'exact' }] } };
+      return url.startsWith('/api/nodes/') ? json({ node, provenance: [], edges: [] }) : json({ nodes: [node], edges: [] });
+    }));
+    render(<Investigate id="vendor:palo-alto-networks" onSelect={() => {}} onClose={() => {}} />);
+    expect(await screen.findByText('Paloaltonetworks', { exact: false })).toBeTruthy();
+    expect(screen.getByText(/merged by name \(same name without separators\)/)).toBeTruthy();
+  });
+
   it('explains when a vendor is not placed on the map', async () => {
     show({ status: 'ambiguous', qid: null, label: null, description: null, url: null, hq: null, matchedBy: null, confidence: null, candidates: ['Q1', 'Q2'], checkedAt: 'x' });
     expect(await screen.findByText(/ambiguous \(2 candidates\), so it is not placed on the map/)).toBeTruthy();

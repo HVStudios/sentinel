@@ -46,6 +46,12 @@ describe('CISA KEV parser', () => {
     expect(batch.edges.every((e) => e.basis === 'reported' && e.confidence === 1)).toBe(true);
   });
 
+  it('trims stray whitespace in vendor and product names', () => {
+    const b = parseKev({ catalogVersion: 'x', dateReleased: 'x', vulnerabilities: [{ ...fixture<KevFeed>('kev.json').vulnerabilities[0]!, vendorProject: 'Array Networks ', product: ' AG ' }] });
+    expect(b.nodes.find((n) => n.type === 'vendor')!.title).toBe('Array Networks');
+    expect(b.nodes.find((n) => n.type === 'product')!.title).toBe('Array Networks AG');
+  });
+
   it('extracts URLs from the notes field', () => {
     const ivanti = batch.nodes.find((n) => n.id === 'cve:CVE-2026-111357')!;
     const notes = (ivanti.attrs?.kev as { notes: string[] }).notes;

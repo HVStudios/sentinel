@@ -193,13 +193,17 @@ A few days of notable NVD CVEs (CVSS ≥ 7) pushed other categories out of the c
 - [x] Same behaviour in the static (Pages) build, covered by the parity test
 
 ### SEN-25 · Merge duplicate vendor nodes
-Priority: P1 · Labels: data · Status: todo
+Priority: P1 · Labels: data · Status: done (merged)
 
-KEV names vendors in readable form ("Palo Alto Networks", "D-Link"), while NVD CPE IDs run them
-together ("paloaltonetworks", "dlink"). That creates two vendor nodes for one company. The
-CPE-derived duplicates rarely match on Wikidata, and they split relationships in the graph.
-Add an alias step, e.g. merge when the slug without separators is equal, plus a small
-curated alias table, keeping both names as provenance.
+KEV names vendors readably ("Palo Alto Networks", "D-Link"), while NVD CPE IDs run them together
+("paloaltonetworks", "dlink") or add suffixes ("zohocorp", "sudo_project"), creating two vendor
+nodes for one company.
+
+- [x] Rule 1 (exact): names identical once separators are removed are merged
+- [x] Rule 2 (suffix): names differing only by a trailing legal/descriptive word are merged, only into a single KEV-named vendor; no prefix matching
+- [x] Products move under the surviving vendor; same-named products merge (e.g. "Pan Os" + "PAN-OS")
+- [x] The KEV spelling survives; other spellings are kept in `attrs.aliases` with their rule and shown as "Also known as"
+- [x] Runs after every source that writes vendors, so Wikidata and the graph see one node per company; idempotent
 
 ### SEN-21 · Story clustering over time
 Priority: P2 · Labels: analysis · Status: todo

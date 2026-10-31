@@ -105,6 +105,14 @@ EPSS (for all stored CVEs) → Wikidata vendor HQs → USGS → EONET → curate
 A source may return non-fatal `warnings` (e.g. 2 of 17 feeds failed). The source then stays
 `ok`, and the warnings are stored in `last_error` so the Sources panel shows them.
 
+**Vendor de-duplication** (`dedupe.ts`): after any source that writes vendor nodes, duplicate
+spellings of one company are folded together. Rule 1 merges names that are identical once
+separators are removed (Paloaltonetworks → Palo Alto Networks). Rule 2 merges names that differ
+only by a trailing word such as Inc, Corp, GmbH, Project, Networks or Security, but only into a
+single KEV-named vendor (Zohocorp → Zoho), and never by prefix (Intellian ≠ Intel). Products move
+with their vendor, and same-named products merge. The KEV spelling survives, and the other
+spellings are kept in `attrs.aliases` with the rule that matched.
+
 **Vendor headquarters** (`sources/wikidata.ts`): vendors are looked up on the Wikidata SPARQL
 endpoint by name and a few variants ("Inc.", "Corporation", "Networks", "Systems", "Software").
 Only items with a headquarters (P159) whose English description marks them as a technology
