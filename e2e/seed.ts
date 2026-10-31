@@ -6,7 +6,7 @@ import { Store } from '../server/src/store.ts';
 import { ingest } from '../server/src/ingest.ts';
 import { buildSnapshot } from '../server/src/snapshot.ts';
 import { RateLimiter } from '../server/src/http.ts';
-import { FIXTURE_NOW, fixtureFetchJson, fixtureFetchText } from '../server/test/fixtures/router.ts';
+import { FIXTURE_NOW, fixtureFetchJson, fixtureFetchJsonWithHeaders, fixtureFetchText } from '../server/test/fixtures/router.ts';
 
 const [dbPath, snapshotPath] = process.argv.slice(2);
 if (!dbPath || !snapshotPath) throw new Error('usage: node e2e/seed.ts <db> <snapshot.json>');
@@ -16,7 +16,7 @@ for (const f of [dbPath, `${dbPath}-wal`, `${dbPath}-shm`]) rmSync(f, { force: t
 RateLimiter.prototype.acquire = async () => {};
 
 const store = new Store(dbPath, () => FIXTURE_NOW.toISOString());
-await ingest(store, { ctx: { fetchJson: fixtureFetchJson, fetchText: fixtureFetchText, env: {}, now: () => FIXTURE_NOW, log: () => {} } });
+await ingest(store, { ctx: { fetchJson: fixtureFetchJson, fetchText: fixtureFetchText, fetchJsonWithHeaders: fixtureFetchJsonWithHeaders, env: {}, now: () => FIXTURE_NOW, log: () => {} } });
 const snapshot = buildSnapshot(store, () => FIXTURE_NOW);
 store.close();
 

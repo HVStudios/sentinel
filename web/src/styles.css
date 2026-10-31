@@ -16,6 +16,7 @@
   --c-fire: #ff4d4d;
   --c-storm: #b388ff;
   --c-volcano: #ffd166;
+  --c-flood: #5c9dff;
   --c-vendor: #b392f0;
   --c-product: #8bd5a0;
   --c-weakness: #9aa4b2;
@@ -207,6 +208,7 @@ h3 { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: 
 .facts { display: grid; grid-template-columns: 120px 1fr; gap: 4px 10px; margin: 4px 0 0; font-size: 12.5px; }
 .facts dt { color: var(--muted); }
 .facts dd { margin: 0; word-break: break-word; }
+.pkg-list { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 2px; font-size: 12px; }
 .refs summary { cursor: pointer; color: var(--muted); font-size: 12px; }
 .refs ul { padding-left: 16px; margin: 6px 0; font-size: 12px; word-break: break-all; }
 .inv-section { padding: 12px 14px; border-bottom: 1px solid var(--line); }

@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { HttpError, type fetchJson, type fetchText } from '../../src/http.ts';
+import { HttpError, type fetchJson, type fetchJsonWithHeaders, type fetchText } from '../../src/http.ts';
 
 /** Recorded payloads keyed by host, so the full pipeline can run offline (tests and the e2e seed). */
 export const FIXTURE_NOW = new Date('2026-10-30T20:00:00Z');
@@ -24,6 +24,8 @@ export const fixtureFetchJson = (async (url: string) => {
       return json('hn.json');
     case 'query.wikidata.org':
       return json('wikidata.json');
+    case 'www.gdacs.org':
+      return json('gdacs.json');
     case 'api.gdeltproject.org':
       throw new HttpError(429, 'HTTP 429 from api.gdeltproject.org');
     default:
@@ -34,3 +36,9 @@ export const fixtureFetchJson = (async (url: string) => {
 /** Feeds: the Canadian Cyber Centre's Atom feed for the CCCS entry, BleepingComputer's RSS for every other feed. */
 export const fixtureFetchText = (async (url: string) =>
   read(new URL(url).host.endsWith('cyber.gc.ca') ? 'atom-cccs.xml' : 'rss-bleepingcomputer.xml')) as typeof fetchText;
+
+/** GitHub advisories: one recorded page, no further pages. */
+export const fixtureFetchJsonWithHeaders = (async (url: string) => {
+  if (new URL(url).host !== 'api.github.com') throw new Error(`no fixture for ${url}`);
+  return { body: json('ghsa.json'), headers: new Headers() };
+}) as typeof fetchJsonWithHeaders;

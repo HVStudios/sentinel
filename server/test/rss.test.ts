@@ -86,7 +86,7 @@ describe('feed registry', () => {
 
 describe('news feed source', () => {
   const ctx = (fetchText: IngestContext['fetchText']): IngestContext => ({
-    store: new Store(), fetchJson: vi.fn(), fetchText, env: {}, now: () => NOW, log: () => {},
+    store: new Store(), fetchJson: vi.fn(), fetchText, fetchJsonWithHeaders: vi.fn(), env: {}, now: () => NOW, log: () => {},
   });
 
   it('collects feeds and reports individual failures as warnings', async () => {

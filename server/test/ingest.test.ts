@@ -4,7 +4,7 @@ import { Store } from '../src/store.ts';
 import { fetchJson, RateLimiter } from '../src/http.ts';
 import type { SourceModule } from '../src/sources/common.ts';
 
-import { fixtureFetchJson as fakeFetch, fixtureFetchText as fakeFetchText } from './fixtures/router.ts';
+import { fixtureFetchJson as fakeFetch, fixtureFetchJsonWithHeaders, fixtureFetchText as fakeFetchText } from './fixtures/router.ts';
 
 describe('ingest pipeline', () => {
   it('runs all sources offline, isolates failures and records status', async () => {
@@ -14,7 +14,7 @@ describe('ingest pipeline', () => {
     // Speed up rate limiters: the pipeline must not depend on wall-clock sleeps in tests.
     vi.spyOn(RateLimiter.prototype, 'acquire').mockResolvedValue();
     const { results, inferredEdges } = await ingest(store, {
-      ctx: { fetchJson: fakeFetch, fetchText: fakeFetchText, env: {}, log: (m) => logs.push(m), now: () => new Date('2026-10-30T20:00:00Z') },
+      ctx: { fetchJson: fakeFetch, fetchText: fakeFetchText, fetchJsonWithHeaders: fixtureFetchJsonWithHeaders, env: {}, log: (m) => logs.push(m), now: () => new Date('2026-10-30T20:00:00Z') },
     });
     vi.useRealTimers();
     vi.restoreAllMocks();

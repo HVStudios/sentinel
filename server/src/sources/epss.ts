@@ -37,7 +37,8 @@ export function parseEpss(resp: EpssResponse, known: Set<string>): Batch {
 export const epssSource: SourceModule = {
   meta,
   async run(ctx) {
-    const ids = ctx.store.idsByType('vulnerability');
+    // EPSS scores CVEs only; GitHub-only advisories (ghsa:…) have no CVE.
+    const ids = ctx.store.idsByType('vulnerability').filter((id) => id.startsWith('cve:'));
     const known = new Set(ids);
     const cves = ids.map((id) => id.slice(4));
     const limiter = new RateLimiter(5, 1_000);

@@ -1,0 +1,457 @@
+[
+ {
+  "ghsa_id": "GHSA-4xm8-rg9h-jhq2",
+  "cve_id": null,
+  "url": "https://api.github.com/advisories/GHSA-4xm8-rg9h-jhq2",
+  "html_url": "https://github.com/advisories/GHSA-4xm8-rg9h-jhq2",
+  "summary": "Signal K resources API path traversal can disclose the JWT signing secret and enable remote code execution",
+  "description": "### Summary\n\nPath traversal in the Signal K resources and applicationData APIs lets an\nunauthenticated or low-privileged user read, write and delete files outside\nthe storage root. Reading <config>/security.json discloses the JWT signing\nsecret, enabling admin token forgery and remote code execution",
+  "type": "reviewed",
+  "severity": "critical",
+  "repository_advisory_url": "https://api.github.com/repos/SignalK/signalk-server/security-advisories/GHSA-4xm8-rg9h-jhq2",
+  "source_code_location": "https://github.com/SignalK/signalk-server",
+  "identifiers": [
+   {
+    "value": "GHSA-4xm8-rg9h-jhq2",
+    "type": "GHSA"
+   }
+  ],
+  "references": [
+   "https://github.com/SignalK/signalk-server/security/advisories/GHSA-4xm8-rg9h-jhq2",
+   "https://github.com/SignalK/signalk-server/commit/83689f040d7e90280dddc643f44f3e4ce348fbb1",
+   "https://github.com/SignalK/signalk-server/releases/tag/v2.34.0",
+   "https://github.com/advisories/GHSA-4xm8-rg9h-jhq2"
+  ],
+  "published_at": "2026-10-30T22:57:22Z",
+  "updated_at": "2026-10-30T22:57:23Z",
+  "github_reviewed_at": "2026-10-30T22:57:22Z",
+  "nvd_published_at": null,
+  "withdrawn_at": null,
+  "vulnerabilities": [
+   {
+    "package": {
+     "ecosystem": "npm",
+     "name": "signalk-server"
+    },
+    "vulnerable_version_range": ">= 2.0.0, < 2.34.0",
+    "first_patched_version": "2.34.0",
+    "vulnerable_functions": []
+   },
+   {
+    "package": {
+     "ecosystem": "npm",
+     "name": "@signalk/resources-provider"
+    },
+    "vulnerable_version_range": ">= 1.0.0, < 1.5.3",
+    "first_patched_version": "1.5.3",
+    "vulnerable_functions": []
+   }
+  ],
+  "cvss_severities": {
+   "cvss_v3": {
+    "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+    "score": 9.8
+   },
+   "cvss_v4": {
+    "vector_string": null,
+    "score": 0.0
+   }
+  },
+  "cwes": [
+   {
+    "cwe_id": "CWE-22",
+    "name": "Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')"
+   }
+  ],
+  "comments": 6,
+  "cvss": {
+   "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+   "score": 9.8
+  }
+ },
+ {
+  "ghsa_id": "GHSA-hff9-5pqw-6w9f",
+  "cve_id": null,
+  "url": "https://api.github.com/advisories/GHSA-hff9-5pqw-6w9f",
+  "html_url": "https://github.com/advisories/GHSA-hff9-5pqw-6w9f",
+  "summary": "imgproxy has integer overflow in imgproxy ICO loader that causes denial of service and may permit remote code execution",
+  "description": "## Summary\n\nThe ICO loader allocates `data_size + BMP_FILE_HEADER_LEN` bytes after reading a 32-bit attacker-controlled `data_size`. For `data_size > UINT32_MAX - BMP_FILE_HEADER_LEN`, the addition wraps before allocation. imgproxy then writes the ICO prefix and reads up to the original declared siz",
+  "type": "reviewed",
+  "severity": "critical",
+  "repository_advisory_url": "https://api.github.com/repos/imgproxy/imgproxy/security-advisories/GHSA-hff9-5pqw-6w9f",
+  "source_code_location": "https://github.com/imgproxy/imgproxy",
+  "identifiers": [
+   {
+    "value": "GHSA-hff9-5pqw-6w9f",
+    "type": "GHSA"
+   }
+  ],
+  "references": [
+   "https://github.com/imgproxy/imgproxy/security/advisories/GHSA-hff9-5pqw-6w9f",
+   "https://github.com/imgproxy/imgproxy/commit/a821b6a4cb07a1bf2bb9077431d1c1e734d79917",
+   "https://github.com/imgproxy/imgproxy/releases/tag/v4.0.16",
+   "https://github.com/advisories/GHSA-hff9-5pqw-6w9f"
+  ],
+  "published_at": "2026-10-30T22:57:00Z",
+  "updated_at": "2026-10-30T22:57:03Z",
+  "github_reviewed_at": "2026-10-30T22:57:00Z",
+  "nvd_published_at": null,
+  "withdrawn_at": null,
+  "vulnerabilities": [
+   {
+    "package": {
+     "ecosystem": "go",
+     "name": "github.com/imgproxy/imgproxy/v3"
+    },
+    "vulnerable_version_range": ">= 4.0.0, < 4.0.16",
+    "first_patched_version": "4.0.16",
+    "vulnerable_functions": []
+   },
+   {
+    "package": {
+     "ecosystem": "go",
+     "name": "github.com/imgproxy/imgproxy/v2"
+    },
+    "vulnerable_version_range": ">= 4.0.0, < 4.0.16",
+    "first_patched_version": "4.0.16",
+    "vulnerable_functions": []
+   },
+   {
+    "package": {
+     "ecosystem": "go",
+     "name": "github.com/imgproxy/imgproxy"
+    },
+    "vulnerable_version_range": ">= 4.0.0, < 4.0.16",
+    "first_patched_version": "4.0.16",
+    "vulnerable_functions": []
+   }
+  ],
+  "cvss_severities": {
+   "cvss_v3": {
+    "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+    "score": 9.8
+   },
+   "cvss_v4": {
+    "vector_string": null,
+    "score": 0.0
+   }
+  },
+  "cwes": [
+   {
+    "cwe_id": "CWE-122",
+    "name": "Heap-based Buffer Overflow"
+   },
+   {
+    "cwe_id": "CWE-190",
+    "name": "Integer Overflow or Wraparound"
+   }
+  ],
+  "comments": 9,
+  "cvss": {
+   "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+   "score": 9.8
+  }
+ },
+ {
+  "ghsa_id": "GHSA-5xjx-3w67-w9x9",
+  "cve_id": null,
+  "url": "https://api.github.com/advisories/GHSA-5xjx-3w67-w9x9",
+  "html_url": "https://github.com/advisories/GHSA-5xjx-3w67-w9x9",
+  "summary": "pypi-publish action revocation of CA in the chain that Sigstore uses in Trusted Publishing and Digital Attestations for PyPI",
+  "description": "### Summary\n\nThe [pypi-publish action][pypi-publish] versions before 1.14.2 used to bundle the `emSign` root CA trust store certificate through the `certifi` distribution. It has since been removed through the bundle and the new version no longer includes them.\n\n[pypi-publish]: https://github.com/ma",
+  "type": "reviewed",
+  "severity": "critical",
+  "repository_advisory_url": "https://api.github.com/repos/pypa/gh-action-pypi-publish/security-advisories/GHSA-5xjx-3w67-w9x9",
+  "source_code_location": "https://github.com/pypa/gh-action-pypi-publish",
+  "identifiers": [
+   {
+    "value": "GHSA-5xjx-3w67-w9x9",
+    "type": "GHSA"
+   }
+  ],
+  "references": [
+   "https://github.com/pypa/gh-action-pypi-publish/security/advisories/GHSA-5xjx-3w67-w9x9",
+   "https://github.com/advisories/GHSA-5xjx-3w67-w9x9"
+  ],
+  "published_at": "2026-10-30T20:24:24Z",
+  "updated_at": "2026-10-30T20:24:25Z",
+  "github_reviewed_at": "2026-10-30T20:24:24Z",
+  "nvd_published_at": null,
+  "withdrawn_at": null,
+  "vulnerabilities": [
+   {
+    "package": {
+     "ecosystem": "actions",
+     "name": "pypa/gh-action-pypi-publish"
+    },
+    "vulnerable_version_range": "<= 1.14.2",
+    "first_patched_version": "1.14.3",
+    "vulnerable_functions": []
+   }
+  ],
+  "cvss_severities": {
+   "cvss_v3": {
+    "vector_string": null,
+    "score": 0.0
+   },
+   "cvss_v4": {
+    "vector_string": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N",
+    "score": 9.3
+   }
+  },
+  "cwes": [
+   {
+    "cwe_id": "CWE-295",
+    "name": "Improper Certificate Validation"
+   }
+  ],
+  "comments": 8,
+  "cvss": {
+   "vector_string": null,
+   "score": null
+  }
+ },
+ {
+  "ghsa_id": "GHSA-6jp4-8v48-cc5v",
+  "cve_id": "CVE-2026-117601",
+  "url": "https://api.github.com/advisories/GHSA-6jp4-8v48-cc5v",
+  "html_url": "https://github.com/advisories/GHSA-6jp4-8v48-cc5v",
+  "summary": "Electrum: Malicious server can replace a just-broadcast tx and try to trick user into RBF-ing it",
+  "description": "### Summary\n\nThe main Electrum server the client connects to is trusted with mempool (\"unconfirmed\") transactions. This is documented [design](https://electrum.readthedocs.io/en/latest/faq.html#does-electrum-trust-servers). [0]\n\nHowever now someone figured out a way to practically exploit it:\n- when",
+  "type": "reviewed",
+  "severity": "critical",
+  "repository_advisory_url": "https://api.github.com/repos/spesmilo/electrum/security-advisories/GHSA-6jp4-8v48-cc5v",
+  "source_code_location": "https://github.com/spesmilo/electrum",
+  "identifiers": [
+   {
+    "value": "GHSA-6jp4-8v48-cc5v",
+    "type": "GHSA"
+   },
+   {
+    "value": "CVE-2026-117601",
+    "type": "CVE"
+   }
+  ],
+  "references": [
+   "https://github.com/spesmilo/electrum/security/advisories/GHSA-6jp4-8v48-cc5v",
+   "https://nvd.nist.gov/vuln/detail/CVE-2026-117601",
+   "https://github.com/spesmilo/electrum/commit/90fe30822561e515a9d2d6e5a352cc07780999eb",
+   "https://www.binance.com/en/square/post/381361716824742",
+   "https://www.vulncheck.com/advisories/electrum-before-4.8.3-missing-signature-verification-of-mempool-transactions",
+   "https://github.com/advisories/GHSA-6jp4-8v48-cc5v"
+  ],
+  "published_at": "2026-10-28T21:23:44Z",
+  "updated_at": "2026-10-28T21:23:45Z",
+  "github_reviewed_at": "2026-10-28T21:23:44Z",
+  "nvd_published_at": "2026-10-27T14:16:39Z",
+  "withdrawn_at": null,
+  "vulnerabilities": [
+   {
+    "package": {
+     "ecosystem": "pip",
+     "name": "electrum"
+    },
+    "vulnerable_version_range": "< 4.8.3",
+    "first_patched_version": "4.8.3",
+    "vulnerable_functions": []
+   }
+  ],
+  "cvss_severities": {
+   "cvss_v3": {
+    "vector_string": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:H/A:H",
+    "score": 7.5
+   },
+   "cvss_v4": {
+    "vector_string": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
+    "score": 9.3
+   }
+  },
+  "cwes": [
+   {
+    "cwe_id": "CWE-347",
+    "name": "Improper Verification of Cryptographic Signature"
+   }
+  ],
+  "comments": 1,
+  "cvss": {
+   "vector_string": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:H/A:H",
+   "score": 7.5
+  },
+  "epss": {
+   "percentage": 0.00176,
+   "percentile": 0.0712
+  }
+ },
+ {
+  "ghsa_id": "GHSA-mghf-wjfp-p5xm",
+  "cve_id": "CVE-2026-115893",
+  "url": "https://api.github.com/advisories/GHSA-mghf-wjfp-p5xm",
+  "html_url": "https://github.com/advisories/GHSA-mghf-wjfp-p5xm",
+  "summary": "Wasmtime: Cranelift backend on aarch64 can jump to incorrect target on large Wasm `br_table` instruction",
+  "description": "## Summary\n\nWhen running with the Cranelift compiler backend on an aarch64 target, Wasmtime can compile a Wasm module with more than ~256k targets on one `br_table` instruction in a way that results in an incorrect conditional branch target. This conditional branch could then jump to arbitrary other",
+  "type": "reviewed",
+  "severity": "critical",
+  "repository_advisory_url": "https://api.github.com/repos/bytecodealliance/wasmtime/security-advisories/GHSA-mghf-wjfp-p5xm",
+  "source_code_location": "https://github.com/bytecodealliance/wasmtime",
+  "identifiers": [
+   {
+    "value": "GHSA-mghf-wjfp-p5xm",
+    "type": "GHSA"
+   },
+   {
+    "value": "CVE-2026-115893",
+    "type": "CVE"
+   }
+  ],
+  "references": [
+   "https://github.com/bytecodealliance/wasmtime/security/advisories/GHSA-mghf-wjfp-p5xm",
+   "https://nvd.nist.gov/vuln/detail/CVE-2026-115893",
+   "https://github.com/bytecodealliance/wasmtime/pull/14818",
+   "https://github.com/bytecodealliance/wasmtime/pull/14819",
+   "https://github.com/bytecodealliance/wasmtime/pull/14820",
+   "https://github.com/bytecodealliance/wasmtime/pull/14826",
+   "https://github.com/bytecodealliance/wasmtime/commit/222ff3a65dab9aa7011f8c246937751a0bac5abd",
+   "https://github.com/bytecodealliance/wasmtime/commit/994549891c8a706cb4f2809f9d17b9f67b31e618",
+   "https://github.com/bytecodealliance/wasmtime/commit/e61df1b454be9313d61a5f8de07722a421139bbe",
+   "https://github.com/bytecodealliance/wasmtime/commit/f517bd6e890c7c1291ab9fe05d8cc0c9f11e56aa",
+   "https://github.com/bytecodealliance/wasmtime/releases/tag/v36.0.19",
+   "https://github.com/bytecodealliance/wasmtime/releases/tag/v48.0.7",
+   "https://github.com/bytecodealliance/wasmtime/releases/tag/v49.0.4",
+   "https://rustsec.org/advisories/RUSTSEC-2026-0379.html",
+   "https://github.com/advisories/GHSA-mghf-wjfp-p5xm"
+  ],
+  "published_at": "2026-10-28T21:14:14Z",
+  "updated_at": "2026-10-28T21:14:15Z",
+  "github_reviewed_at": "2026-10-28T21:14:14Z",
+  "nvd_published_at": "2026-10-23T22:16:58Z",
+  "withdrawn_at": null,
+  "vulnerabilities": [
+   {
+    "package": {
+     "ecosystem": "rust",
+     "name": "wasmtime"
+    },
+    "vulnerable_version_range": "< 36.0.19",
+    "first_patched_version": "36.0.19",
+    "vulnerable_functions": []
+   },
+   {
+    "package": {
+     "ecosystem": "rust",
+     "name": "wasmtime"
+    },
+    "vulnerable_version_range": ">= 37.0.0, < 48.0.7",
+    "first_patched_version": "48.0.7",
+    "vulnerable_functions": []
+   },
+   {
+    "package": {
+     "ecosystem": "rust",
+     "name": "wasmtime"
+    },
+    "vulnerable_version_range": ">= 49.0.0, < 49.0.4",
+    "first_patched_version": "49.0.4",
+    "vulnerable_functions": []
+   }
+  ],
+  "cvss_severities": {
+   "cvss_v3": {
+    "vector_string": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H",
+    "score": 9.9
+   },
+   "cvss_v4": {
+    "vector_string": null,
+    "score": 0.0
+   }
+  },
+  "cwes": [
+   {
+    "cwe_id": "CWE-691",
+    "name": "Insufficient Control Flow Management"
+   }
+  ],
+  "comments": 7,
+  "cvss": {
+   "vector_string": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H",
+   "score": 9.9
+  },
+  "epss": {
+   "percentage": 0.0099,
+   "percentile": 0.62391
+  }
+ },
+ {
+  "ghsa_id": "GHSA-m665-v7pm-7grj",
+  "cve_id": "CVE-2026-115905",
+  "url": "https://api.github.com/advisories/GHSA-m665-v7pm-7grj",
+  "html_url": "https://github.com/advisories/GHSA-m665-v7pm-7grj",
+  "summary": "zip: Critical Parser Differential & Security Control Bypass via Dual-Header Inconsistencies (Zip Cloaking) Leading to Arbitrary File Overwrite & RCE",
+  "description": "## Summary\nA critical architectural parser differential exists in the `zip` crate (`<= 9.0.4`) between random-access archive readers (`ZipArchive`) and streaming readers (`ZipStreamReader`). `ZipArchive` considers the Central Directory File Header (CDFH) authoritative and ignores the filename declar",
+  "type": "reviewed",
+  "severity": "critical",
+  "repository_advisory_url": "https://api.github.com/repos/zip-rs/zip2/security-advisories/GHSA-m665-v7pm-7grj",
+  "source_code_location": "https://github.com/zip-rs/zip2",
+  "identifiers": [
+   {
+    "value": "GHSA-m665-v7pm-7grj",
+    "type": "GHSA"
+   },
+   {
+    "value": "CVE-2026-115905",
+    "type": "CVE"
+   }
+  ],
+  "references": [
+   "https://github.com/zip-rs/zip2/security/advisories/GHSA-m665-v7pm-7grj",
+   "https://nvd.nist.gov/vuln/detail/CVE-2026-115905",
+   "https://github.com/zip-rs/zip2/commit/8068ab480ccf8daa7411424e365fcdbe6d09443e",
+   "https://github.com/zip-rs/zip2/releases/tag/v9.0.5",
+   "https://github.com/advisories/GHSA-m665-v7pm-7grj"
+  ],
+  "published_at": "2026-10-28T21:09:50Z",
+  "updated_at": "2026-10-28T21:09:53Z",
+  "github_reviewed_at": "2026-10-28T21:09:50Z",
+  "nvd_published_at": "2026-10-26T17:17:17Z",
+  "withdrawn_at": null,
+  "vulnerabilities": [
+   {
+    "package": {
+     "ecosystem": "rust",
+     "name": "zip"
+    },
+    "vulnerable_version_range": "<= 9.0.4",
+    "first_patched_version": "9.0.5",
+    "vulnerable_functions": []
+   }
+  ],
+  "cvss_severities": {
+   "cvss_v3": {
+    "vector_string": null,
+    "score": 0.0
+   },
+   "cvss_v4": {
+    "vector_string": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:L",
+    "score": 10.0
+   }
+  },
+  "cwes": [
+   {
+    "cwe_id": "CWE-20",
+    "name": "Improper Input Validation"
+   },
+   {
+    "cwe_id": "CWE-436",
+    "name": "Interpretation Conflict"
+   }
+  ],
+  "comments": 39,
+  "cvss": {
+   "vector_string": null,
+   "score": null
+  },
+  "epss": {
+   "percentage": 0.0032,
+   "percentile": 0.24843
+  }
+ }
+]

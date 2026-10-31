@@ -1,12 +1,13 @@
 import { createHash } from 'node:crypto';
 import type { Batch, SourceMeta } from '../types.ts';
 import type { Store } from '../store.ts';
-import type { fetchJson, fetchText } from '../http.ts';
+import type { fetchJson, fetchJsonWithHeaders, fetchText } from '../http.ts';
 
 export interface IngestContext {
   store: Store;
   fetchJson: typeof fetchJson;
   fetchText: typeof fetchText;
+  fetchJsonWithHeaders: typeof fetchJsonWithHeaders;
   env: Record<string, string | undefined>;
   now: () => Date;
   log: (msg: string) => void;

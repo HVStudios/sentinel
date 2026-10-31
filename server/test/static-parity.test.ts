@@ -7,7 +7,7 @@ import { indexSnapshot, queryFeed, queryGraph, queryMap, queryNode, queryTimelin
 import type { TimedType } from '../../web/src/api.ts';
 import { vi } from 'vitest';
 
-import { fixtureFetchJson as fakeFetch, fixtureFetchText } from './fixtures/router.ts';
+import { fixtureFetchJson as fakeFetch, fixtureFetchJsonWithHeaders, fixtureFetchText } from './fixtures/router.ts';
 
 /** The static (GitHub Pages) engine must answer exactly like the SQL-backed server. */
 describe('static snapshot engine parity', () => {
@@ -16,7 +16,7 @@ describe('static snapshot engine parity', () => {
 
   beforeAll(async () => {
     vi.spyOn(RateLimiter.prototype, 'acquire').mockResolvedValue();
-    await ingest(store, { ctx: { fetchJson: fakeFetch, fetchText: fixtureFetchText, env: {}, log: () => {}, now: () => new Date('2026-10-30T20:00:00Z') } });
+    await ingest(store, { ctx: { fetchJson: fakeFetch, fetchText: fixtureFetchText, fetchJsonWithHeaders: fixtureFetchJsonWithHeaders, env: {}, log: () => {}, now: () => new Date('2026-10-30T20:00:00Z') } });
     vi.restoreAllMocks();
     // Round-trip through JSON exactly like the deployed snapshot file.
     ix = indexSnapshot(JSON.parse(JSON.stringify(buildSnapshot(store))) as Snapshot);

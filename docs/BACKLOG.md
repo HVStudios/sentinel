@@ -159,9 +159,12 @@ Priority: P1 · Labels: testing · Status: done (merged)
 - [x] CI job with report artifact on failure
 
 ### SEN-18 · Additional sources
-Priority: P1 · Labels: ingestion · Status: todo
+Priority: P1 · Labels: ingestion · Status: done (merged)
 
-CISA cybersecurity advisories (RSS), GDACS disaster alerts, GitHub Security Advisories.
+- [x] CISA cybersecurity advisories (delivered with the curated feeds in SEN-22)
+- [x] GDACS disaster alerts: Orange/Red of all types + Green cyclones/volcanoes; enrich matching USGS quakes and EONET storms instead of duplicating; centroids labelled; multi-country events not reduced to a point
+- [x] GitHub Security Advisories: reviewed high/critical, CVE enrichment or `ghsa:` nodes, package nodes with version ranges and fixes, GHSA-ID mention inference
+- [x] EPSS skips non-CVE advisories; e2e coverage for both sources
 
 ### SEN-19 · Watchlists and saved investigations
 Priority: P1 · Labels: frontend, backend · Status: todo
