@@ -22,7 +22,7 @@ A single repository with two npm workspaces:
 | Path | Purpose |
 |---|---|
 | `server/` | Ingestion, storage, relationship inference, HTTP API. Runs TypeScript directly with Node 24's built-in type stripping, so it needs no build step. |
-| `web/` | Single-page app built by Vite. During development Vite proxies `/api` to the server. In production the server serves `web/dist`. |
+| `web/` | Single-page app built by Vite. During development Vite proxies `/api` to the server. In production the server serves `web/dist` through a small built-in handler (`server/src/staticFiles.ts`: GET/HEAD only, no traversal, dotfiles or symlinks out of the root). |
 | `docs/` | Product, architecture, backlog. |
 
 ## Technology choices
