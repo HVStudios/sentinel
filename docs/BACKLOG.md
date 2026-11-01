@@ -129,14 +129,14 @@ the same queries client-side from that snapshot. The result is deployed to GitHu
 ## P1 — Next
 
 ### SEN-15 · Scheduled refresh and ingest status panel
-Priority: P1 · Labels: backend, frontend · Status: in-progress
+Priority: P1 · Labels: backend, frontend · Status: done (merged)
 
 Optional in-process interval refresh (`SENTINEL_REFRESH_MINUTES`) and a UI panel showing
 last run, counts and errors per source.
 
 - [x] Sources panel with last run, status, count and error; manual "Refresh all sources" (feature/sen-05-web)
-- [ ] Interval refresh via `SENTINEL_REFRESH_MINUTES`
-- [ ] Poll ingest status while running and refresh map and feed when it finishes
+- [x] Interval refresh via `SENTINEL_REFRESH_MINUTES` (empty database refreshed at startup; single-flight shared with manual refresh)
+- [x] Poll ingest status while running and refresh map and feed when it finishes (all views reload; static build never polls)
 
 ### SEN-16 · Vendor headquarters geography (Wikidata, attributed)
 Priority: P1 · Labels: geo, data · Status: done (merged)

@@ -9,6 +9,13 @@ export function SourcesPanel({ onClose }: { onClose: () => void }) {
   const { data, error } = useFetch((s) => api.sources(s), String(tick));
   const dialogRef = useRef<HTMLDivElement>(null);
 
+  // Follow a running refresh: re-read the status every 2 seconds until it finishes.
+  useEffect(() => {
+    if (!data?.ingest.running) return;
+    const t = setTimeout(() => setTick((n) => n + 1), 2_000);
+    return () => clearTimeout(t);
+  }, [data]);
+
   // Modal behaviour: focus moves in, Tab stays inside, Escape closes, focus returns to the opener.
   useEffect(() => {
     const opener = document.activeElement as HTMLElement | null;
@@ -95,6 +102,12 @@ export function SourcesPanel({ onClose }: { onClose: () => void }) {
             </span>
           ) : (
             <>
+              <span className="muted small refresh-schedule">
+                {data?.ingest.refreshMinutes
+                  ? `Automatic refresh every ${data.ingest.refreshMinutes} min${data.ingest.nextRunAt ? `; next ${relativeTime(data.ingest.nextRunAt)}` : ''}.`
+                  : 'Automatic refresh is off (set SENTINEL_REFRESH_MINUTES to enable it).'}
+                {data?.ingest.running && data.ingest.last && ` Refreshing since ${relativeTime(data.ingest.last.startedAt)}…`}
+              </span>
               <button onClick={refresh} disabled={data?.ingest.running}>
                 {data?.ingest.running ? 'Refreshing…' : 'Refresh all sources'}
               </button>

@@ -11,6 +11,7 @@ import { SourcesPanel } from './components/SourcesPanel.tsx';
 import { StoriesList } from './components/StoriesList.tsx';
 import { WatchlistView } from './components/WatchlistView.tsx';
 import { useWatchData, useWatchlist } from './lib/watchlist.ts';
+import { useDataVersion } from './lib/useDataVersion.ts';
 
 export const PRESETS = [
   { id: '24h', label: '24h', ms: 86_400_000 },
@@ -45,8 +46,10 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
   const [sort, setSort] = useState<FeedSort>('mixed');
   const [showVendors, setShowVendors] = useState(true);
   const [view, setView] = useState<'feed' | 'stories' | 'watchlist'>('feed');
+  // Live mode: reload data whenever a server-side refresh (manual or scheduled) finishes.
+  const data = useDataVersion(api);
   const watchlist = useWatchlist(now);
-  const watchData = useWatchData(watchlist.watches);
+  const watchData = useWatchData(watchlist.watches, data.version);
   // Recomputed when the preset changes, so the window slides forward on re-selection.
   const [anchor, setAnchor] = useState(() => now().getTime());
 
@@ -70,19 +73,19 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
   }, [preset, anchor]);
 
   const filters: Filters = { ...(brush ?? windowRange), types, q: q || undefined };
-  const fkey = JSON.stringify(filters);
+  const fkey = JSON.stringify([filters, data.version]);
 
   const map = useFetch((s) => api.map(filters, s), fkey);
   const timeline = useFetch(
     (s) => api.timeline({ ...windowRange, types, q: undefined }, 72, s),
-    JSON.stringify([windowRange, types]),
+    JSON.stringify([windowRange, types, data.version]),
   );
 
   const [pages, setPages] = useState<{ key: string; items: SNode[]; cursor: string | null }>({ key: '', items: [], cursor: null });
   const [cursor, setCursor] = useState<string | undefined>(undefined);
   // Sorting only affects the feed, so the map and timeline do not refetch when it changes.
   const feedFilters: Filters = { ...filters, sort };
-  const feedKey = JSON.stringify(feedFilters);
+  const feedKey = JSON.stringify([feedFilters, data.version]);
   const feed = useFetch((s) => api.feed(feedFilters, cursor, s), `${feedKey}|${cursor ?? ''}`);
   useEffect(() => setCursor(undefined), [feedKey]);
   useEffect(() => {
@@ -126,7 +129,7 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
     setTypes((cur) => (cur.includes(t) ? (cur.length > 1 ? cur.filter((x) => x !== t) : cur) : [...cur, t]));
 
   const storyWindow = brush ?? windowRange;
-  const stories = useFetch((s) => api.stories(storyWindow, s), view === 'stories' ? JSON.stringify(storyWindow) : null);
+  const stories = useFetch((s) => api.stories(storyWindow, s), view === 'stories' ? JSON.stringify([storyWindow, data.version]) : null);
 
   const snapshot = useFetch((s) => api.sources(s), api.mode === 'static' ? 'snapshot' : null);
 
@@ -186,6 +189,7 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
         </div>
         <button className="ghost" onClick={() => setShowSources(true)}>
           Sources
+          {data.running && <span className="refreshing-tag">refreshing…</span>}
           {snapshot.data?.generatedAt && (
             <span className="snapshot-tag" title={`Static snapshot generated ${snapshot.data.generatedAt}`}>
               snapshot · {relativeTime(snapshot.data.generatedAt)}

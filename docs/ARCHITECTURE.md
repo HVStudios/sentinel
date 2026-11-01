@@ -218,7 +218,7 @@ and the parity test covers all three orderings.
 | `GET /api/stories?from&to&limit` | Stories active in the window, most recent first. |
 | `GET /api/related/:id?limit` | Timed items related to a watched node, each with `via` (the link that relates it). |
 | `GET /api/sources` | Source metadata and last-run status. |
-| `POST /api/ingest` | Triggers a refresh (single-flight). Only bound when the server listens on localhost. |
+| `POST /api/ingest` | Triggers a refresh (single-flight, shared with the scheduled refresh). Only bound when the server listens on localhost. |
 
 ## Testing strategy
 
@@ -252,9 +252,20 @@ runs tests, ingests live data, exports, builds with `VITE_BASE=/<repo>/`, and de
 `actions/deploy-pages`. Routing uses `#/node/<id>` hashes, so deep links work without
 server rewrites. An optional `NVD_API_KEY` repository secret speeds up the NVD step.
 
+## Refresh
+
+- **Live server**: `SENTINEL_REFRESH_MINUTES` starts an in-process timer (an empty database is
+  refreshed immediately). Manual (`POST /api/ingest`) and scheduled refreshes share one
+  single-flight runner, so they never overlap. `GET /api/sources` reports `running`, the last run
+  (with its trigger), `refreshMinutes` and `nextRunAt`.
+- **Browser**: `useDataVersion` polls the status every 60 s, or every 2 s while a refresh runs.
+  When a refresh finishes, every data request key changes and the map, timeline, feed, stories
+  and watchlist reload. The static build never polls.
+- **GitHub Pages**: the scheduled workflow rebuilds the snapshot every 6 hours.
+
 ## Operational notes
 
 - Config via env: `PORT` (default 8787), `HOST` (default 127.0.0.1),
   `SENTINEL_DB` (default `data/sentinel.db`), `NVD_API_KEY` (optional),
-  `NVD_RECENT_DAYS` (default 3).
+  `NVD_RECENT_DAYS` (default 3), `SENTINEL_REFRESH_MINUTES` (default off).
 - The server binds to `127.0.0.1` by default. Nothing is deployed publicly.
