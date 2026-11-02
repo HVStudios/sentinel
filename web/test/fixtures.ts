@@ -28,7 +28,7 @@ export const kevCve = node({
     cveId: 'CVE-2026-111357',
     kev: { dateAdded: '2026-10-30', dueDate: '2026-11-02', ransomware: 'Known', requiredAction: 'Apply mitigations.' },
     cvss: { score: 7, version: '3.1', severity: 'HIGH', vector: 'CVSS:3.1/AV:L', source: 'cve@mitre.org' },
-    epss: { score: 0.00316, percentile: 0.2457, date: '2026-10-30' },
+    epss: { score: 0.00316, percentile: 0.2457, date: '2026-10-30', history: [['2026-10-24', 0.0012], ['2026-10-30', 0.00316]] },
   },
 });
 
