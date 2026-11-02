@@ -94,6 +94,13 @@ export function SourcesPanel({ onClose }: { onClose: () => void }) {
             ))}
           </tbody>
         </table>
+        {data?.retention && (
+          <p className="muted small retention-note">
+            Items expire to keep the data current and the page fast: news after {data.retention.article} days, world events after{' '}
+            {data.retention.natural_event} days, and new CVEs that are not known to be exploited after {data.retention.vulnerability} days.
+            Entries in CISA&apos;s Known Exploited Vulnerabilities catalogue are kept.
+          </p>
+        )}
         <div className="modal-foot">
           {api.mode === 'static' ? (
             <span className="muted small">

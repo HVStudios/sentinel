@@ -355,6 +355,36 @@ export class Store {
     for (const e of edges) stmt.run(e.src, e.dst, e.rel, e.basis, e.confidence, n(e.rationale), e.sourceId, now);
   }
 
+  /** Deletes nodes with their edges and provenance. Call inside a transaction. */
+  deleteNodesInTransaction(ids: string[]): void {
+    const edges = this.db.prepare('delete from edges where src = ? or dst = ?');
+    const prov = this.db.prepare('delete from provenance where node_id = ?');
+    const node = this.db.prepare('delete from nodes where id = ?');
+    for (const id of ids) {
+      edges.run(id, id);
+      prov.run(id);
+      node.run(id);
+    }
+  }
+
+  /**
+   * Removes reference nodes nothing refers to any more: weaknesses and vendors without edges, and
+   * products whose only remaining edge is `made_by` (no vulnerability affects them). Repeats until
+   * stable, so a vendor goes once its last product has gone. Call inside a transaction.
+   */
+  deleteOrphanReferenceNodesInTransaction(): number {
+    const orphans = `(type in ('vendor', 'weakness') and not exists (select 1 from edges e where e.src = nodes.id or e.dst = nodes.id))
+      or (type = 'product' and not exists (select 1 from edges e where (e.src = nodes.id or e.dst = nodes.id) and e.rel <> 'made_by'))`;
+    const select = this.db.prepare(`select id from nodes where ${orphans}`);
+    let total = 0;
+    for (;;) {
+      const ids = (select.all() as Row[]).map((r) => r.id as string);
+      if (!ids.length) return total;
+      this.deleteNodesInTransaction(ids);
+      total += ids.length;
+    }
+  }
+
   idsWithProvenance(sourceId: string): string[] {
     return (this.db.prepare('select node_id from provenance where source_id = ?').all(sourceId) as Row[]).map((r) => r.node_id as string);
   }

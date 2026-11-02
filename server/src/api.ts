@@ -3,6 +3,7 @@ import { FEED_SORTS, type FeedSort, type Store } from './store.ts';
 import { TIMED_TYPES, type NodeType } from './types.ts';
 import { ingest, type IngestResult } from './ingest.ts';
 import { VERSION } from './version.ts';
+import { RETENTION_DAYS } from './retention.ts';
 
 export interface AppOptions {
   /** Enables POST /api/ingest. Only turned on when the server is bound to loopback. */
@@ -189,6 +190,7 @@ export function buildApp(store: Store, opts: AppOptions = {}): FastifyInstance {
   app.get('/api/sources', async () => ({
     sources: store.sources(),
     ingest: { running: Boolean(running), last: lastIngest, refreshMinutes: opts.refreshMinutes || null, nextRunAt },
+    retention: RETENTION_DAYS,
   }));
 
   if (opts.allowIngest) {

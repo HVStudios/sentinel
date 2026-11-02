@@ -279,7 +279,9 @@ function DetailBody({ d, headingRef }: { d: NodeDetail; headingRef: React.RefObj
       </dl>
       {a.nvd?.references?.length > 0 && (
         <details className="refs">
-          <summary>References ({a.nvd.references.length})</summary>
+          <summary>
+            References ({a.nvd.referenceCount ? `${a.nvd.references.length} of ${a.nvd.referenceCount}; all on NVD` : a.nvd.references.length})
+          </summary>
           <ul>
             {a.nvd.references.map((r: { url: string; tags: string[] }) => (
               <li key={r.url}>

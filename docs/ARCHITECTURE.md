@@ -233,6 +233,15 @@ and the parity test covers all three orderings.
   on the map and graph, focus return, modal focus trap) and phone-width layout checks.
 - **No network in tests**. Live fetching is exercised only by `npm run ingest`.
 
+## Retention
+
+The database persists between runs, so `retention.ts` expires items after every ingest:
+articles after 90 days, world events after 180 days, and vulnerabilities not in CISA KEV after
+14 days (NVD adds about 250 notable CVEs a day). KEV entries are kept indefinitely. Products,
+vendors and weaknesses with nothing left pointing at them are removed in cascade. Stories and
+inferred edges are rebuilt afterwards. The windows are published in `/api/sources` and in the
+snapshot, and the Sources panel shows them.
+
 ## Static deployment (GitHub Pages)
 
 The web app has two data back-ends behind one `Api` interface (`web/src/api.ts`):
@@ -241,8 +250,12 @@ The web app has two data back-ends behind one `Api` interface (`web/src/api.ts`)
 - **static** (`VITE_STATIC=1`): downloads `snapshot.json` once and answers feed, map, timeline,
   node and graph queries in the browser (`web/src/staticApi.ts`).
 
-`npm run export` writes the snapshot from the SQLite store (`server/src/snapshot.ts`), about
-11 MB raw and about 1 MB gzipped. `server/test/static-parity.test.ts` runs the full offline
+`npm run export` writes the snapshot from the SQLite store (`server/src/snapshot.ts`). Format 2
+is compact: edges and provenance are tuples, null fields and URLs equal to a source's homepage
+are omitted, NVD reference lists are cut to five (the count is kept), and KEV descriptions
+identical to the summary are not repeated. The browser expands it back (`expandSnapshot`), and
+format 1 is still readable. The export warns, as a GitHub Actions annotation, above a 12 MB
+budget. `server/test/static-parity.test.ts` runs the full offline
 ingest, round-trips the snapshot through JSON, and asserts the static engine returns exactly
 what the SQL queries return (paging cursors, map aggregates, timeline buckets, graph
 truncation).

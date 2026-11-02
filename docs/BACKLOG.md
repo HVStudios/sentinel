@@ -126,6 +126,70 @@ the same queries client-side from that snapshot. The result is deployed to GitHu
 - [x] UI shows snapshot time and hides the refresh action in static mode
 - [x] Pages enabled; live at https://hvstudios.github.io/sentinel/
 
+## Next (after the first release)
+
+### SEN-26 · Data retention and snapshot size budget
+Priority: P1 · Labels: data, performance · Status: done (merged)
+
+Since the Pages workflow keeps its database between runs, nothing expires. The live snapshot grew
+from 11.4 MB to 14.1 MB in two days (873 vulnerabilities in October, articles nearly doubled), and
+every visitor downloads all of it. Add a retention policy and slim the exported snapshot without
+losing what the UI shows.
+
+- [x] Retention: articles, events and non-KEV vulnerabilities expire after a window; KEV entries are kept; orphaned products, vendors and weaknesses are removed
+- [x] Compact snapshot format (edges, provenance) expanded by the static engine; parity unchanged
+- [x] Trim duplicated or bulky detail (repeated source URLs, duplicate KEV descriptions, long reference lists) in the export only
+- [x] Export reports its size and warns in CI above a budget
+- [x] Retention windows published in `/api/sources` and the snapshot, shown in the Sources panel
+
+### SEN-27 · Shareable view state in the URL
+Priority: P1 · Labels: frontend · Status: todo
+
+Only the open item is in the URL (`#/node/…`). Encode the time window, categories, search, feed
+order and side-panel view as well, so a link reproduces exactly what you see, and so the browser
+back button works for filter changes.
+
+### SEN-28 · Trends view from accumulated history
+Priority: P2 · Labels: frontend, analysis · Status: todo
+
+With history retained, show trends: KEV additions per week, most-affected vendors and products
+over 30/90 days, and event counts by category. Keep the rules transparent and label every chart
+with its source data.
+
+### SEN-29 · More national CERT feeds with publisher country
+Priority: P2 · Labels: ingestion, geo · Status: todo
+
+Publisher-country shading currently covers about six countries. Evaluate official advisory feeds
+from more agencies (e.g. JPCERT/CC, CERT-In, BSI, NCSC-NL, CSA Singapore), adding only those with a
+working feed and a verifiable publisher.
+
+### SEN-30 · GDACS affected-country layer
+Priority: P2 · Labels: geo, frontend · Status: todo
+
+GDACS reports the countries an event affects. Offer an optional map layer that shades those
+countries, labelled as "affected countries reported by GDACS". It must be visually distinct from
+publisher-country shading, and is especially useful for droughts that have no single point.
+
+### SEN-31 · Watchlist export and import
+Priority: P2 · Labels: frontend · Status: todo
+
+Watchlists live in one browser. Add export/import as a small JSON file (validated, merged without
+duplicates) so they can move between browsers and devices without accounts.
+
+### SEN-32 · EPSS history per CVE
+Priority: P2 · Labels: data, frontend · Status: todo
+
+EPSS changes daily but only the latest score is kept. Store a compact score history and show a
+sparkline with the date range in the investigation panel, so rising exploitation likelihood is
+visible.
+
+### SEN-33 · Source health history
+Priority: P3 · Labels: backend, frontend · Status: todo
+
+The Sources panel shows only the last run. Keep a short run history per source (status, count,
+duration) and show success rate and trends, which makes intermittent problems such as GDELT's
+rate limiting visible over time.
+
 ## P1 — Next
 
 ### SEN-15 · Scheduled refresh and ingest status panel

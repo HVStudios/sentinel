@@ -136,6 +136,7 @@ test('lists sources with mode-appropriate actions', async ({ page }, info) => {
   const dialog = page.getByRole('dialog', { name: 'Data sources' });
   await expect(dialog.getByRole('link', { name: 'CISA Known Exploited Vulnerabilities' })).toBeVisible();
   await expect(dialog.getByRole('link', { name: 'Wikidata (vendor headquarters)' })).toBeVisible();
+  await expect(dialog.getByText(/new CVEs that are not known to be exploited after 14 days/)).toBeVisible();
   // The fixture router answers GDELT with HTTP 429, which must be visible, not hidden.
   await expect(dialog.getByText('HTTP 429', { exact: false }).first()).toBeVisible();
   if (info.project.name === 'static') {

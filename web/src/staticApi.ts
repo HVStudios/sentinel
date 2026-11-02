@@ -4,27 +4,54 @@ import type { Api, Filters, SourcesResponse } from './api.ts';
 import { relatedItems } from '../../shared/related.ts';
 
 /** Mirrors server/src/snapshot.ts. */
+type Provenance = { nodeId: string; sourceId: string; sourceUrl: string | null; fetchedAt: string };
+/** [src, dst, rel, 'r' | 'i', confidence, rationale | null, sourceId] (format 2) */
+type CompactEdge = [string, string, string, 'r' | 'i', number, string | null, string];
+/** [nodeId, sourceId, sourceUrl | null, fetchedAt] (format 2) */
+type CompactProvenance = [string, string, string | null, string];
+
+/** Mirrors server/src/snapshot.ts. Format 2 is compact (tuples, nulls omitted); format 1 is plain. */
 export interface Snapshot {
   format: number;
   version: string;
   generatedAt: string;
+  retention?: { article: number; natural_event: number; vulnerability: number };
   sources: SourceStatus[];
-  nodes: SNode[];
-  edges: SEdge[];
-  provenance: { nodeId: string; sourceId: string; sourceUrl: string | null; fetchedAt: string }[];
+  nodes: Partial<SNode>[];
+  edges: (SEdge | CompactEdge)[];
+  provenance: (Provenance | CompactProvenance)[];
+}
+
+const NODE_DEFAULTS = {
+  summary: null, url: null, category: null, occurredAt: null, publishedAt: null, updatedAt: null,
+  lat: null, lon: null, country: null, geoBasis: null, severity: null, attrs: {},
+} as const;
+
+/** Expands either snapshot format into the plain shapes the queries use. */
+export function expandSnapshot(snap: Snapshot): { nodes: SNode[]; edges: SEdge[]; provenance: Provenance[] } {
+  return {
+    nodes: snap.nodes.map((n) => ({ ...NODE_DEFAULTS, ...n }) as SNode),
+    edges: snap.edges.map((e) =>
+      Array.isArray(e)
+        ? { src: e[0], dst: e[1], rel: e[2], basis: e[3] === 'r' ? 'reported' : 'inferred', confidence: e[4], rationale: e[5], sourceId: e[6], observedAt: '' }
+        : e,
+    ),
+    provenance: snap.provenance.map((p) => (Array.isArray(p) ? { nodeId: p[0], sourceId: p[1], sourceUrl: p[2], fetchedAt: p[3] } : p)),
+  };
 }
 
 interface Index {
-  snap: Snapshot;
+  snap: Omit<Snapshot, 'nodes' | 'edges' | 'provenance'> & ReturnType<typeof expandSnapshot>;
   byId: Map<string, SNode>;
   /** Timed nodes sorted newest first, ties by id descending (same order as the server). */
   timed: SNode[];
   adj: Map<string, SEdge[]>;
-  prov: Map<string, Snapshot['provenance']>;
+  prov: Map<string, Provenance[]>;
   sources: Map<string, SourceStatus>;
 }
 
-export function indexSnapshot(snap: Snapshot): Index {
+export function indexSnapshot(raw: Snapshot): Index {
+  const snap = { ...raw, ...expandSnapshot(raw) };
   const byId = new Map(snap.nodes.map((n) => [n.id, n]));
   const timed = snap.nodes
     .filter((n) => (TIMED_TYPES as string[]).includes(n.type) && n.occurredAt)
@@ -33,7 +60,7 @@ export function indexSnapshot(snap: Snapshot): Index {
   for (const e of snap.edges) {
     for (const id of [e.src, e.dst]) adj.set(id, [...(adj.get(id) ?? []), e]);
   }
-  const prov = new Map<string, Snapshot['provenance']>();
+  const prov = new Map<string, Provenance[]>();
   for (const p of snap.provenance) prov.set(p.nodeId, [...(prov.get(p.nodeId) ?? []), p]);
   return { snap, byId, timed, adj, prov, sources: new Map(snap.sources.map((s) => [s.id, s])) };
 }
@@ -259,7 +286,7 @@ export function createStaticApi(load: () => Promise<Snapshot>): Api {
     graph: async (id, depth) => queryGraph(await ix(), id, depth),
     sources: async (): Promise<SourcesResponse> => {
       const { snap } = await ix();
-      return { sources: snap.sources, ingest: { running: false, last: null }, generatedAt: snap.generatedAt };
+      return { sources: snap.sources, ingest: { running: false, last: null }, generatedAt: snap.generatedAt, retention: snap.retention };
     },
     stories: async (f) => ({ stories: queryStories(await ix(), f) }),
     related: async (id) => {

@@ -3,6 +3,7 @@ import { fetchJson, fetchJsonWithHeaders, fetchText } from './http.ts';
 import { runInference } from './relate.ts';
 import { mergeDuplicateVendors } from './dedupe.ts';
 import { runStories } from './stories.ts';
+import { pruneExpired } from './retention.ts';
 import type { IngestContext, SourceModule } from './sources/common.ts';
 import { kevSource } from './sources/kev.ts';
 import { nvdSource } from './sources/nvd.ts';
@@ -79,6 +80,8 @@ export async function ingest(store: Store, opts: IngestOptions = {}): Promise<{ 
     }
   }
 
+  const pruned = pruneExpired(store, ctx.now());
+  ctx.log(`✓ retention: ${pruned.expired} expired items, ${pruned.orphans} orphaned products/vendors/weaknesses removed`);
   const { edges } = runInference(store);
   ctx.log(`✓ inference: ${edges} inferred edges`);
   const stories = runStories(store, ctx.now());
