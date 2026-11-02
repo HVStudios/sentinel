@@ -56,7 +56,10 @@ describe('static snapshot engine parity', () => {
       expect(ids(st.points)).toEqual(ids(srv.points));
       expect(st.countries).toEqual(srv.countries);
       expect(st.vendors).toEqual(srv.vendors);
+      expect(st.affected).toEqual(srv.affected);
     }
+    // The fixtures include GDACS events with affected countries, so that layer is exercised too.
+    expect(store.mapData({ types: all, from: '2026-01-01T00:00:00.000Z' }).affected.length).toBeGreaterThan(0);
     // The fixtures include Wikidata matches, so the vendor layer is actually exercised.
     expect(store.mapData({ types: all }).vendors.length).toBeGreaterThan(0);
     const tq = { types: all, from: '2026-09-01T00:00:00.000Z', to: '2026-11-01T00:00:00.000Z' };

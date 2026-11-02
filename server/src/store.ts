@@ -5,6 +5,7 @@ import type { Batch, NodeType, SentinelEdge, SentinelNode, SourceMeta } from './
 import { TIMED_TYPES } from './types.ts';
 import { relatedItems } from '../../shared/related.ts';
 import { computeTrends, type Trends } from '../../shared/trends.ts';
+import { aggregateAffected, type AffectedCountry } from '../../shared/affected.ts';
 
 const SCHEMA = `
 create table if not exists nodes (
@@ -573,7 +574,7 @@ export class Store {
     });
   }
 
-  mapData(q: TimeQuery): { points: NodeRow[]; countries: { country: string; count: number }[]; vendors: VendorHq[] } {
+  mapData(q: TimeQuery): { points: NodeRow[]; countries: { country: string; count: number }[]; vendors: VendorHq[]; affected: AffectedCountry[] } {
     const p1: SQLInputValue[] = [];
     const points = (
       this.db
@@ -592,7 +593,17 @@ export class Store {
         )
         .all(...p2) as Row[]
     ).map((r) => ({ country: r.country as string, count: Number(r.count) }));
-    return { points, countries, vendors: this.vendorHeadquarters(q) };
+    // Only world events carry GDACS's affected countries; none when that category is filtered out.
+    const p3: SQLInputValue[] = [];
+    const gdacsEvents =
+      q.types?.length && !q.types.includes('natural_event')
+        ? []
+        : (
+            this.db
+              .prepare(`select * from nodes where ${this.timeWhere({ ...q, types: ['natural_event'] }, p3)} and json_extract(attrs, '$.gdacs.affectedCountries') is not null`)
+              .all(...p3) as Row[]
+          ).map(toNode);
+    return { points, countries, vendors: this.vendorHeadquarters(q), affected: aggregateAffected(gdacsEvents) };
   }
 
   /** Histogram of timed nodes in `buckets` equal-width bins over [from, to]. */

@@ -251,3 +251,15 @@ test('shows KEV trends with sources, and opens a ranked vendor', async ({ page }
   await page.locator('.rank').filter({ hasText: 'Vendors' }).getByRole('button', { name: 'Ivanti' }).click();
   await expect(investigation(page).getByRole('heading', { name: 'Ivanti', exact: true })).toBeVisible();
 });
+
+test('hatches countries GDACS reports as affected, with an accessible list', async ({ page }) => {
+  await open(page);
+  await expect(page.locator('[data-affected="Germany"]')).toHaveAttribute('fill', 'url(#hatch-Orange)');
+  await expect(page.getByText(/Reported by GDACS, not inferred/)).toBeVisible();
+  await page.getByText(/^Affected countries \(\d+\)$/).click();
+  const germany = page.locator('.affected-list li').filter({ hasText: /^\s*Germany/ });
+  await germany.getByRole('button', { name: /^Drought in Andorra/ }).click();
+  await expect(investigation(page).getByText('GDACS Orange', { exact: true })).toBeVisible();
+  await page.getByLabel('GDACS affected countries').uncheck();
+  await expect(page.locator('[data-affected]')).toHaveCount(0);
+});

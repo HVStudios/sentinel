@@ -11,6 +11,7 @@ const ALIASES: Record<string, string> = {
   'bosnia and herzegovina': 'Bosnia and Herz.',
   'bosnia-herzegovina': 'Bosnia and Herz.',
   'democratic republic of the congo': 'Dem. Rep. Congo',
+  'democratic republic of congo': 'Dem. Rep. Congo',
   'congo, democratic republic of the': 'Dem. Rep. Congo',
   'republic of the congo': 'Congo',
   'central african republic': 'Central African Rep.',
@@ -51,7 +52,8 @@ export function createCountryResolver(atlasNames: Iterable<string>) {
   const byLower = new Map<string, string>();
   for (const name of atlasNames) byLower.set(name.toLowerCase(), name);
   return (sourceName: string): string | null => {
-    const key = sourceName.trim().toLowerCase();
+    // Sources differ in spacing and conjunctions (GDACS: "Bosnia  and  Herzegovina", "Bosnia & Herzegovina").
+    const key = sourceName.replace(/&/g, ' and ').replace(/\s+/g, ' ').trim().toLowerCase();
     if (byLower.has(key)) return byLower.get(key)!;
     const alias = ALIASES[key];
     return alias && byLower.has(alias.toLowerCase()) ? alias : null;

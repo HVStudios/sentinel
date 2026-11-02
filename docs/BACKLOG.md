@@ -165,11 +165,12 @@ from more agencies (e.g. JPCERT/CC, CERT-In, BSI, NCSC-NL, CSA Singapore), addin
 working feed and a verifiable publisher.
 
 ### SEN-30 · GDACS affected-country layer
-Priority: P2 · Labels: geo, frontend · Status: todo
+Priority: P2 · Labels: geo, frontend · Status: done (merged)
 
-GDACS reports the countries an event affects. Offer an optional map layer that shades those
-countries, labelled as "affected countries reported by GDACS". It must be visually distinct from
-publisher-country shading, and is especially useful for droughts that have no single point.
+- [x] Countries GDACS reports as affected, hatched by highest alert level, visually distinct from publisher-country shading; toggle
+- [x] Country tooltips name the events; expandable accessible list with links; countries too small for the base map listed, not drawn
+- [x] GDACS name variants resolved (spacing, "&", "Democratic Republic of Congo")
+- [x] Shared aggregation for server and static site; unit, parity, e2e and axe tests
 
 ### SEN-31 · Watchlist export and import
 Priority: P2 · Labels: frontend · Status: todo

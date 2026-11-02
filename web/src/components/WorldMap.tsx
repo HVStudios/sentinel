@@ -6,7 +6,7 @@ import { feature, mesh } from 'topojson-client';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { GeometryCollection, Topology } from 'topojson-specification';
 import world from 'world-atlas/countries-110m.json';
-import type { SNode, VendorHq } from '../api.ts';
+import type { AffectedCountry, SNode, VendorHq } from '../api.ts';
 import { createCountryResolver } from '../lib/countries.ts';
 import { categoryLabel, relativeTime } from '../lib/format.ts';
 import { useRovingFocus } from '../lib/useRovingFocus.ts';
@@ -50,9 +50,14 @@ interface Props {
   /** Vendor headquarters (Wikidata) for vulnerabilities in the window. */
   vendors?: VendorHq[];
   showVendors?: boolean;
+  /** Countries GDACS reports as affected by events in the window. */
+  affected?: AffectedCountry[];
+  showAffected?: boolean;
 }
 
-export function WorldMap({ points, countryCounts, selectedId, onSelect, showCountries, vendors = [], showVendors = false }: Props) {
+export const ALERT_COLORS: Record<AffectedCountry['maxAlert'], string> = { Green: '#5ee6a8', Orange: '#ff9f43', Red: '#ff4d6d' };
+
+export function WorldMap({ points, countryCounts, selectedId, onSelect, showCountries, vendors = [], showVendors = false, affected = [], showAffected = false }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const zoomRef = useRef<ReturnType<typeof zoom<SVGSVGElement, unknown>> | null>(null);
   const [transform, setTransform] = useState<ZoomTransform>(zoomIdentity);
@@ -87,6 +92,18 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
     }
     return { shading, unmapped, max: Math.max(1, ...shading.values()) };
   }, [countryCounts]);
+
+  // GDACS spells countries its own way; resolve to base-map names and list the ones too small to draw.
+  const { affectedByName, affectedUnmapped } = useMemo(() => {
+    const byName = new Map<string, AffectedCountry>();
+    const unmapped: AffectedCountry[] = [];
+    for (const a of showAffected ? affected : []) {
+      const name = resolveCountry(a.country);
+      if (!name) unmapped.push(a);
+      else if (!byName.has(name)) byName.set(name, a);
+    }
+    return { affectedByName: byName, affectedUnmapped: unmapped };
+  }, [affected, showAffected]);
 
   const projected = useMemo(
     () =>
@@ -151,6 +168,11 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
         onKeyDown={onMapKey}
       >
         <defs>
+          {Object.entries(ALERT_COLORS).map(([level, color]) => (
+            <pattern key={level} id={`hatch-${level}`} width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+              <line x1="0" y1="0" x2="0" y2="5" stroke={color} strokeWidth="1.6" />
+            </pattern>
+          ))}
           <radialGradient id="glow">
             <stop offset="0%" stopColor="#fff" stopOpacity="0.9" />
             <stop offset="100%" stopColor="#fff" stopOpacity="0" />
@@ -169,9 +191,18 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
                 data-country={c.name}
                 style={count ? { fill: `color-mix(in oklab, var(--c-news) ${Math.round(18 + 62 * Math.sqrt(count / max))}%, var(--land))` } : undefined}
               >
-                <title>{count ? `${c.name}: ${count} article${count === 1 ? '' : 's'} by publishers based here` : c.name}</title>
+                <title>
+                  {[
+                    count ? `${c.name}: ${count} article${count === 1 ? '' : 's'} by publishers based here` : c.name,
+                    ...(affectedByName.get(c.name)?.events.map((e) => `GDACS ${e.alertLevel}: ${e.title}`) ?? []),
+                  ].join('\n')}
+                </title>
               </path>
             );
+          })}
+          {countryPaths.map((c) => {
+            const a = affectedByName.get(c.name);
+            return a ? <path key={`affected-${c.name}`} d={c.d} className="affected" fill={`url(#hatch-${a.maxAlert})`} data-affected={c.name} /> : null;
           })}
           <path d={borderPath} className="borders" strokeWidth={0.5 / k} />
           {projected.map(({ p, xy }) => {
@@ -257,6 +288,34 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
                 Not drawn: {unmapped.map((u) => `${u.country} (${u.count})`).join(', ')}
               </span>
             )}
+          </div>
+        )}
+        {showAffected && affected.length > 0 && (
+          <div className="legend-note">
+            <i className="swatch-hatch" aria-hidden="true" /> Hatching: countries <strong>GDACS reports as affected</strong> by disasters in this window,
+            coloured by the highest alert (green, orange, red). Reported by GDACS, not inferred.
+            <details className="affected-list">
+              <summary>Affected countries ({affected.length})</summary>
+              <ul>
+                {affected.map((a) => (
+                  <li key={a.country}>
+                    <span className={`alert-dot alert-${a.maxAlert}`} aria-hidden="true" /> {a.country}
+                    {!resolveCountry(a.country) && <span className="muted"> (too small for this map, not drawn)</span>}:{' '}
+                    {a.events.map((e, i) => (
+                      <span key={e.id}>
+                        {i > 0 && ', '}
+                        {/* GDACS titles can list dozens of countries; keep the full title for hover and the investigation. */}
+                        <button className="link-btn" onClick={() => onSelect(e.id)} title={e.title}>
+                          {e.title.length > 48 ? `${e.title.slice(0, 47).trimEnd()}…` : e.title}
+                        </button>{' '}
+                        <span className="muted">({e.alertLevel})</span>
+                      </span>
+                    ))}
+                  </li>
+                ))}
+              </ul>
+            </details>
+            {affectedUnmapped.length > 0 && <span className="unmapped"> Not drawn: {affectedUnmapped.map((u) => u.country).join(', ')}.</span>}
           </div>
         )}
         {showVendors ? (
