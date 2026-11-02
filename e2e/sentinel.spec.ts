@@ -142,6 +142,10 @@ test('lists sources with mode-appropriate actions', async ({ page }, info) => {
   await expect(dialog.getByText(/new CVEs that are not known to be exploited after 14 days/)).toBeVisible();
   // The fixture router answers GDELT with HTTP 429, which must be visible, not hidden.
   await expect(dialog.getByText('HTTP 429', { exact: false }).first()).toBeVisible();
+  // Run history per source: the seed ingests once.
+  const row = (name: string) => dialog.getByRole('row').filter({ has: page.getByRole('link', { name, exact: true }) });
+  await expect(row('CISA Known Exploited Vulnerabilities').getByText(/^1 run: 1 ok · median /)).toBeVisible();
+  await expect(row('GDELT Project DOC 2.0').getByText(/^1 run: 0 ok, 1 failed · median /)).toBeVisible();
   if (info.project.name === 'static') {
     await expect(dialog.getByText(/Static snapshot generated/)).toBeVisible();
     await expect(dialog.getByRole('button', { name: 'Refresh all sources' })).toHaveCount(0);

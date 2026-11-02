@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { api } from '../apiClient.ts';
 import { formatDate, relativeTime } from '../lib/format.ts';
 import { useFetch } from '../lib/useFetch.ts';
+import { RunHistory } from './RunHistory.tsx';
 
 export function SourcesPanel({ onClose }: { onClose: () => void }) {
   const [tick, setTick] = useState(0);
@@ -68,6 +69,7 @@ export function SourcesPanel({ onClose }: { onClose: () => void }) {
               <th>Last run</th>
               <th>Status</th>
               <th>Records</th>
+              <th>Recent runs</th>
             </tr>
           </thead>
           <tbody>
@@ -90,6 +92,9 @@ export function SourcesPanel({ onClose }: { onClose: () => void }) {
                   {s.lastError && <div className="muted small">{s.lastError}</div>}
                 </td>
                 <td>{s.lastCount ?? '—'}</td>
+                <td>
+                  <RunHistory runs={s.runs ?? []} />
+                </td>
               </tr>
             ))}
           </tbody>

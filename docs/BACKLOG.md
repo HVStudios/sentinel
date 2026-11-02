@@ -187,11 +187,11 @@ Priority: P2 · Labels: data, frontend · Status: done (merged)
 - [x] Step-chart sparkline with date range and a written summary (also its accessible name) in the investigation panel
 
 ### SEN-33 · Source health history
-Priority: P3 · Labels: backend, frontend · Status: todo
+Priority: P3 · Labels: backend, frontend · Status: done (merged)
 
-The Sources panel shows only the last run. Keep a short run history per source (status, count,
-duration) and show success rate and trends, which makes intermittent problems such as GDELT's
-rate limiting visible over time.
+- [x] `source_runs` table: status, record count, duration and (shortened) error per run; the latest 60 runs per source (15 days at the Pages schedule)
+- [x] Runs included in `/api/sources` and the snapshot
+- [x] "Recent runs" column in the Sources panel: one bar per run (colour = ok / warnings / failed, height = records) and a summary with counts and median duration
 
 ## P1 — Next
 

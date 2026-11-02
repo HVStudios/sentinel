@@ -334,3 +334,8 @@ button.small { font-size: 12px; padding: 3px 8px; }
 .epss-spark circle { fill: var(--muted); }
 .epss-spark.rising path { stroke: var(--c-vuln); }
 .epss-spark.rising circle { fill: var(--c-vuln); }
+.run-history { display: flex; flex-direction: column; gap: 3px; min-width: 120px; }
+.run-history svg { display: block; max-width: 100%; }
+.run-ok { fill: var(--t-low); }
+.run-warn { fill: var(--t-medium); }
+.run-error { fill: var(--t-critical); }
