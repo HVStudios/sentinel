@@ -31,6 +31,9 @@ connect.
 - **Trends.** Known-exploited vulnerabilities added per week over a year (with the ransomware
   share), the most-affected vendors, products and weaknesses for 30/90/365 days, and SENTINEL's
   own collection activity, each chart labelled with its source and coverage.
+- **Shareable links.** The URL captures the time window, categories, search, feed order, views,
+  map layers and the open item, so "Copy link" shares exactly what you see. The browser's Back
+  button undoes filter changes.
 - **Watchlists.** Watch a vendor, product, vulnerability or story (★). New related items are
   counted and highlighted in the feed. The watchlist is stored only in your browser, so it also
   works on the static site.

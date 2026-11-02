@@ -143,11 +143,12 @@ losing what the UI shows.
 - [x] Retention windows published in `/api/sources` and the snapshot, shown in the Sources panel
 
 ### SEN-27 · Shareable view state in the URL
-Priority: P1 · Labels: frontend · Status: todo
+Priority: P1 · Labels: frontend · Status: done (merged)
 
-Only the open item is in the URL (`#/node/…`). Encode the time window, categories, search, feed
-order and side-panel view as well, so a link reproduces exactly what you see, and so the browser
-back button works for filter changes.
+- [x] Hash encodes open item, time window or brushed range, categories, search, feed order, side and main views, and hidden map layers; defaults omitted; old `#/node/…` links keep working
+- [x] Malformed links fall back to defaults; presets relative, brushed ranges absolute
+- [x] History: discrete changes are Back-able; typing a search replaces the current entry; Back/Forward re-apply the state
+- [x] "Copy link" button with an announced result; unit, app and e2e tests (link round-trip in a fresh page, Back/Forward)
 
 ### SEN-28 · Trends view from accumulated history
 Priority: P2 · Labels: frontend, analysis · Status: done (merged)
