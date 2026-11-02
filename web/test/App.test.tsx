@@ -72,6 +72,29 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Top' }).getAttribute('aria-pressed')).toBe('true');
   });
 
+  it('restores the whole view from the URL and writes changes back', async () => {
+    window.location.hash = '#/?w=30d&t=article&q=ivanti&sort=top&view=stories';
+    const calls = mockApi();
+    render(<App now={() => new Date('2026-10-30T12:00:00Z')} />);
+    expect((screen.getByLabelText('Search') as HTMLInputElement).value).toBe('ivanti');
+    expect(screen.getByRole('button', { name: '30d' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: /Vulnerability/ }).getAttribute('aria-pressed')).toBe('false');
+    expect(screen.getByRole('heading', { name: 'Stories' })).toBeTruthy();
+    await waitFor(() => expect(calls.some((c) => c.startsWith('/api/stories') && c.includes('from=2026-09-30'))).toBe(true));
+    fireEvent.click(screen.getByRole('button', { name: '90d' }));
+    expect(window.location.hash).toBe('#/?w=90d&t=article&q=ivanti&sort=top&view=stories');
+  });
+
+  it('copies a link to the current view', async () => {
+    mockApi();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    render(<App now={() => new Date('2026-10-30T12:00:00Z')} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Copy link' }));
+    await screen.findByText('Link copied');
+    expect(writeText).toHaveBeenCalledWith(window.location.href);
+  });
+
   it('never allows deselecting every category', async () => {
     mockApi();
     render(<App now={() => new Date('2026-10-30T12:00:00Z')} />);

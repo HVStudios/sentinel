@@ -13,6 +13,7 @@ import { WatchlistView } from './components/WatchlistView.tsx';
 import { TrendsView } from './components/TrendsView.tsx';
 import { useWatchData, useWatchlist } from './lib/watchlist.ts';
 import { useDataVersion } from './lib/useDataVersion.ts';
+import { formatHash, isNavigation, parseHash, type ViewState } from './lib/urlState.ts';
 
 export const PRESETS = [
   { id: '24h', label: '24h', ms: 86_400_000 },
@@ -29,26 +30,24 @@ export const FEED_SORTS: { id: FeedSort; label: string; title: string }[] = [
   { id: 'top', label: 'Top', title: 'Highest severity or SENTINEL rank first, taking from each category in turn' },
 ];
 
-const nodeFromHash = () => {
-  const m = /^#\/node\/(.+)$/.exec(window.location.hash);
-  return m ? decodeURIComponent(m[1]!) : null;
-};
-
 export function App({ now = () => new Date() }: { now?: () => Date }) {
-  const [preset, setPreset] = useState<PresetId>('7d');
-  const [brush, setBrush] = useState<{ from: string; to: string } | null>(null);
-  const [types, setTypes] = useState<TimedType[]>([...TIMED_TYPES]);
-  const [query, setQuery] = useState('');
-  const [q, setQ] = useState('');
-  const [selected, setSelected] = useState<string | null>(nodeFromHash);
+  // The whole view lives in the URL hash, so links reproduce it and Back undoes filter changes.
+  const [initial] = useState<ViewState>(() => parseHash(window.location.hash));
+  const [preset, setPreset] = useState<PresetId>(initial.preset);
+  const [brush, setBrush] = useState<{ from: string; to: string } | null>(initial.brush);
+  const [types, setTypes] = useState<TimedType[]>(initial.types);
+  const [query, setQuery] = useState(initial.q);
+  const [q, setQ] = useState(initial.q);
+  const [selected, setSelected] = useState<string | null>(initial.node);
   const [history, setHistory] = useState<string[]>([]);
   const [showSources, setShowSources] = useState(false);
-  const [showCountries, setShowCountries] = useState(true);
-  const [sort, setSort] = useState<FeedSort>('mixed');
-  const [showVendors, setShowVendors] = useState(true);
-  const [showAffected, setShowAffected] = useState(true);
-  const [view, setView] = useState<'feed' | 'stories' | 'watchlist'>('feed');
-  const [stageView, setStageView] = useState<'map' | 'trends'>('map');
+  const [showCountries, setShowCountries] = useState(!initial.hidden.includes('publishers'));
+  const [sort, setSort] = useState<FeedSort>(initial.sort);
+  const [showVendors, setShowVendors] = useState(!initial.hidden.includes('vendors'));
+  const [showAffected, setShowAffected] = useState(!initial.hidden.includes('gdacs'));
+  const [view, setView] = useState<'feed' | 'stories' | 'watchlist'>(initial.view);
+  const [stageView, setStageView] = useState<'map' | 'trends'>(initial.main);
+  const [copyStatus, setCopyStatus] = useState('');
   // Live mode: reload data whenever a server-side refresh (manual or scheduled) finishes.
   const data = useDataVersion(api);
   const watchlist = useWatchlist(now);
@@ -61,10 +60,57 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
     return () => clearTimeout(t);
   }, [query]);
 
+  const viewState: ViewState = useMemo(
+    () => ({
+      node: selected,
+      preset,
+      brush,
+      types,
+      q,
+      sort,
+      view,
+      main: stageView,
+      hidden: [...(showCountries ? [] : ['publishers' as const]), ...(showVendors ? [] : ['vendors' as const]), ...(showAffected ? [] : ['gdacs' as const])],
+    }),
+    [selected, preset, brush, types, q, sort, view, stageView, showCountries, showVendors, showAffected],
+  );
+
+  // State → URL: navigation gets its own history entry; typing a search only replaces the current one.
+  const lastView = useRef<ViewState>(initial);
   useEffect(() => {
-    const onHash = () => setSelected(nodeFromHash());
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
+    const hash = formatHash(viewState);
+    if (hash !== window.location.hash) {
+      const push = isNavigation(lastView.current, viewState) && window.location.hash !== '';
+      window.history[push ? 'pushState' : 'replaceState'](null, '', hash);
+    }
+    lastView.current = viewState;
+  }, [viewState]);
+
+  // URL → state: Back/Forward and edited or pasted links.
+  useEffect(() => {
+    const apply = () => {
+      const v = parseHash(window.location.hash);
+      lastView.current = v;
+      setSelected(v.node);
+      setHistory([]);
+      setPreset(v.preset);
+      setBrush(v.brush);
+      setTypes(v.types);
+      setQuery(v.q);
+      setQ(v.q);
+      setSort(v.sort);
+      setView(v.view);
+      setStageView(v.main);
+      setShowCountries(!v.hidden.includes('publishers'));
+      setShowVendors(!v.hidden.includes('vendors'));
+      setShowAffected(!v.hidden.includes('gdacs'));
+    };
+    window.addEventListener('popstate', apply);
+    window.addEventListener('hashchange', apply);
+    return () => {
+      window.removeEventListener('popstate', apply);
+      window.removeEventListener('hashchange', apply);
+    };
   }, []);
 
   const windowRange = useMemo(() => {
@@ -109,7 +155,6 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
     if (!selected && (active instanceof HTMLElement || active instanceof SVGElement)) returnFocus.current = active;
     if (selected && selected !== id) setHistory((h) => [...h, selected]);
     setSelected(id);
-    window.history.replaceState(null, '', `#/node/${encodeURIComponent(id)}`);
   };
   const close = () => {
     const target = returnFocus.current;
@@ -118,14 +163,22 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
     setTimeout(() => (target?.isConnected ? target : document.getElementById('feed'))?.focus());
     setSelected(null);
     setHistory([]);
-    window.history.replaceState(null, '', window.location.pathname + window.location.search);
   };
   const back = () => {
     const prev = history.at(-1);
     if (!prev) return;
     setHistory((h) => h.slice(0, -1));
     setSelected(prev);
-    window.history.replaceState(null, '', `#/node/${encodeURIComponent(prev)}`);
+  };
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopyStatus('Link copied');
+    } catch {
+      setCopyStatus('Could not copy; the address bar has the link');
+    }
+    setTimeout(() => setCopyStatus(''), 2500);
   };
 
   const toggleType = (t: TimedType) =>
@@ -190,6 +243,12 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
             </button>
           ))}
         </div>
+        <button className="ghost" onClick={copyLink} title="Copy a link to exactly this view">
+          Copy link
+        </button>
+        <span className="copy-status small" role="status" aria-live="polite">
+          {copyStatus}
+        </span>
         <button className="ghost" onClick={() => setShowSources(true)}>
           Sources
           {data.running && <span className="refreshing-tag">refreshing…</span>}

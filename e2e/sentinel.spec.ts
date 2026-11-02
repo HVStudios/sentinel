@@ -263,3 +263,44 @@ test('hatches countries GDACS reports as affected, with an accessible list', asy
   await page.getByLabel('GDACS affected countries').uncheck();
   await expect(page.locator('[data-affected]')).toHaveCount(0);
 });
+
+test('a copied link reproduces the exact view in a new page', async ({ page, context }) => {
+  await open(page);
+  await page.getByRole('button', { name: '30d' }).click();
+  await category(page, /News & tech/).click();
+  await page.getByRole('group', { name: 'Feed order' }).getByRole('button', { name: 'Top' }).click();
+  await page.getByLabel('Search').fill('ivanti');
+  await expect(page).toHaveURL(/q=ivanti/);
+  await page.getByRole('group', { name: 'Main view' }).getByRole('button', { name: 'Trends' }).click();
+  await page.getByRole('group', { name: 'Side panel view' }).getByRole('button', { name: 'Stories' }).click();
+  const url = page.url();
+  expect(url).toMatch(/w=30d/);
+  expect(url).toMatch(/t=vulnerability,natural_event/);
+
+  const other = await context.newPage();
+  await other.clock.setFixedTime(new Date('2026-10-30T21:00:00Z'));
+  await other.goto(url);
+  await expect(other.getByRole('heading', { name: 'Stories' })).toBeVisible();
+  await expect(other.getByRole('heading', { name: 'Trends' })).toBeVisible();
+  await expect(other.getByRole('group', { name: 'Time window' }).getByRole('button', { name: '30d' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(other.getByRole('group', { name: 'Categories' }).getByRole('button', { name: /News & tech/ })).toHaveAttribute('aria-pressed', 'false');
+  await expect(other.getByLabel('Search')).toHaveValue('ivanti');
+  await other.getByRole('group', { name: 'Side panel view' }).getByRole('button', { name: 'Feed' }).click();
+  await expect(other.getByRole('group', { name: 'Feed order' }).getByRole('button', { name: 'Top' })).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('the browser Back button undoes filter changes and closes an opened item', async ({ page }) => {
+  await open(page);
+  await page.getByRole('button', { name: '30d' }).click();
+  await page.getByRole('button', { name: '90d' }).click();
+  await expect(page.getByRole('button', { name: '90d' })).toHaveAttribute('aria-pressed', 'true');
+  await page.goBack();
+  await expect(page.getByRole('button', { name: '30d' })).toHaveAttribute('aria-pressed', 'true');
+  await feed(page).getByRole('listitem').first().getByRole('button').click();
+  await expect(investigation(page)).toBeVisible();
+  await page.goBack();
+  await expect(investigation(page)).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '30d' })).toHaveAttribute('aria-pressed', 'true');
+  await page.goForward();
+  await expect(investigation(page)).toBeVisible();
+});

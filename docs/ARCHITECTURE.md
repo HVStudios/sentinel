@@ -185,6 +185,16 @@ member, so they stay stable as stories grow. Titles prefer an English news headl
 vulnerability name, then an English advisory. Everything is rebuilt on each run.
 `GET /api/stories` lists stories active in a window, and the static engine mirrors it.
 
+## Shareable view state
+
+The whole view lives in the URL hash (`web/src/lib/urlState.ts`), so a link reproduces it on the
+live server and on GitHub Pages without server rewrites:
+`#/node/<id>?w=30d&t=vulnerability,article&q=ivanti&sort=top&view=stories&main=trends&off=gdacs`.
+Defaults are omitted, so plain links stay `#/` and older `#/node/<id>` links still work.
+Malformed values fall back to defaults. Presets are relative to when a link is opened; a brushed
+timeline range (`from`/`to`) is absolute. Discrete changes get their own history entry, so Back
+undoes them; typing a search replaces the current entry.
+
 ## Watchlists
 
 Watchlists live only in the viewer's browser (`web/src/lib/watchlist.ts`, localStorage, synced
