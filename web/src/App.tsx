@@ -46,6 +46,7 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
   const [showCountries, setShowCountries] = useState(true);
   const [sort, setSort] = useState<FeedSort>('mixed');
   const [showVendors, setShowVendors] = useState(true);
+  const [showAffected, setShowAffected] = useState(true);
   const [view, setView] = useState<'feed' | 'stories' | 'watchlist'>('feed');
   const [stageView, setStageView] = useState<'map' | 'trends'>('map');
   // Live mode: reload data whenever a server-side refresh (manual or scheduled) finishes.
@@ -224,6 +225,9 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
                 <label className="small check check-tight">
                   <input type="checkbox" checked={showVendors} onChange={(e) => setShowVendors(e.target.checked)} /> Vendor HQs
                 </label>
+                <label className="small check check-tight">
+                  <input type="checkbox" checked={showAffected} onChange={(e) => setShowAffected(e.target.checked)} /> GDACS affected countries
+                </label>
               </>
             )}
           </div>
@@ -239,6 +243,8 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
               showCountries={showCountries}
               vendors={map.data?.vendors ?? []}
               showVendors={showVendors && types.includes('vulnerability')}
+            affected={map.data?.affected ?? []}
+            showAffected={showAffected && types.includes('natural_event')}
             />
             {timeline.data && (
               <Timeline

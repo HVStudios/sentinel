@@ -18,6 +18,8 @@ async function audit(page: Page) {
 
 test('main view has no WCAG A/AA violations', async ({ page }) => {
   await open(page);
+  // Include the expanded GDACS affected-country list in the audit.
+  await page.getByText(/^Affected countries \(\d+\)$/).click();
   expect(await audit(page)).toEqual([]);
 });
 

@@ -121,6 +121,13 @@ such. Droughts, and events affecting more than three countries, get no point at 
 centroid in one country would misrepresent a continent-wide event; their affected countries are
 listed instead.
 
+**GDACS affected countries** (`shared/affected.ts`): `/api/map` also returns, for world events in
+the window, each country GDACS lists as affected, its highest alert level and its events (most
+severe first). The map hatches those countries in the alert colour, separate from the
+publisher-country fill. Countries too small for the base map are listed, not drawn, and an
+expandable list gives keyboard access to every event. These countries are *reported* by GDACS,
+which is how continent-wide droughts without a point become visible.
+
 **Vendor de-duplication** (`dedupe.ts`): after any source that writes vendor nodes, duplicate
 spellings of one company are folded together. Rule 1 merges names that are identical once
 separators are removed (Paloaltonetworks → Palo Alto Networks). Rule 2 merges names that differ
@@ -226,7 +233,7 @@ and the parity test covers all three orderings.
 |---|---|
 | `GET /api/health` | Liveness and DB counts. |
 | `GET /api/feed?from&to&types&q&sort&limit&before` | Time-bound nodes with cursor pagination. `sort` is `latest` (chronological), `mixed` (one category at a time, newest first within each) or `top` (one category at a time, by severity/rank). |
-| `GET /api/map?from&to&types` | `{ points[], countries[], vendors[] }`: geolocated nodes, publisher-country aggregates, and Wikidata headquarters of vendors behind vulnerabilities in the window. |
+| `GET /api/map?from&to&types` | `{ points[], countries[], vendors[], affected[] }`: geolocated nodes, publisher-country aggregates, Wikidata headquarters of vendors behind vulnerabilities in the window, and countries GDACS reports as affected. |
 | `GET /api/timeline?from&to&types` | Histogram buckets per node type. |
 | `GET /api/nodes/:id` | Node, provenance and adjacent edges. |
 | `GET /api/graph/:id?depth=1..2&limit` | Neighbourhood subgraph. |

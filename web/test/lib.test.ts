@@ -66,6 +66,9 @@ describe('country resolver', () => {
     expect(resolve('United States')).toBe('United States of America');
     expect(resolve('czech republic')).toBe('Czechia');
     expect(resolve('Russian Federation')).toBe('Russia');
+    expect(resolve('Bosnia  and  Herzegovina')).toBe('Bosnia and Herz.');
+    expect(resolve('Bosnia & Herzegovina')).toBe('Bosnia and Herz.');
+    expect(resolve('Democratic Republic of Congo')).toBe('Dem. Rep. Congo');
   });
 
   it('leaves countries absent from the base map unmapped instead of guessing', () => {

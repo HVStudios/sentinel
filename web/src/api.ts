@@ -56,7 +56,10 @@ export interface VendorHq {
 export type { Trends } from '../../shared/trends.ts';
 import type { Trends } from '../../shared/trends.ts';
 
-export type MapData = { points: SNode[]; countries: { country: string; count: number }[]; vendors: VendorHq[] };
+export type { AffectedCountry } from '../../shared/affected.ts';
+import type { AffectedCountry } from '../../shared/affected.ts';
+
+export type MapData = { points: SNode[]; countries: { country: string; count: number }[]; vendors: VendorHq[]; affected: AffectedCountry[] };
 
 export interface SourceStatus {
   id: string;

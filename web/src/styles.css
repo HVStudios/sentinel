@@ -142,6 +142,16 @@ h3 { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: 
 .tt-title { font-weight: 600; }
 .tt-meta { color: var(--muted); font-size: 12px; }
 
+/* GDACS affected countries */
+.affected { pointer-events: none; opacity: 0.85; }
+.swatch-hatch { display: inline-block; width: 12px; height: 9px; vertical-align: middle; margin-right: 4px; background: repeating-linear-gradient(45deg, #ff9f43 0 2px, transparent 2px 5px); }
+.affected-list summary { cursor: pointer; display: inline; margin-left: 6px; color: var(--c-news); }
+.affected-list ul { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 3px; max-height: 160px; overflow-y: auto; }
+.alert-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+.alert-Green { background: #5ee6a8; }
+.alert-Orange { background: #ff9f43; }
+.alert-Red { background: #ff4d6d; }
+
 /* Vendor headquarters (Wikidata) */
 .vendor-hq { cursor: pointer; }
 .vendor-hq rect { fill: var(--c-vendor); fill-opacity: 0.75; stroke: #0a1220; }

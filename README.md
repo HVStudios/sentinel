@@ -14,7 +14,8 @@ connect.
   was ingested.
 - **Honest geography.** Points appear only where a source reports coordinates.
   News is shaded by *publisher* country and labelled as such. Vulnerabilities are never placed
-  on the map, because KEV and NVD do not report a location. The affected *vendors* can be shown
+  on the map, because KEV and NVD do not report a location. Countries GDACS reports as affected by
+  a disaster can be hatched by alert level. The affected *vendors* can be shown
   at their Wikidata headquarters, labelled as such, and only when the name match is
   unambiguous.
 - **Facts vs. inferences.** Relationships stated by a source are drawn as solid lines and

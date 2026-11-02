@@ -69,6 +69,26 @@ describe('WorldMap', () => {
     expect(screen.getByText(/Vulnerabilities are not mapped/)).toBeTruthy();
   });
 
+  it('hatches countries GDACS reports as affected and lists them, including ones too small to draw', () => {
+    const onSelect = vi.fn();
+    const affected = [
+      { country: 'Germany', maxAlert: 'Orange' as const, events: [{ id: 'gdacs:DR1', title: `Drought in ${'Andorra, Albania, Austria, '.repeat(4)}Germany`, alertLevel: 'Orange' }] },
+      { country: 'Liechtenstein', maxAlert: 'Orange' as const, events: [{ id: 'gdacs:DR1', title: 'Drought', alertLevel: 'Orange' }] },
+    ];
+    const { container, rerender } = render(<WorldMap points={[]} countryCounts={[]} selectedId={null} onSelect={onSelect} showCountries={false} affected={affected} showAffected />);
+    expect(container.querySelector('[data-affected="Germany"]')!.getAttribute('fill')).toBe('url(#hatch-Orange)');
+    expect(container.querySelector('[data-affected="France"]')).toBeNull();
+    expect(screen.getByText(/Reported by GDACS, not inferred/)).toBeTruthy();
+    expect(screen.getByText(/Not drawn: Liechtenstein/)).toBeTruthy();
+    const link = screen.getAllByRole('button', { name: /^Drought in Andorra/ })[0]!;
+    expect(link.textContent!.endsWith('…')).toBe(true);
+    fireEvent.click(link);
+    expect(onSelect).toHaveBeenCalledWith('gdacs:DR1');
+    rerender(<WorldMap points={[]} countryCounts={[]} selectedId={null} onSelect={onSelect} showCountries={false} affected={affected} showAffected={false} />);
+    expect(container.querySelector('[data-affected]')).toBeNull();
+    expect(screen.queryByText(/Reported by GDACS/)).toBeNull();
+  });
+
   it('hides shading when disabled', () => {
     const { container } = render(<WorldMap points={[]} countryCounts={[{ country: 'Germany', count: 3 }]} selectedId={null} onSelect={() => {}} showCountries={false} />);
     expect((container.querySelector('[data-country="Germany"]') as SVGPathElement).style.fill).toBe('');

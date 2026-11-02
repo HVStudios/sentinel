@@ -3,6 +3,7 @@ import { TIMED_TYPES } from './api.ts';
 import type { Api, Filters, SourcesResponse } from './api.ts';
 import { relatedItems } from '../../shared/related.ts';
 import { computeTrends } from '../../shared/trends.ts';
+import { aggregateAffected } from '../../shared/affected.ts';
 
 /** Mirrors server/src/snapshot.ts. */
 type Provenance = { nodeId: string; sourceId: string; sourceUrl: string | null; fetchedAt: string };
@@ -189,7 +190,13 @@ export function queryMap(ix: Index, f: Filters): MapData {
   }
   // Ties by name in code-unit order, matching SQLite's BINARY collation on the server.
   const countries = [...counts].map(([country, count]) => ({ country, count })).sort((a, b) => b.count - a.count || (a.country < b.country ? -1 : a.country > b.country ? 1 : 0));
-  return { points, countries, vendors: vendorHeadquarters(ix, f) };
+  // Same rule as Store.mapData: GDACS-affected countries come from world events only.
+  const eventsWin = inWindow({ ...f, types: ['natural_event'] });
+  const affected =
+    f.types.length && !f.types.includes('natural_event')
+      ? []
+      : aggregateAffected(ix.timed.filter((n) => eventsWin(n) && (n.attrs?.gdacs as { affectedCountries?: unknown } | undefined)?.affectedCountries));
+  return { points, countries, vendors: vendorHeadquarters(ix, f), affected };
 }
 
 export function queryTimeline(ix: Index, f: Filters & { from: string; to: string }, buckets: number) {
