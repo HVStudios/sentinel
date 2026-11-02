@@ -275,6 +275,7 @@ button.small { font-size: 12px; padding: 3px 8px; }
 .sources { width: 100%; border-collapse: collapse; font-size: 13px; }
 .sources th, .sources td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
 .sources th { color: var(--muted); font-weight: 500; font-size: 12px; }
+.retention-note { margin: 10px 12px 0; }
 .modal-foot { display: flex; gap: 10px; align-items: center; padding: 12px; flex-wrap: wrap; }
 
 /* Responsive */

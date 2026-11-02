@@ -196,6 +196,8 @@ scripts/       dev runner, GitHub issue creation from the backlog
 - **GDELT** often answers with HTTP 429 or empty results, locally and on GitHub's runners.
   Publisher-country shading therefore comes mainly from the curated feeds. To add a feed, add an
   entry to `server/src/sources/feeds.ts` with the outlet's country and a page that confirms it.
+- Data expires: news after 90 days, world events after 180, and new CVEs that are not known to be
+  exploited after 14 days. CISA KEV entries are kept. This keeps the static site's download small.
 - Stories are deliberately conservative. Coverage that uses different words and no shared
   identifier (e.g. two very differently phrased headlines) stays separate.
 - Wikidata matching is conservative: about a quarter of vendors get a mappable match.

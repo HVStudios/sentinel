@@ -104,6 +104,8 @@ export interface SourcesResponse {
   };
   /** Set in static mode: when the snapshot was exported. */
   generatedAt?: string;
+  /** How many days items are kept, by type (vulnerabilities: those not listed in CISA KEV). */
+  retention?: { article: number; natural_event: number; vulnerability: number };
 }
 
 export interface Api {
