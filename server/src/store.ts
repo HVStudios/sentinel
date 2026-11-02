@@ -453,6 +453,14 @@ export class Store {
     return (this.db.prepare('select id from nodes where type = ?').all(type) as Row[]).map((r) => r.id as string);
   }
 
+  /** Stored EPSS score histories (change points), for merging with newly fetched days. */
+  epssHistories(): Map<string, [string, number][]> {
+    const rows = this.db
+      .prepare(`select id, json_extract(attrs, '$.epss.history') h from nodes where type = 'vulnerability' and json_extract(attrs, '$.epss.history') is not null`)
+      .all() as { id: string; h: string }[];
+    return new Map(rows.map((r) => [r.id, JSON.parse(r.h) as [string, number][]]));
+  }
+
   provenanceFor(id: string): (SourceMeta & { sourceUrl: string | null; fetchedAt: string })[] {
     const rows = this.db
       .prepare(

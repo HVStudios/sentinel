@@ -7,6 +7,21 @@ import type { SourceModule } from '../src/sources/common.ts';
 import { fixtureFetchJson as fakeFetch, fixtureFetchJsonWithHeaders, fixtureFetchText as fakeFetchText } from './fixtures/router.ts';
 
 describe('ingest pipeline', () => {
+  it('keeps EPSS history from earlier runs when the API window moves on', async () => {
+    vi.spyOn(RateLimiter.prototype, 'acquire').mockResolvedValue();
+    const store = new Store();
+    const ctx = { fetchJson: fakeFetch, fetchText: fakeFetchText, fetchJsonWithHeaders: fixtureFetchJsonWithHeaders, env: {}, log: () => {}, now: () => new Date('2026-10-30T20:00:00Z') };
+    await ingest(store, { ctx, only: ['cisa-kev', 'first-epss'] });
+    // An older point, as if stored by a run more than 30 days ago.
+    store.db.prepare(`update nodes set attrs = json_set(attrs, '$.epss.history', json('[["2026-09-01",0.0005]]')) where id = 'cve:CVE-2026-111357'`).run();
+    await ingest(store, { ctx, only: ['first-epss'] });
+    vi.restoreAllMocks();
+    const epss = store.getNode('cve:CVE-2026-111357')!.attrs.epss as { history: [string, number][] };
+    expect(epss.history[0]).toEqual(['2026-09-01', 0.0005]);
+    expect(epss.history.at(-1)).toEqual(['2026-10-30', 0.00316]);
+    expect(epss.history).toHaveLength(6);
+  });
+
   it('runs all sources offline, isolates failures and records status', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     const store = new Store();

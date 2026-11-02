@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { parseKev, type KevFeed } from '../src/sources/kev.ts';
 import { bestCvss, parseCpe, parseNvd, type NvdResponse } from '../src/sources/nvd.ts';
-import { parseEpss, type EpssResponse } from '../src/sources/epss.ts';
+import { mergeEpssHistory, parseEpss, type EpssResponse } from '../src/sources/epss.ts';
 import { parseUsgs, type UsgsFeed } from '../src/sources/usgs.ts';
 import { parseEonet, type EonetFeed } from '../src/sources/eonet.ts';
 import { parseGdelt, parseSeenDate, type GdeltResponse } from '../src/sources/gdelt.ts';
@@ -116,6 +116,50 @@ describe('EPSS parser', () => {
     expect(batch.nodes).toHaveLength(1);
     expect(batch.nodes[0]).toMatchObject({ id: 'cve:CVE-2021-44228', title: '' });
     expect(batch.nodes[0]!.attrs?.epss).toMatchObject({ score: 0.99999, percentile: 1, date: '2026-10-30' });
+  });
+
+  it('turns the 30-day time series into change points', () => {
+    const batch = parseEpss(fixture<EpssResponse>('epss.json'), new Set(['cve:CVE-2026-111357', 'cve:CVE-2021-44228']));
+    const history = (id: string) => (batch.nodes.find((n) => n.id === id)!.attrs!.epss as { history: unknown }).history;
+    expect(history('cve:CVE-2026-111357')).toEqual([
+      ['2026-10-24', 0.0012],
+      ['2026-10-25', 0.0018],
+      ['2026-10-27', 0.0025],
+      ['2026-10-28', 0.00291],
+      ['2026-10-30', 0.00316],
+    ]);
+    // 0.99998 and 0.99999 round to the same 4 decimals: one point.
+    expect(history('cve:CVE-2021-44228')).toEqual([['2026-10-27', 1]]);
+  });
+});
+
+describe('EPSS history merge', () => {
+  it('keeps stored points older than the fetched window and lets fetched days win', () => {
+    const stored: [string, number][] = [
+      ['2026-08-01', 0.1],
+      ['2026-09-15', 0.2],
+      ['2026-10-29', 0.9],
+    ];
+    const days = [
+      { date: '2026-10-28', score: 0.3 },
+      { date: '2026-10-29', score: 0.3 },
+      { date: '2026-10-30', score: 0.4 },
+    ];
+    expect(mergeEpssHistory(stored, days, '2026-10-30')).toEqual([
+      ['2026-08-01', 0.1],
+      ['2026-09-15', 0.2],
+      ['2026-10-28', 0.3],
+      ['2026-10-30', 0.4],
+    ]);
+  });
+
+  it('drops a repeated score and folds points older than a year into the first kept day', () => {
+    const stored: [string, number][] = [
+      ['2025-01-01', 0.05],
+      ['2025-06-01', 0.07],
+      ['2026-01-01', 0.07],
+    ];
+    expect(mergeEpssHistory(stored, [{ date: '2026-10-30', score: 0.07 }], '2026-10-30')).toEqual([['2025-10-30', 0.07]]);
   });
 });
 

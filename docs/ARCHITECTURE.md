@@ -106,6 +106,16 @@ curated feeds → GDELT → HN → inference.
 A source may return non-fatal `warnings` (e.g. 2 of 17 feeds failed). The source then stays
 `ok`, and the warnings are stored in `last_error` so the Sources panel shows them.
 
+**FIRST EPSS** (`sources/epss.ts`): scores every stored CVE in batches of 100 with
+`scope=time-series`, which also returns the previous 30 days. Besides the latest score and
+percentile, `attrs.epss.history` keeps the score as change points (`[date, score]`, each holding
+until the next point or `epss.date`). Scores are rounded (3 significant digits, or 4 decimals at
+10% and above) so noise does not add points. Fetched days replace stored points from the same
+period and older stored points are kept, so the history grows past the API's 30 days, up to 365.
+Most scores barely move, so this costs about 30 bytes per CVE in the snapshot. The investigation
+panel draws it as a step-chart sparkline scaled to its own range, with the range and the change
+in words.
+
 **GitHub Security Advisories** (`sources/ghsa.ts`): reviewed high and critical advisories from the
 last 7 days, paged via the `Link` header. An advisory with a CVE enriches the existing CVE node
 (GitHub's facts only; KEV/NVD title and CVSS are kept) or creates it. One without a CVE becomes a

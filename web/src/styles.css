@@ -328,3 +328,9 @@ button.small { font-size: 12px; padding: 3px 8px; }
   .search { flex-basis: 100%; max-width: none; }
   .stage-head .check { margin-left: 0; }
 }
+.epss-history { display: flex; flex-direction: column; gap: 2px; }
+.epss-spark { width: 240px; max-width: 100%; height: 36px; display: block; }
+.epss-spark path { fill: none; stroke: var(--muted); stroke-width: 1.5; }
+.epss-spark circle { fill: var(--muted); }
+.epss-spark.rising path { stroke: var(--c-vuln); }
+.epss-spark.rising circle { fill: var(--c-vuln); }

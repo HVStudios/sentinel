@@ -180,11 +180,11 @@ Watchlists live in one browser. Add export/import as a small JSON file (validate
 duplicates) so they can move between browsers and devices without accounts.
 
 ### SEN-32 · EPSS history per CVE
-Priority: P2 · Labels: data, frontend · Status: todo
+Priority: P2 · Labels: data, frontend · Status: done (merged)
 
-EPSS changes daily but only the latest score is kept. Store a compact score history and show a
-sparkline with the date range in the investigation panel, so rising exploitation likelihood is
-visible.
+- [x] EPSS fetched with `scope=time-series`: a new CVE gets 30 days of history at once, and gaps between runs are filled
+- [x] History stored as change points (`attrs.epss.history`), merged across runs, capped at 365 days; ~30 bytes per CVE
+- [x] Step-chart sparkline with date range and a written summary (also its accessible name) in the investigation panel
 
 ### SEN-33 · Source health history
 Priority: P3 · Labels: backend, frontend · Status: todo

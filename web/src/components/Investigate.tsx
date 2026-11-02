@@ -4,6 +4,7 @@ import { WATCHABLE } from '../lib/watchlist.ts';
 import { api } from '../apiClient.ts';
 import { badgesFor, categoryLabel, formatDate, locationLabel, relativeTime, TYPE_LABEL } from '../lib/format.ts';
 import { useFetch } from '../lib/useFetch.ts';
+import { EpssSparkline } from './EpssSparkline.tsx';
 import { Graph } from './Graph.tsx';
 
 interface Props {
@@ -129,6 +130,7 @@ function DetailBody({ d, headingRef }: { d: NodeDetail; headingRef: React.RefObj
             <Fact label="CVE">{a.cveId}</Fact>
             <Fact label="CVSS">{a.cvss && `${a.cvss.score} ${a.cvss.severity ?? ''} · v${a.cvss.version} · ${a.cvss.vector}`}</Fact>
             <Fact label="EPSS">{a.epss && `${(a.epss.score * 100).toFixed(2)}% (percentile ${(a.epss.percentile * 100).toFixed(1)}) on ${a.epss.date}`}</Fact>
+            <Fact label="EPSS history">{a.epss?.history?.length > 0 && <EpssSparkline epss={a.epss} />}</Fact>
             <Fact label="KEV added">{a.kev?.dateAdded}</Fact>
             <Fact label="KEV due date">{a.kev?.dueDate}</Fact>
             <Fact label="Ransomware use">{a.kev?.ransomware}</Fact>

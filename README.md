@@ -168,7 +168,7 @@ unit and integration tests, then the production build. CI (`.github/workflows/ci
 |---|---|---|
 | [CISA KEV](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) | Exploited CVEs, vendor/product, due dates, ransomware use | none |
 | [NIST NVD](https://nvd.nist.gov/developers) | CVSS, CWE, affected products (CPE), references | none |
-| [FIRST EPSS](https://www.first.org/epss/) | Exploit probability and percentile | none |
+| [FIRST EPSS](https://www.first.org/epss/) | Exploit probability and percentile, with daily history | none |
 | [GitHub Security Advisories](https://github.com/advisories) | Reviewed high/critical advisories for open-source packages (npm, PyPI, Go, crates.io…), affected version ranges and fixes | none |
 | [USGS](https://earthquake.usgs.gov/earthquakes/feed/) | Significant (month) and M4.5+ (week) earthquakes | source coordinates |
 | [NASA EONET](https://eonet.gsfc.nasa.gov/) | Open natural events (wildfires, storms, volcanoes…) | source point coordinates |
