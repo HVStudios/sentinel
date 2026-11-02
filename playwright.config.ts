@@ -21,7 +21,7 @@ export default defineConfig({
     {
       command: 'node --disable-warning=ExperimentalWarning server/src/main.ts',
       url: 'http://127.0.0.1:8788/api/health',
-      env: { PORT: '8788', HOST: '127.0.0.1', SENTINEL_DB: 'e2e/.data/seed.db' },
+      env: { PORT: '8788', HOST: '127.0.0.1', SENTINEL_DB: 'e2e/.data/seed.db', SENTINEL_FAKE_NOW: '2026-10-30T21:00:00Z' },
       reuseExistingServer: !process.env.CI,
     },
     {

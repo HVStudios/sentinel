@@ -4,6 +4,7 @@ import { dirname } from 'node:path';
 import type { Batch, NodeType, SentinelEdge, SentinelNode, SourceMeta } from './types.ts';
 import { TIMED_TYPES } from './types.ts';
 import { relatedItems } from '../../shared/related.ts';
+import { computeTrends, type Trends } from '../../shared/trends.ts';
 
 const SCHEMA = `
 create table if not exists nodes (
@@ -691,6 +692,14 @@ export class Store {
   /** Timed items related to a watched node, with the path that relates them (see shared/related.ts). */
   related(id: string, limit = 50): { node: NodeRow; via: string }[] {
     return relatedItems<NodeRow>({ node: (x) => this.getNode(x), edges: (x) => this.edgesOf(x) }, id, limit);
+  }
+
+  /** KEV history and collection activity (see shared/trends.ts). */
+  trends(now: Date, windowDays: number): Trends {
+    const nodes = [...this.nodesByType('vulnerability'), ...this.nodesByType('article'), ...this.nodesByType('natural_event')];
+    const weaknessesOf = new Map<string, string[]>();
+    for (const e of this.edgesByRel(['has_weakness'])) weaknessesOf.set(e.src, [...(weaknessesOf.get(e.src) ?? []), e.dst]);
+    return computeTrends({ nodes, weaknessesOf, now, windowDays });
   }
 
   sources(): SourceRow[] {

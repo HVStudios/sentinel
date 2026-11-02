@@ -53,6 +53,9 @@ export interface VendorHq {
   vulnerabilities: number;
 }
 
+export type { Trends } from '../../shared/trends.ts';
+import type { Trends } from '../../shared/trends.ts';
+
 export type MapData = { points: SNode[]; countries: { country: string; count: number }[]; vendors: VendorHq[] };
 
 export interface SourceStatus {
@@ -124,6 +127,8 @@ export interface Api {
   stories(f: Pick<Filters, 'from' | 'to'>, signal?: AbortSignal): Promise<{ stories: SNode[] }>;
   /** Timed items related to a watched node, each with `via` explaining the link. */
   related(id: string, signal?: AbortSignal): Promise<{ items: (SNode & { via: string })[] }>;
+  /** KEV history (complete) and SENTINEL's collection activity, for a 30/90/365-day ranking window. */
+  trends(windowDays: number, signal?: AbortSignal): Promise<Trends>;
   startIngest(): Promise<void>;
 }
 
@@ -142,6 +147,7 @@ export const httpApi: Api = {
   graph: (id, depth, signal) =>
     get<{ nodes: SNode[]; edges: SEdge[] }>(`/api/graph/${encodeURIComponent(id)}${qs({ depth, limit: 60 })}`, signal),
   sources: (signal?: AbortSignal) => get<SourcesResponse>('/api/sources', signal),
+  trends: (windowDays, signal) => get<Trends>(`/api/trends${qs({ window: windowDays })}`, signal),
   related: (id, signal) => get<{ items: (SNode & { via: string })[] }>(`/api/related/${encodeURIComponent(id)}`, signal),
   stories: (f, signal) => get<{ stories: SNode[] }>(`/api/stories${qs({ from: f.from, to: f.to, limit: 100 })}`, signal),
   startIngest: async () => {

@@ -52,6 +52,13 @@ test('watchlist view has no WCAG A/AA violations', async ({ page }) => {
   expect(await audit(page)).toEqual([]);
 });
 
+test('trends view has no WCAG A/AA violations', async ({ page }) => {
+  await open(page);
+  await page.getByRole('group', { name: 'Main view' }).getByRole('button', { name: 'Trends' }).click();
+  await expect(page.getByRole('heading', { name: /Most affected in the last/ })).toBeVisible();
+  expect(await audit(page)).toEqual([]);
+});
+
 test.describe('phone width', () => {
   test.use({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
 

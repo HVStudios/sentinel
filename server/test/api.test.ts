@@ -115,6 +115,13 @@ describe('HTTP API', () => {
     expect((await get('/api/related/vendor:acme?limit=0')).status).toBe(400);
   });
 
+  it('serves trends for 30, 90 or 365 days', async () => {
+    const { body } = await get('/api/trends?window=30');
+    expect(body).toMatchObject({ windowDays: 30, weeks: expect.any(Array), kevWeekly: { total: expect.any(Array) } });
+    expect((await get('/api/trends')).body.windowDays).toBe(90);
+    expect((await get('/api/trends?window=7')).status).toBe(400);
+  });
+
   it('lists sources', async () => {
     const { body } = await get('/api/sources');
     expect(body.sources[0]).toMatchObject({ id: 'test', name: 'Test' });

@@ -1,4 +1,7 @@
 import { createHash } from 'node:crypto';
+import { productNodeId, slug, vendorNodeId } from '../../../shared/ids.ts';
+
+export { productNodeId, slug, vendorNodeId };
 import type { Batch, SourceMeta } from '../types.ts';
 import type { Store } from '../store.ts';
 import type { fetchJson, fetchJsonWithHeaders, fetchText } from '../http.ts';
@@ -21,14 +24,6 @@ export interface SourceModule {
   run(ctx: IngestContext): Promise<SourceResult>;
 }
 
-export const slug = (s: string): string =>
-  s
-    .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '') || 'unknown';
-
 export const sha1 = (s: string): string => createHash('sha1').update(s).digest('hex').slice(0, 16);
 
 export const clamp01 = (x: number): number => Math.min(1, Math.max(0, x));
@@ -42,8 +37,6 @@ export const toIso = (s: string | null | undefined): string | null => {
 };
 
 export const cveNodeId = (cve: string) => `cve:${cve.toUpperCase()}`;
-export const vendorNodeId = (vendor: string) => `vendor:${slug(vendor)}`;
-export const productNodeId = (vendor: string, product: string) => `product:${slug(vendor)}/${slug(product)}`;
 export const cweNodeId = (cwe: string) => `cwe:${cwe.toUpperCase()}`;
 export const nvdUrl = (cve: string) => `https://nvd.nist.gov/vuln/detail/${cve.toUpperCase()}`;
 export const cweUrl = (cwe: string) => `https://cwe.mitre.org/data/definitions/${cwe.replace(/^CWE-/i, '')}.html`;
