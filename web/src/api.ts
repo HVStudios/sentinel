@@ -71,6 +71,17 @@ export interface SourceStatus {
   lastCount: number | null;
   lastError: string | null;
   lastDurationMs: number | null;
+  /** Recent runs, oldest first (absent in older snapshots). */
+  runs?: SourceRun[];
+}
+
+export interface SourceRun {
+  at: string;
+  status: 'ok' | 'error';
+  count: number;
+  durationMs: number;
+  /** Error, or warnings for an `ok` run with partial problems. */
+  error?: string;
 }
 
 /** See server/src/store.ts: latest = chronological; mixed/top = one category at a time, by time or rank. */

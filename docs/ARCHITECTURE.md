@@ -106,6 +106,14 @@ curated feeds → GDELT → HN → inference.
 A source may return non-fatal `warnings` (e.g. 2 of 17 feeds failed). The source then stays
 `ok`, and the warnings are stored in `last_error` so the Sources panel shows them.
 
+Every run is also appended to `source_runs` (status, record count, duration, error cut to 200
+characters), keeping the latest 60 per source: 15 days at the Pages workflow's 6-hour schedule.
+`/api/sources` and the snapshot carry them as `runs`, oldest first. The Sources panel draws one
+bar per run (colour: ok, ok with warnings, failed; height: records, failed runs full height) with
+a summary such as "14 runs: 12 ok, 1 with warnings, 1 failed · median 2.1 s", so intermittent
+problems like GDELT's rate limiting show up over time. On Pages the history survives as long as the
+cached database does; if GitHub evicts the cache, it starts again.
+
 **FIRST EPSS** (`sources/epss.ts`): scores every stored CVE in batches of 100 with
 `scope=time-series`, which also returns the previous 30 days. Besides the latest score and
 percentile, `attrs.epss.history` keeps the score as change points (`[date, score]`, each holding

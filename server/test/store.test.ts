@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { decodeMixCursor, encodeMixCursor, Store } from '../src/store.ts';
+import { decodeMixCursor, encodeMixCursor, RUN_HISTORY, Store } from '../src/store.ts';
 import type { Batch } from '../src/types.ts';
 
 const src = { id: 'test', name: 'Test source', homepage: 'https://example.org', description: 'fixture' };
@@ -236,5 +236,17 @@ describe('Store', () => {
   it('records source runs', () => {
     store.recordSourceRun('test', { status: 'error', count: 0, error: 'boom', durationMs: 12 });
     expect(store.sources()[0]).toMatchObject({ lastStatus: 'error', lastError: 'boom', lastRunAt: '2024-06-01T00:00:00.000Z' });
+    expect(store.sources()[0]!.runs).toEqual([{ at: '2024-06-01T00:00:00.000Z', status: 'error', count: 0, durationMs: 12, error: 'boom' }]);
+  });
+
+  it('keeps the most recent runs per source, oldest first, with errors shortened', () => {
+    for (let i = 0; i < RUN_HISTORY + 5; i++) store.recordSourceRun('test', { status: 'ok', count: i, durationMs: 1 });
+    store.recordSourceRun('test', { status: 'error', count: 0, durationMs: 1, error: 'x'.repeat(500) });
+    const s = store.sources()[0]!;
+    expect(s.runs).toHaveLength(RUN_HISTORY);
+    expect(s.runs[0]!.count).toBe(6);
+    expect(s.runs.at(-1)!.error).toHaveLength(200);
+    expect(s.lastError).toHaveLength(500); // the latest error stays complete
+    expect(s.runs.at(-2)).not.toHaveProperty('error');
   });
 });

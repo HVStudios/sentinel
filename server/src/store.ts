@@ -61,7 +61,24 @@ create table if not exists sources (
   last_error text,
   last_duration_ms integer
 );
+
+-- The most recent runs per source (see RUN_HISTORY), so intermittent failures show over time.
+create table if not exists source_runs (
+  id integer primary key,
+  source_id text not null,
+  ran_at text not null,
+  status text not null,
+  count integer not null,
+  duration_ms integer not null,
+  error text
+);
+create index if not exists source_runs_source on source_runs (source_id, id);
 `;
+
+/** Runs kept per source: 60 is 15 days at the Pages workflow's 6-hour schedule. */
+export const RUN_HISTORY = 60;
+/** Run errors are cut to this length in the history (the latest stays complete in `lastError`). */
+const RUN_ERROR_MAX = 200;
 
 export interface NodeRow extends SentinelNode {
   ingestedAt: string;
@@ -78,6 +95,17 @@ export interface SourceRow extends SourceMeta {
   lastCount: number | null;
   lastError: string | null;
   lastDurationMs: number | null;
+  /** Recent runs, oldest first (at most RUN_HISTORY). */
+  runs: SourceRun[];
+}
+
+export interface SourceRun {
+  at: string;
+  status: 'ok' | 'error';
+  count: number;
+  durationMs: number;
+  /** Error, or warnings for an `ok` run with partial problems. */
+  error?: string;
 }
 
 /** A vendor headquarters marker: where the vendor is based (Wikidata), not where anything happened. */
@@ -187,7 +215,7 @@ const toEdge = (r: Row): EdgeRow => ({
   observedAt: r.observed_at as string,
 });
 
-const toSource = (r: Row): SourceRow => ({
+const toSource = (r: Row, runs: SourceRun[] = []): SourceRow => ({
   id: r.id as string,
   name: r.name as string,
   homepage: r.homepage as string,
@@ -197,6 +225,7 @@ const toSource = (r: Row): SourceRow => ({
   lastCount: r.last_count as number | null,
   lastError: r.last_error as string | null,
   lastDurationMs: r.last_duration_ms as number | null,
+  runs,
 });
 
 const n = <T>(v: T | undefined): T | null => (v === undefined ? null : v);
@@ -246,6 +275,12 @@ export class Store {
          where id = ?`,
       )
       .run(this.now(), run.status, run.count, run.error ?? null, run.durationMs, id);
+    this.db
+      .prepare('insert into source_runs (source_id, ran_at, status, count, duration_ms, error) values (?, ?, ?, ?, ?, ?)')
+      .run(id, this.now(), run.status, run.count, run.durationMs, run.error ? run.error.slice(0, RUN_ERROR_MAX) : null);
+    this.db
+      .prepare('delete from source_runs where source_id = ? and id not in (select id from source_runs where source_id = ? order by id desc limit ?)')
+      .run(id, id, RUN_HISTORY);
   }
 
   /**
@@ -722,7 +757,13 @@ export class Store {
   }
 
   sources(): SourceRow[] {
-    return (this.db.prepare('select * from sources order by name').all() as Row[]).map(toSource);
+    const runs = new Map<string, SourceRun[]>();
+    for (const r of this.db.prepare('select * from source_runs order by id').all() as Row[]) {
+      const run: SourceRun = { at: r.ran_at as string, status: r.status as SourceRun['status'], count: r.count as number, durationMs: r.duration_ms as number };
+      if (r.error) run.error = r.error as string;
+      runs.set(r.source_id as string, [...(runs.get(r.source_id as string) ?? []), run]);
+    }
+    return (this.db.prepare('select * from sources order by name').all() as Row[]).map((r) => toSource(r, runs.get(r.id as string)));
   }
 
   counts(): Record<string, number> {
