@@ -73,7 +73,8 @@ test('investigates a vulnerability and follows the graph', async ({ page }) => {
   await expect(panel.getByText('No location reported by source')).toBeVisible();
   await expect(panel.getByText(/reported · cisa-kev/).first()).toBeVisible();
   await expect(panel.getByRole('link', { name: 'CISA Known Exploited Vulnerabilities' })).toBeVisible();
-  await expect(page).toHaveURL(/#\/node\/cve%3ACVE-2026-111357$/);
+  // The URL carries the open item and the active search (applied after the search debounce).
+  await expect(page).toHaveURL(/#\/node\/cve%3ACVE-2026-111357\?q=ivanti$/);
 
   // Graph → product → vendor, then back.
   const graph = panel.getByRole('group', { name: 'Relationship graph' });
