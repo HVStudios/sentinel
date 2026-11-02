@@ -2,6 +2,7 @@ import type { MapData, NodeDetail, SEdge, SNode, SourceStatus, TimedType, Vendor
 import { TIMED_TYPES } from './api.ts';
 import type { Api, Filters, SourcesResponse } from './api.ts';
 import { relatedItems } from '../../shared/related.ts';
+import { computeTrends } from '../../shared/trends.ts';
 
 /** Mirrors server/src/snapshot.ts. */
 type Provenance = { nodeId: string; sourceId: string; sourceUrl: string | null; fetchedAt: string };
@@ -271,6 +272,14 @@ export function queryStories(ix: Index, f: { from?: string; to?: string }, limit
 export const queryRelated = (ix: Index, id: string, limit = 50) =>
   relatedItems<SNode>({ node: (x) => ix.byId.get(x), edges: (x) => ix.adj.get(x) ?? [] }, id, limit);
 
+/** Same inputs as Store.trends: timed nodes plus vulnerability → weakness links. */
+export function queryTrends(ix: Index, now: Date, windowDays: number) {
+  const nodes = ix.snap.nodes.filter((n) => n.type === 'vulnerability' || n.type === 'article' || n.type === 'natural_event');
+  const weaknessesOf = new Map<string, string[]>();
+  for (const e of ix.snap.edges) if (e.rel === 'has_weakness') weaknessesOf.set(e.src, [...(weaknessesOf.get(e.src) ?? []), e.dst]);
+  return computeTrends({ nodes, weaknessesOf, now, windowDays });
+}
+
 export function createStaticApi(load: () => Promise<Snapshot>): Api {
   let index: Promise<Index> | null = null;
   const ix = () => (index ??= load().then(indexSnapshot).catch((err) => {
@@ -289,6 +298,11 @@ export function createStaticApi(load: () => Promise<Snapshot>): Api {
       return { sources: snap.sources, ingest: { running: false, last: null }, generatedAt: snap.generatedAt, retention: snap.retention };
     },
     stories: async (f) => ({ stories: queryStories(await ix(), f) }),
+    // The snapshot's own time is "now": its data stops there, so trends end there too.
+    trends: async (windowDays) => {
+      const i = await ix();
+      return queryTrends(i, new Date(i.snap.generatedAt), windowDays);
+    },
     related: async (id) => {
       const i = await ix();
       if (!i.byId.has(id)) throw new Error(`404 Not Found for ${id}`);

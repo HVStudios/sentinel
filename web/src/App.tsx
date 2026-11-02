@@ -10,6 +10,7 @@ import { Investigate } from './components/Investigate.tsx';
 import { SourcesPanel } from './components/SourcesPanel.tsx';
 import { StoriesList } from './components/StoriesList.tsx';
 import { WatchlistView } from './components/WatchlistView.tsx';
+import { TrendsView } from './components/TrendsView.tsx';
 import { useWatchData, useWatchlist } from './lib/watchlist.ts';
 import { useDataVersion } from './lib/useDataVersion.ts';
 
@@ -46,6 +47,7 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
   const [sort, setSort] = useState<FeedSort>('mixed');
   const [showVendors, setShowVendors] = useState(true);
   const [view, setView] = useState<'feed' | 'stories' | 'watchlist'>('feed');
+  const [stageView, setStageView] = useState<'map' | 'trends'>('map');
   // Live mode: reload data whenever a server-side refresh (manual or scheduled) finishes.
   const data = useDataVersion(api);
   const watchlist = useWatchlist(now);
@@ -201,36 +203,54 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
       <main className="main">
         <section className="stage">
           <div className="stage-head">
-            <h2>World view</h2>
-            <span className="muted small">
-              {brush ? `${new Date(brush.from).toLocaleString()} → ${new Date(brush.to).toLocaleString()}` : `Last ${preset}`}
-              {counts && ` · ${counts.points} mapped events · ${counts.countries} articles with publisher country`}
-            </span>
-            <label className="small check">
-              <input type="checkbox" checked={showCountries} onChange={(e) => setShowCountries(e.target.checked)} /> Publisher-country shading
-            </label>
-            <label className="small check check-tight">
-              <input type="checkbox" checked={showVendors} onChange={(e) => setShowVendors(e.target.checked)} /> Vendor HQs
-            </label>
+            <h2>{stageView === 'map' ? 'World view' : 'Trends'}</h2>
+            <div className="seg seg-sm seg-view" role="group" aria-label="Main view">
+              <button className={stageView === 'map' ? 'on' : ''} aria-pressed={stageView === 'map'} onClick={() => setStageView('map')}>
+                Map
+              </button>
+              <button className={stageView === 'trends' ? 'on' : ''} aria-pressed={stageView === 'trends'} onClick={() => setStageView('trends')}>
+                Trends
+              </button>
+            </div>
+            {stageView === 'map' && (
+              <>
+                <span className="muted small">
+                  {brush ? `${new Date(brush.from).toLocaleString()} → ${new Date(brush.to).toLocaleString()}` : `Last ${preset}`}
+                  {counts && ` · ${counts.points} mapped events · ${counts.countries} articles with publisher country`}
+                </span>
+                <label className="small check">
+                  <input type="checkbox" checked={showCountries} onChange={(e) => setShowCountries(e.target.checked)} /> Publisher-country shading
+                </label>
+                <label className="small check check-tight">
+                  <input type="checkbox" checked={showVendors} onChange={(e) => setShowVendors(e.target.checked)} /> Vendor HQs
+                </label>
+              </>
+            )}
           </div>
-          <WorldMap
-            points={map.data?.points ?? []}
-            countryCounts={map.data?.countries ?? []}
-            selectedId={selected}
-            onSelect={select}
-            showCountries={showCountries}
-            vendors={map.data?.vendors ?? []}
-            showVendors={showVendors && types.includes('vulnerability')}
-          />
-          {timeline.data && (
-            <Timeline
-              from={timeline.data.from}
-              to={timeline.data.to}
-              bucketMs={timeline.data.bucketMs}
-              series={timeline.data.series}
-              selection={brush}
-              onBrush={setBrush}
+          {stageView === 'trends' ? (
+            <TrendsView onSelect={select} dataVersion={data.version} />
+          ) : (
+            <>
+            <WorldMap
+              points={map.data?.points ?? []}
+              countryCounts={map.data?.countries ?? []}
+              selectedId={selected}
+              onSelect={select}
+              showCountries={showCountries}
+              vendors={map.data?.vendors ?? []}
+              showVendors={showVendors && types.includes('vulnerability')}
             />
+            {timeline.data && (
+              <Timeline
+                from={timeline.data.from}
+                to={timeline.data.to}
+                bucketMs={timeline.data.bucketMs}
+                series={timeline.data.series}
+                selection={brush}
+                onBrush={setBrush}
+              />
+            )}
+            </>
           )}
         </section>
 

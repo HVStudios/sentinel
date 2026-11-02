@@ -27,6 +27,9 @@ connect.
 - **Stories.** Related CVEs, advisories and articles are grouped into stories that evolve over
   time. They are linked only by shared identifiers, exploit chains, the same exploited product,
   or near-identical headlines, with the reason shown for every item. No AI model is involved.
+- **Trends.** Known-exploited vulnerabilities added per week over a year (with the ransomware
+  share), the most-affected vendors, products and weaknesses for 30/90/365 days, and SENTINEL's
+  own collection activity, each chart labelled with its source and coverage.
 - **Watchlists.** Watch a vendor, product, vulnerability or story (★). New related items are
   counted and highlighted in the feed. The watchlist is stored only in your browser, so it also
   works on the static site.
@@ -151,6 +154,7 @@ unit and integration tests, then the production build. CI (`.github/workflows/ci
 | `SENTINEL_DB` | `data/sentinel.db` | SQLite file, relative to the repo root |
 | `NVD_API_KEY` | — | Optional free NVD key; raises the limit from 5 to 50 requests per 30 s |
 | `SENTINEL_REFRESH_MINUTES` | off | Refresh all sources in the background every N minutes (an empty database is refreshed at startup). Open pages reload their data when a refresh finishes. |
+| `SENTINEL_FAKE_NOW` | — | Test only: pins the server clock (used by the end-to-end tests) |
 | `GITHUB_TOKEN` | — | Optional; raises the GitHub advisories API limit from 60 to 1,000 requests an hour (set automatically in GitHub Actions) |
 | `NVD_RECENT_DAYS` | `3` | Window for recently published CVEs (only CVSS ≥ 7 or KEV-listed CVEs are kept) |
 

@@ -187,6 +187,20 @@ export function buildApp(store: Store, opts: AppOptions = {}): FastifyInstance {
     },
   );
 
+  app.get<{ Querystring: { window?: number } }>(
+    '/api/trends',
+    {
+      schema: {
+        querystring: {
+          type: 'object',
+          additionalProperties: false,
+          properties: { window: { type: 'integer', enum: [30, 90, 365], default: 90 } },
+        },
+      },
+    },
+    async (req) => store.trends(now(), req.query.window ?? 90),
+  );
+
   app.get('/api/sources', async () => ({
     sources: store.sources(),
     ingest: { running: Boolean(running), last: lastIngest, refreshMinutes: opts.refreshMinutes || null, nextRunAt },

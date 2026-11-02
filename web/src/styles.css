@@ -222,6 +222,24 @@ h3 { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: 
 .new-tag { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #1a0f00; background: var(--t-medium); border-radius: 4px; padding: 0 4px; margin-right: 6px; }
 button.small { font-size: 12px; padding: 3px 8px; }
 
+/* Trends */
+.trends { overflow-y: auto; flex: 1; padding: 12px 14px; display: grid; gap: 14px; align-content: start; }
+.trend-card { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; display: grid; gap: 8px; }
+.trend-card h3 { margin: 0; text-transform: none; letter-spacing: 0; font-size: 13px; color: var(--text); }
+.trend-head { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.trend-bars { width: 100%; height: 120px; display: block; }
+.bar-ransomware { fill: #b0213e; }
+.swatch-ransomware { display: inline-block; width: 9px; height: 9px; border-radius: 2px; background: #b0213e; }
+.trend-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; }
+.trend-source { margin: 0; }
+.ranks { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.rank h3 { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 6px; }
+.rank ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.rank li { display: grid; grid-template-columns: minmax(0, 1fr) 28px; grid-template-areas: 'name count' 'bar bar'; column-gap: 6px; font-size: 12.5px; }
+.rank li .link-btn { grid-area: name; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rank-bar { grid-area: bar; height: 4px; border-radius: 2px; background: var(--c-vuln); opacity: 0.7; }
+.rank-count { grid-area: count; text-align: right; font-family: var(--mono); color: var(--muted); }
+
 /* Investigation */
 .investigate { overflow-y: auto; }
 .inv-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--panel); z-index: 2; }

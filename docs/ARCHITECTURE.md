@@ -197,6 +197,21 @@ the path as `via`:
 | weakness | vulnerabilities with that CWE |
 | story | its members |
 
+## Trends
+
+`shared/trends.ts` computes the Trends view, used by both the server (`GET /api/trends?window=`)
+and the static engine. On the static site "now" is the snapshot's own time. The view has two kinds
+of history, labelled differently:
+
+- **CISA KEV (complete):** KEV additions per week over 52 weeks (Monday-aligned UTC weeks), with
+  the share CISA marks as known ransomware use, plus the most-affected vendors, products and CWEs
+  over 30/90/365 days. KEV entries carry CISA's date added and never expire, so this covers the
+  catalogue's full history.
+- **SENTINEL's collection (partial):** news and world events per publication week, with the
+  collection start date. Weeks before collection started hold only what was still in the feeds
+  then, and retention trims older items. These charts describe SENTINEL's collection, not world
+  activity.
+
 ## Feed ordering
 
 A chronological feed is dominated by whichever category publishes most (a few days of NVD
@@ -216,6 +231,7 @@ and the parity test covers all three orderings.
 | `GET /api/nodes/:id` | Node, provenance and adjacent edges. |
 | `GET /api/graph/:id?depth=1..2&limit` | Neighbourhood subgraph. |
 | `GET /api/stories?from&to&limit` | Stories active in the window, most recent first. |
+| `GET /api/trends?window=30\|90\|365` | KEV additions per week (complete history), rankings for the window, and collection activity. |
 | `GET /api/related/:id?limit` | Timed items related to a watched node, each with `via` (the link that relates it). |
 | `GET /api/sources` | Source metadata and last-run status. |
 | `POST /api/ingest` | Triggers a refresh (single-flight, shared with the scheduled refresh). Only bound when the server listens on localhost. |

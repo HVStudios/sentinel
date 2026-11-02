@@ -150,11 +150,12 @@ order and side-panel view as well, so a link reproduces exactly what you see, an
 back button works for filter changes.
 
 ### SEN-28 · Trends view from accumulated history
-Priority: P2 · Labels: frontend, analysis · Status: todo
+Priority: P2 · Labels: frontend, analysis · Status: done (merged)
 
-With history retained, show trends: KEV additions per week, most-affected vendors and products
-over 30/90 days, and event counts by category. Keep the rules transparent and label every chart
-with its source data.
+- [x] KEV additions per week over 52 weeks with the known-ransomware share (complete history: KEV never expires)
+- [x] Most-affected vendors, products and CWEs for 30/90/365 days, clickable into investigations
+- [x] SENTINEL's collection activity by publication week, labelled with the collection start and its limits
+- [x] One shared computation (`shared/trends.ts`) for the server and the static site; parity, unit, e2e and axe tests
 
 ### SEN-29 · More national CERT feeds with publisher country
 Priority: P2 · Labels: ingestion, geo · Status: todo

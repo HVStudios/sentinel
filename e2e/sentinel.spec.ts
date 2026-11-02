@@ -236,3 +236,18 @@ test('highlights items that are new since the last check, and clears them', asyn
   await expect(list.getByText('New', { exact: true })).toHaveCount(0);
   await expect(tab).not.toContainText('new');
 });
+
+test('shows KEV trends with sources, and opens a ranked vendor', async ({ page }) => {
+  await open(page);
+  await page.getByRole('group', { name: 'Main view' }).getByRole('button', { name: 'Trends' }).click();
+  await expect(page.getByRole('heading', { name: 'Trends' })).toBeVisible();
+  await expect(page.getByRole('img', { name: /^KEV additions: \d+ in 52 weeks/ })).toBeVisible();
+  await expect(page.getByText(/Complete history: SENTINEL never expires KEV entries/)).toBeVisible();
+  await expect(page.getByText(/This counts SENTINEL's own collection, not world activity/)).toBeVisible();
+  const ranking = page.getByRole('heading', { name: /Most affected in the last 90 days/ });
+  await expect(ranking).toContainText(/\d+ KEV additions/);
+  await page.getByRole('group', { name: 'Ranking window' }).getByRole('button', { name: '1y' }).click();
+  await expect(page.getByRole('heading', { name: /Most affected in the last 365 days/ })).toBeVisible();
+  await page.locator('.rank').filter({ hasText: 'Vendors' }).getByRole('button', { name: 'Ivanti' }).click();
+  await expect(investigation(page).getByRole('heading', { name: 'Ivanti', exact: true })).toBeVisible();
+});

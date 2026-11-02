@@ -3,7 +3,7 @@ import { ingest } from '../src/ingest.ts';
 import { Store } from '../src/store.ts';
 import { buildSnapshot } from '../src/snapshot.ts';
 import { RateLimiter } from '../src/http.ts';
-import { indexSnapshot, queryFeed, queryGraph, queryMap, queryNode, queryRelated, queryStories, queryTimeline, type Snapshot } from '../../web/src/staticApi.ts';
+import { indexSnapshot, queryFeed, queryGraph, queryMap, queryNode, queryRelated, queryStories, queryTimeline, queryTrends, type Snapshot } from '../../web/src/staticApi.ts';
 import type { TimedType } from '../../web/src/api.ts';
 import { vi } from 'vitest';
 
@@ -70,6 +70,12 @@ describe('static snapshot engine parity', () => {
       expect(queryRelated(ix, id).map((r) => `${r.node.id}|${r.via}`), id).toEqual(srv);
     }
     expect(store.related('vendor:ivanti').length).toBeGreaterThan(0);
+  });
+
+  it('computes identical trends', () => {
+    const now = new Date('2026-10-31T00:00:00Z');
+    for (const w of [30, 90, 365]) expect(queryTrends(ix, now, w)).toEqual(store.trends(now, w));
+    expect(store.trends(now, 365).kevInWindow).toBeGreaterThan(0);
   });
 
   it('lists identical stories', () => {

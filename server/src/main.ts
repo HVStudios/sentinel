@@ -6,7 +6,13 @@ import { registerStaticFiles } from './staticFiles.ts';
 
 const loopback = ['127.0.0.1', 'localhost', '::1'].includes(config.host);
 const store = new Store(config.dbPath);
-const app = buildApp(store, { allowIngest: loopback, logger: true, refreshMinutes: config.refreshMinutes });
+const fakeNow = config.fakeNow;
+const app = buildApp(store, {
+  allowIngest: loopback,
+  logger: true,
+  refreshMinutes: config.refreshMinutes,
+  ...(fakeNow ? { now: () => fakeNow } : {}),
+});
 
 if (existsSync(config.webDist)) await registerStaticFiles(app, config.webDist);
 
