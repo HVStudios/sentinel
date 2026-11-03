@@ -67,6 +67,10 @@ sources(id PK, name, homepage, description, last_run_at, last_status,
   - `coordinates`: the source supplies lat/lon (USGS, EONET).
   - `publisher_country`: the publishing outlet's country (GDELT, or the curated feed registry).
     This is *not* where the event happened, and the UI labels it as publisher country.
+    A vulnerability's **Who reported it** section (`shared/coverage.ts`) groups the articles and
+    advisories that mention it by this country, biggest group first and oldest item first, each
+    still marked inferred with its confidence. "Show on map" outlines those countries, with a
+    legend saying they are where the publishers are based, not where the vulnerability is.
   - `null`: no location. This applies to all vulnerabilities.
 - **Severity** is normalised to 0–1 so the map and feed can rank items consistently. The raw
   values are kept in `attrs`.
@@ -276,7 +280,7 @@ and the parity test covers all three orderings.
 | `GET /api/feed?from&to&types&q&sort&limit&before` | Time-bound nodes with cursor pagination. `sort` is `latest` (chronological), `mixed` (one category at a time, newest first within each) or `top` (one category at a time, by severity/rank). |
 | `GET /api/map?from&to&types` | `{ points[], countries[], vendors[], affected[] }`: geolocated nodes, publisher-country aggregates, Wikidata headquarters of vendors behind vulnerabilities in the window, and countries GDACS reports as affected. |
 | `GET /api/timeline?from&to&types` | Histogram buckets per node type. |
-| `GET /api/nodes/:id` | Node, provenance and adjacent edges. |
+| `GET /api/nodes/:id` | Node, provenance and adjacent edges. For linked articles, `other` also carries the category, publisher country and outlet. |
 | `GET /api/graph/:id?depth=1..2&limit` | Neighbourhood subgraph. |
 | `GET /api/stories?from&to&limit` | Stories active in the window, most recent first. |
 | `GET /api/trends?window=30\|90\|365` | KEV additions per week (complete history), rankings for the window, EPSS movers (7 and 30 days), and collection activity. |

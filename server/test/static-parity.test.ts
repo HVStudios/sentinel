@@ -3,6 +3,7 @@ import { ingest } from '../src/ingest.ts';
 import { Store } from '../src/store.ts';
 import { buildSnapshot } from '../src/snapshot.ts';
 import { RateLimiter } from '../src/http.ts';
+import { edgeOther } from '../../shared/coverage.ts';
 import { indexSnapshot, queryFeed, queryGraph, queryMap, queryNode, queryRelated, queryStories, queryTimeline, queryTrends, type Snapshot } from '../../web/src/staticApi.ts';
 import type { TimedType } from '../../web/src/api.ts';
 import { vi } from 'vitest';
@@ -96,6 +97,8 @@ describe('static snapshot engine parity', () => {
       expect(st.edges.map((e) => `${e.src}|${e.dst}|${e.rel}|${e.basis}`).sort()).toEqual(
         store.edgesOf(id).map((e) => `${e.src}|${e.dst}|${e.rel}|${e.basis}`).sort(),
       );
+      // The linked nodes' details (publisher country, outlet) match what the server API returns.
+      for (const e of st.edges) expect(e.other, e.other.id).toEqual(edgeOther(store.getNode(e.other.id), e.other.id));
       for (const depth of [1, 2]) {
         const g = store.graph(id, depth, 8);
         const sg = queryGraph(ix, id, depth, 8);

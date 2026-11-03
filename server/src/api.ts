@@ -4,6 +4,7 @@ import { TIMED_TYPES, type NodeType } from './types.ts';
 import { ingest, type IngestResult } from './ingest.ts';
 import { VERSION } from './version.ts';
 import { RETENTION_DAYS } from './retention.ts';
+import { edgeOther } from '../../shared/coverage.ts';
 
 export interface AppOptions {
   /** Enables POST /api/ingest. Only turned on when the server is bound to loopback. */
@@ -125,12 +126,7 @@ export function buildApp(store: Store, opts: AppOptions = {}): FastifyInstance {
     if (!node) return reply.code(404).send({ error: 'not found' });
     const edges = store.edgesOf(node.id).map((e) => {
       const otherId = e.src === node.id ? e.dst : e.src;
-      const other = store.getNode(otherId);
-      return {
-        ...e,
-        direction: e.src === node.id ? 'out' : 'in',
-        other: other ? { id: other.id, type: other.type, title: other.title, occurredAt: other.occurredAt } : { id: otherId, type: null, title: otherId },
-      };
+      return { ...e, direction: e.src === node.id ? 'out' : 'in', other: edgeOther(store.getNode(otherId), otherId) };
     });
     return { node, provenance: store.provenanceFor(node.id), edges };
   });

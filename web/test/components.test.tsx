@@ -89,6 +89,15 @@ describe('WorldMap', () => {
     expect(screen.queryByText(/Reported by GDACS/)).toBeNull();
   });
 
+  it('outlines the publisher countries of a CVE\'s coverage, labelled as such', () => {
+    const { container } = render(
+      <WorldMap points={[]} countryCounts={[]} selectedId={null} onSelect={() => {}} showCountries coverage={{ title: 'CVE-1', countries: ['Japan', 'United States', 'Singapore'] }} />,
+    );
+    expect([...container.querySelectorAll('[data-coverage]')].map((p) => p.getAttribute('data-coverage')).sort()).toEqual(['Japan', 'United States of America']);
+    expect(screen.getByText(/of the outlets and agencies that\s+reported CVE-1: where they are based, not where the vulnerability is/)).toBeTruthy();
+    expect(screen.getByText(/Not drawn: Singapore/)).toBeTruthy();
+  });
+
   it('hides shading when disabled', () => {
     const { container } = render(<WorldMap points={[]} countryCounts={[{ country: 'Germany', count: 3 }]} selectedId={null} onSelect={() => {}} showCountries={false} />);
     expect((container.querySelector('[data-country="Germany"]') as SVGPathElement).style.fill).toBe('');
@@ -154,6 +163,37 @@ describe('Investigate (articles)', () => {
   });
 });
 
+describe('Investigate (vulnerability coverage)', () => {
+  it('lists who reported a CVE by publisher country and offers to outline those countries', async () => {
+    const mention = (id: string, title: string, country: string | null, outlet: string, category: string, at: string) => ({
+      src: id, dst: kevCve.id, rel: 'mentions', basis: 'inferred' as const, confidence: 0.95, rationale: 'Text contains the exact identifier CVE-2026-111357.',
+      sourceId: 'sentinel-inference', observedAt: at, direction: 'in' as const,
+      other: { id, type: 'article' as const, title, occurredAt: at, category, publisherCountry: country, outlet },
+    });
+    const edges = [
+      mention('news:1', 'Ivanti advisory', 'Canada', 'Canadian Centre for Cyber Security', 'advisory', '2026-10-29T08:00:00.000Z'),
+      mention('news:2', 'Ivanti flaw exploited', 'United States', 'BleepingComputer', 'security-news', '2026-10-30T09:00:00.000Z'),
+      mention('news:3', 'Ivanti bulletin', 'United States', 'CISA', 'advisory', '2026-10-28T09:00:00.000Z'),
+    ];
+    vi.stubGlobal('fetch', vi.fn((url: string) =>
+      url.startsWith('/api/nodes/') ? json({ node: kevCve, provenance: [], edges }) : json({ nodes: [kevCve], edges: [] }),
+    ));
+    const onShow = vi.fn();
+    render(<Investigate id={kevCve.id} onSelect={() => {}} onClose={() => {}} onShowCoverage={onShow} />);
+    const section = (await screen.findByRole('heading', { name: 'Who reported it' })).closest('section')!;
+    expect(within(section).getByText(/3 mentions \(2 from government advisories\) by outlets and agencies in 2 countries/)).toBeTruthy();
+    const labels = [...section.querySelectorAll('.rel-label')].map((l) => l.textContent);
+    expect(labels).toEqual(['United States (2)', 'Canada (1)']);
+    // Oldest first within a country, each still marked as inferred.
+    const us = section.querySelectorAll('.rel-group')[0]!;
+    expect([...us.querySelectorAll('.link-btn')].map((b) => b.textContent)).toEqual(['Ivanti bulletin', 'Ivanti flaw exploited']);
+    expect(within(section).getAllByText('inferred · 95%')).toHaveLength(3);
+    expect(within(section).getAllByText('advisory')).toHaveLength(2);
+    fireEvent.click(within(section).getByRole('button', { name: 'Show on map' }));
+    expect(onShow).toHaveBeenCalledWith({ id: kevCve.id, title: kevCve.title, countries: ['United States', 'Canada'] });
+  });
+});
+
 describe('Investigate (stories)', () => {
   it('shows members in time order with the reason each joined', async () => {
     const story = { ...kevCve, id: 'story:1', type: 'story' as const, title: 'Ivanti chain', category: 'story', attrs: { size: 2, anchors: ['CVE-2026-111357'], outlets: ['CISA KEV'], firstSeen: '2026-10-28T00:00:00.000Z', lastSeen: '2026-10-30T00:00:00.000Z' } };
@@ -216,7 +256,7 @@ describe('Investigate', () => {
     expect(screen.getByText('No location reported by source')).toBeTruthy();
     expect(screen.getByText('2026-11-02')).toBeTruthy();
     expect(screen.getByText('reported · cisa-kev')).toBeTruthy();
-    expect(screen.getByText('inferred · 95%')).toBeTruthy();
+    expect(screen.getAllByText('inferred · 95%')).toHaveLength(2); // Relationships and "Who reported it"
     expect(screen.getByText('Text contains the exact identifier CVE-2026-111357.')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'CISA KEV' })).toBeTruthy();
     await waitFor(() => expect(screen.getByRole('group', { name: 'Relationship graph' })).toBeTruthy());

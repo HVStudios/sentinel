@@ -2,6 +2,7 @@ import type { MapData, NodeDetail, SEdge, SNode, SourceStatus, TimedType, Vendor
 import { TIMED_TYPES } from './api.ts';
 import type { Api, Filters, SourcesResponse } from './api.ts';
 import { relatedItems } from '../../shared/related.ts';
+import { edgeOther } from '../../shared/coverage.ts';
 import { computeTrends } from '../../shared/trends.ts';
 import { aggregateAffected } from '../../shared/affected.ts';
 
@@ -219,12 +220,7 @@ export function queryNode(ix: Index, id: string): NodeDetail {
   if (!node) throw new Error(`404 Not Found for ${id}`);
   const edges = (ix.adj.get(id) ?? []).map((e) => {
     const otherId = e.src === id ? e.dst : e.src;
-    const other = ix.byId.get(otherId);
-    return {
-      ...e,
-      direction: (e.src === id ? 'out' : 'in') as 'in' | 'out',
-      other: other ? { id: other.id, type: other.type, title: other.title, occurredAt: other.occurredAt } : { id: otherId, type: null, title: otherId },
-    };
+    return { ...e, direction: (e.src === id ? 'out' : 'in') as 'in' | 'out', other: edgeOther(ix.byId.get(otherId), otherId) };
   });
   const provenance = (ix.prov.get(id) ?? [])
     .map((p) => {
