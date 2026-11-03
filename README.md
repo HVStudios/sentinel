@@ -17,7 +17,8 @@ connect.
   on the map, because KEV and NVD do not report a location. Countries GDACS reports as affected by
   a disaster can be hatched by alert level. The affected *vendors* can be shown
   at their Wikidata headquarters, labelled as such, and only when the name match is
-  unambiguous.
+  unambiguous. A vulnerability's investigation lists who reported it (agencies and outlets that
+  mention it) grouped by publisher country, and can outline those countries on the map.
 - **Facts vs. inferences.** Relationships stated by a source are drawn as solid lines and
   labelled *reported*. Links SENTINEL derives from text (e.g. a headline mentioning a CVE ID or
   vendor) are dashed, labelled *inferred*, and carry a confidence and a rationale.

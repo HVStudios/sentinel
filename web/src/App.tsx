@@ -48,6 +48,8 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
   const [sort, setSort] = useState<FeedSort>(initial.sort);
   const [showVendors, setShowVendors] = useState(!initial.hidden.includes('vendors'));
   const [showAffected, setShowAffected] = useState(!initial.hidden.includes('gdacs'));
+  // Publisher countries of a vulnerability's coverage, outlined while that item stays open.
+  const [coverage, setCoverage] = useState<{ id: string; title: string; countries: string[] } | null>(null);
   const [view, setView] = useState<'feed' | 'stories' | 'watchlist'>(initial.view);
   const [stageView, setStageView] = useState<'map' | 'trends'>(initial.main);
   const [copyStatus, setCopyStatus] = useState('');
@@ -314,6 +316,7 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
               showVendors={showVendors && types.includes('vulnerability')}
             affected={map.data?.affected ?? []}
             showAffected={showAffected && types.includes('natural_event')}
+            coverage={coverage?.id === selected ? coverage : null}
             />
             {timeline.data && (
               <Timeline
@@ -399,6 +402,11 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
             onBack={history.length ? back : undefined}
             watched={watchlist.isWatched(selected)}
             onToggleWatch={watchlist.toggle}
+            coverageShown={coverage?.id === selected}
+            onShowCoverage={(c) => {
+              setCoverage(c);
+              if (c) setStageView('map');
+            }}
           />
         )}
       </main>

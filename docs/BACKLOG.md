@@ -225,14 +225,14 @@ Run history (SEN-33) shows problems only when someone opens the Sources panel. S
 - [x] Works in live and static mode; tests for the flagging rules (best-effort GDELT does not raise a permanent alarm)
 
 ### SEN-37 · Who reported a vulnerability, by country
-Priority: P2 · Labels: frontend, geo · Status: todo
+Priority: P2 · Labels: frontend, geo · Status: done
 
 With 10 national CERTs in the feeds, a CVE is often covered by several agencies. Show that
 coverage in the investigation panel.
 
-- [ ] Vulnerability panel lists the advisories and articles that mention it, grouped by publisher country, with dates
-- [ ] Optional map highlight of those publisher countries, labelled as publisher country, not location
-- [ ] Mentions stay marked as inferred, with their confidence
+- [x] Vulnerability panel lists the advisories and articles that mention it, grouped by publisher country, with dates
+- [x] Optional map highlight of those publisher countries, labelled as publisher country, not location
+- [x] Mentions stay marked as inferred, with their confidence
 
 ### SEN-38 · Per-feed fixtures in tests
 Priority: P3 · Labels: testing · Status: todo

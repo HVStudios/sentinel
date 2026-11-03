@@ -53,11 +53,13 @@ interface Props {
   /** Countries GDACS reports as affected by events in the window. */
   affected?: AffectedCountry[];
   showAffected?: boolean;
+  /** Publisher countries of the outlets and agencies that reported an item (outlined). */
+  coverage?: { title: string; countries: string[] } | null;
 }
 
 export const ALERT_COLORS: Record<AffectedCountry['maxAlert'], string> = { Green: '#5ee6a8', Orange: '#ff9f43', Red: '#ff4d6d' };
 
-export function WorldMap({ points, countryCounts, selectedId, onSelect, showCountries, vendors = [], showVendors = false, affected = [], showAffected = false }: Props) {
+export function WorldMap({ points, countryCounts, selectedId, onSelect, showCountries, vendors = [], showVendors = false, affected = [], showAffected = false, coverage = null }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const zoomRef = useRef<ReturnType<typeof zoom<SVGSVGElement, unknown>> | null>(null);
   const [transform, setTransform] = useState<ZoomTransform>(zoomIdentity);
@@ -104,6 +106,17 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
     }
     return { affectedByName: byName, affectedUnmapped: unmapped };
   }, [affected, showAffected]);
+
+  const { coverageNames, coverageUnmapped } = useMemo(() => {
+    const names = new Set<string>();
+    const unmapped: string[] = [];
+    for (const c of coverage?.countries ?? []) {
+      const name = resolveCountry(c);
+      if (name) names.add(name);
+      else unmapped.push(c);
+    }
+    return { coverageNames: names, coverageUnmapped: unmapped };
+  }, [coverage]);
 
   const projected = useMemo(
     () =>
@@ -205,6 +218,9 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
             return a ? <path key={`affected-${c.name}`} d={c.d} className="affected" fill={`url(#hatch-${a.maxAlert})`} data-affected={c.name} /> : null;
           })}
           <path d={borderPath} className="borders" strokeWidth={0.5 / k} />
+          {countryPaths.map((c) =>
+            coverageNames.has(c.name) ? <path key={`coverage-${c.name}`} d={c.d} className="coverage-outline" strokeWidth={1.6 / k} data-coverage={c.name} /> : null,
+          )}
           {projected.map(({ p, xy }) => {
             const r = (2.5 + 7 * (p.severity ?? 0.3)) / Math.sqrt(k);
             const selected = p.id === selectedId;
@@ -288,6 +304,13 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
                 Not drawn: {unmapped.map((u) => `${u.country} (${u.count})`).join(', ')}
               </span>
             )}
+          </div>
+        )}
+        {coverage && (
+          <div className="legend-note coverage-note">
+            <i className="swatch-coverage" aria-hidden="true" /> Outlined: <strong>publisher countries</strong> of the outlets and agencies that
+            reported {coverage.title}: where they are based, not where the vulnerability is ({coverage.countries.join(', ')}).
+            {coverageUnmapped.length > 0 && <span className="unmapped"> Not drawn: {coverageUnmapped.join(', ')}.</span>}
           </div>
         )}
         {showAffected && affected.length > 0 && (

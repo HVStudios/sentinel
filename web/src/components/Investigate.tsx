@@ -4,6 +4,7 @@ import { WATCHABLE } from '../lib/watchlist.ts';
 import { api } from '../apiClient.ts';
 import { badgesFor, categoryLabel, formatDate, locationLabel, relativeTime, TYPE_LABEL } from '../lib/format.ts';
 import { useFetch } from '../lib/useFetch.ts';
+import { coverageByCountry, type CoverageGroup } from '../../../shared/coverage.ts';
 import { EpssSparkline } from './EpssSparkline.tsx';
 import { Graph } from './Graph.tsx';
 
@@ -14,9 +15,12 @@ interface Props {
   onBack?: () => void;
   watched?: boolean;
   onToggleWatch?: (node: SNode) => void;
+  /** Countries whose outlets or agencies reported this item, currently outlined on the map. */
+  coverageShown?: boolean;
+  onShowCoverage?: (c: { id: string; title: string; countries: string[] } | null) => void;
 }
 
-export function Investigate({ id, onSelect, onClose, onBack, watched = false, onToggleWatch }: Props) {
+export function Investigate({ id, onSelect, onClose, onBack, watched = false, onToggleWatch, coverageShown = false, onShowCoverage }: Props) {
   const [depth, setDepth] = useState(1);
   const detail = useFetch((s) => api.node(id, s), id);
   const graph = useFetch((s) => api.graph(id, depth, s), `${id}|${depth}`);
@@ -79,6 +83,9 @@ export function Investigate({ id, onSelect, onClose, onBack, watched = false, on
           !graph.loading && <div className="muted small">No known relationships yet.</div>
         )}
       </section>
+      {detail.data?.node.type === 'vulnerability' && (
+        <Coverage d={detail.data} onSelect={onSelect} shown={coverageShown} onShow={onShowCoverage} />
+      )}
       {detail.data?.node.type === 'story' ? (
         <StoryTimeline d={detail.data} onSelect={onSelect} />
       ) : (
@@ -349,6 +356,71 @@ function Relationships({ d, onSelect }: { d: NodeDetail; onSelect: (id: string) 
               ))}
           </ul>
           {edges.length > 40 && <div className="muted small">…and {edges.length - 40} more</div>}
+        </div>
+      ))}
+    </section>
+  );
+}
+
+const day = (iso: string | null) => (iso ? iso.slice(0, 10) : 'date unknown');
+
+/** Who reported a vulnerability: the articles and advisories mentioning it, by publisher country. */
+function Coverage({
+  d,
+  onSelect,
+  shown,
+  onShow,
+}: {
+  d: NodeDetail;
+  onSelect: (id: string) => void;
+  shown: boolean;
+  onShow?: (c: { id: string; title: string; countries: string[] } | null) => void;
+}) {
+  const groups: CoverageGroup[] = coverageByCountry(d.edges);
+  if (!groups.length) return null;
+  const countries = groups.flatMap((g) => (g.country ? [g.country] : []));
+  const total = groups.reduce((s, g) => s + g.items.length, 0);
+  const advisories = groups.reduce((s, g) => s + g.items.filter((i) => i.advisory).length, 0);
+  return (
+    <section className="inv-section coverage" aria-labelledby="coverage-heading">
+      <div className="inv-section-head">
+        <h3 id="coverage-heading">Who reported it</h3>
+        {onShow && countries.length > 0 && (
+          <button
+            className={`ghost${shown ? ' on' : ''}`}
+            aria-pressed={shown}
+            onClick={() => onShow(shown ? null : { id: d.node.id, title: d.node.title, countries })}
+          >
+            {shown ? 'Hide on map' : 'Show on map'}
+          </button>
+        )}
+      </div>
+      <p className="muted small">
+        {total} {total === 1 ? 'mention' : 'mentions'}
+        {advisories > 0 && ` (${advisories} from government advisories)`} by outlets and agencies in {countries.length}{' '}
+        {countries.length === 1 ? 'country' : 'countries'}, grouped by <strong>publisher country</strong>: where the publisher is based, not
+        where the vulnerability is. Mentions are inferred from the text.
+      </p>
+      {groups.map((g) => (
+        <div key={g.country ?? '?'} className="rel-group">
+          <div className="rel-label">
+            {g.country ?? 'Publisher country unknown'} <span className="muted">({g.items.length})</span>
+          </div>
+          <ul>
+            {g.items.map((i) => (
+              <li key={i.id}>
+                <span className="muted small cov-date">{day(i.occurredAt)}</span>{' '}
+                {i.outlet && <span className="small cov-outlet">{i.outlet}</span>}
+                {i.advisory && <span className="badge tone-info cov-advisory">advisory</span>}{' '}
+                <button className="link-btn" onClick={() => onSelect(i.id)}>
+                  {i.title}
+                </button>
+                <span className={`basis basis-${i.basis}`} title={i.rationale ?? undefined}>
+                  {i.basis === 'reported' ? 'reported' : `inferred · ${Math.round(i.confidence * 100)}%`}
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
       ))}
     </section>

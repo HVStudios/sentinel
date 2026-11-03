@@ -35,7 +35,7 @@ export interface SEdge {
 export interface NodeDetail {
   node: SNode;
   provenance: { id: string; name: string; homepage: string; description: string; sourceUrl: string | null; fetchedAt: string }[];
-  edges: (SEdge & { direction: 'in' | 'out'; other: { id: string; type: NodeType | null; title: string; occurredAt?: string | null } })[];
+  edges: (SEdge & { direction: 'in' | 'out'; other: EdgeOther<NodeType> })[];
 }
 
 /** Where a vendor is headquartered according to Wikidata. Not the location of any vulnerability or attack. */
@@ -53,6 +53,7 @@ export interface VendorHq {
   vulnerabilities: number;
 }
 
+import type { EdgeOther } from '../../shared/coverage.ts';
 export type { Trends } from '../../shared/trends.ts';
 import type { Trends } from '../../shared/trends.ts';
 
