@@ -194,6 +194,64 @@ Priority: P3 · Labels: backend, frontend · Status: done (merged)
 - [x] Runs included in `/api/sources` and the snapshot
 - [x] "Recent runs" column in the Sources panel: one bar per run (colour = ok / warnings / failed, height = records) and a summary with counts and median duration
 
+### SEN-34 · Snapshot budget by transfer size, with lazily loaded details
+Priority: P2 · Labels: performance, infra · Status: todo
+
+The snapshot is 10.65 MB raw, close to the 12 MB raw budget, but GitHub Pages serves it gzipped at
+about 1.5 MB. The raw budget will soon warn on every build without the download being a problem.
+Parsing ~10 MB of JSON on a phone still costs time.
+
+- [ ] The export reports raw and gzip sizes; the CI warning uses a gzip budget (e.g. 3 MB) plus a higher raw ceiling
+- [ ] Rarely needed fields (full summaries, NVD references, KEV notes) move to a details file fetched when an item is opened, if this measurably cuts first load
+- [ ] Static/live parity tests keep passing; the first map and feed render does not wait for details
+
+### SEN-35 · EPSS movers in Trends
+Priority: P2 · Labels: analysis, frontend · Status: todo
+
+EPSS history (SEN-32) is now stored per CVE. Show which vulnerabilities' exploitation likelihood
+rose most, so analysts see emerging risk before it reaches KEV.
+
+- [ ] Trends card: largest EPSS rises over 7 and 30 days (absolute and relative), with KEV status
+- [ ] Each row opens the investigation; the card states how far back history goes
+- [ ] Computed in `shared/` so the server and the static build give identical results (parity test)
+
+### SEN-36 · Source health alerts
+Priority: P2 · Labels: backend, frontend · Status: todo
+
+Run history (SEN-33) shows problems only when someone opens the Sources panel. Surface them.
+
+- [ ] A source is flagged when its last 3 runs failed, or its record count fell far below its recent median
+- [ ] Header indicator with the number of flagged sources, opening the Sources panel; flagged rows highlighted there
+- [ ] Works in live and static mode; tests for the flagging rules (best-effort GDELT does not raise a permanent alarm)
+
+### SEN-37 · Who reported a vulnerability, by country
+Priority: P2 · Labels: frontend, geo · Status: todo
+
+With 10 national CERTs in the feeds, a CVE is often covered by several agencies. Show that
+coverage in the investigation panel.
+
+- [ ] Vulnerability panel lists the advisories and articles that mention it, grouped by publisher country, with dates
+- [ ] Optional map highlight of those publisher countries, labelled as publisher country, not location
+- [ ] Mentions stay marked as inferred, with their confidence
+
+### SEN-38 · Per-feed fixtures in tests
+Priority: P3 · Labels: testing · Status: todo
+
+The offline fixture router answers every news feed with the same BleepingComputer file, so the
+seeded articles end up credited to whichever feed is processed last (currently TechCrunch).
+
+- [ ] The router returns a feed's own fixture by host, and an empty feed for the rest
+- [ ] Seeded articles carry their real outlet and publisher country; e2e expectations updated
+
+### SEN-39 · Article language label and filter
+Priority: P3 · Labels: frontend · Status: todo
+
+Feeds now arrive in six languages (en, de, fr, nl, es, ja). The language is stored but
+not shown. No translation service is used (no paid APIs).
+
+- [ ] Non-English items show a language badge in the feed and investigation panel
+- [ ] Filter the feed by language; the setting is kept in the URL state
+
 ## P1 — Next
 
 ### SEN-15 · Scheduled refresh and ingest status panel
