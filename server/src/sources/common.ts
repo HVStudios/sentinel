@@ -16,7 +16,7 @@ export interface IngestContext {
   log: (msg: string) => void;
 }
 
-/** A batch plus non-fatal problems (e.g. 2 of 17 feeds failed), shown in the source status. */
+/** A batch plus non-fatal problems (e.g. 2 of 23 feeds failed), shown in the source status. */
 export type SourceResult = Batch & { warnings?: string[] };
 
 export interface SourceModule {

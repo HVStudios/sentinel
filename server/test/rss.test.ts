@@ -31,6 +31,27 @@ describe('feed XML parsing', () => {
     expect(heise[0]!.link).toMatch(/^https:\/\/www\.heise\.de\//);
   });
 
+  it('reads RSS 1.0 (RDF) items dated with dc:date, as JPCERT/CC publishes them', () => {
+    const items = parseFeedXml(`<?xml version="1.0" encoding="UTF-8" ?>
+      <rdf:RDF xmlns="http://purl.org/rss/1.0/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xml:lang="ja">
+        <channel rdf:about="https://www.jpcert.or.jp/rss/jpcert.rdf"><title>JPCERT/CC RSS Feed</title><link>https://www.jpcert.or.jp/</link></channel>
+        <item rdf:about="https://www.jpcert.or.jp/at/2026/at260033.html">
+          <title>注意喚起: PHPにおける複数の脆弱性（CVE-2026-109618）に関する注意喚起</title>
+          <link>https://www.jpcert.or.jp/at/2026/at260033.html</link>
+          <description>PHPに複数の脆弱性があります。</description>
+          <dc:date>2026-10-29T15:20:00+09:00</dc:date>
+        </item>
+      </rdf:RDF>`);
+    expect(items).toEqual([
+      {
+        title: '注意喚起: PHPにおける複数の脆弱性（CVE-2026-109618）に関する注意喚起',
+        link: 'https://www.jpcert.or.jp/at/2026/at260033.html',
+        published: '2026-10-29T06:20:00.000Z',
+        summary: 'PHPに複数の脆弱性があります。',
+      },
+    ]);
+  });
+
   it('drops items without a date or link instead of guessing', () => {
     const items = parseFeedXml(`<rss><channel>
       <item><title>No date</title><link>https://example.org/a</link></item>

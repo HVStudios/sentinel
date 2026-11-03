@@ -103,7 +103,7 @@ Order: KEV → NVD (KEV CVEs missing details, plus CVEs published in the last N 
 GitHub advisories → EPSS (for all stored CVEs) → Wikidata vendor HQs → USGS → EONET → GDACS →
 curated feeds → GDELT → HN → inference.
 
-A source may return non-fatal `warnings` (e.g. 2 of 17 feeds failed). The source then stays
+A source may return non-fatal `warnings` (e.g. 2 of 23 feeds failed). The source then stays
 `ok`, and the warnings are stored in `last_error` so the Sources panel shows them.
 
 Every run is also appended to `source_runs` (status, record count, duration, error cut to 200
