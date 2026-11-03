@@ -3,12 +3,16 @@ import { api } from '../apiClient.ts';
 import { formatDate, relativeTime } from '../lib/format.ts';
 import { useFetch } from '../lib/useFetch.ts';
 import { RunHistory } from './RunHistory.tsx';
+import { BEST_EFFORT_SOURCES, sourceAlerts } from '../../../shared/health.ts';
 
 export function SourcesPanel({ onClose }: { onClose: () => void }) {
   const [tick, setTick] = useState(0);
   const [msg, setMsg] = useState<string | null>(null);
   const { data, error } = useFetch((s) => api.sources(s), String(tick));
   const dialogRef = useRef<HTMLDivElement>(null);
+  const alerts = new Map(sourceAlerts(data?.sources ?? []).map((a) => [a.sourceId, a]));
+  // Flagged sources first, so they are visible without scrolling.
+  const sources = [...(data?.sources ?? [])].sort((a, b) => Number(alerts.has(b.id)) - Number(alerts.has(a.id)));
 
   // Follow a running refresh: re-read the status every 2 seconds until it finishes.
   useEffect(() => {
@@ -62,6 +66,12 @@ export function SourcesPanel({ onClose }: { onClose: () => void }) {
           </button>
         </div>
         {error && <div className="error">{error.message}</div>}
+        {alerts.size > 0 && (
+          <p className="health-summary small">
+            ⚠ {alerts.size} {alerts.size === 1 ? 'source needs' : 'sources need'} attention: recent runs failed or returned far fewer records
+            than usual. Flagged rows are listed first and highlighted.
+          </p>
+        )}
         <table className="sources">
           <thead>
             <tr>
@@ -73,13 +83,14 @@ export function SourcesPanel({ onClose }: { onClose: () => void }) {
             </tr>
           </thead>
           <tbody>
-            {data?.sources.map((s) => (
-              <tr key={s.id}>
+            {sources.map((s) => (
+              <tr key={s.id} className={alerts.has(s.id) ? 'flagged' : undefined}>
                 <td>
                   <a href={s.homepage} target="_blank" rel="noreferrer noopener">
                     {s.name}
                   </a>
                   <div className="muted small">{s.description}</div>
+                  {BEST_EFFORT_SOURCES.has(s.id) && <div className="muted small">Best effort: occasional failures are expected and not flagged.</div>}
                 </td>
                 <td title={formatDate(s.lastRunAt)}>{s.lastRunAt ? relativeTime(s.lastRunAt) : 'never'}</td>
                 <td>
@@ -94,6 +105,7 @@ export function SourcesPanel({ onClose }: { onClose: () => void }) {
                 <td>{s.lastCount ?? '—'}</td>
                 <td>
                   <RunHistory runs={s.runs ?? []} />
+                  {alerts.has(s.id) && <div className="health-alert small">⚠ {alerts.get(s.id)!.reason}</div>}
                 </td>
               </tr>
             ))}

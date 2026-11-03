@@ -214,7 +214,8 @@ scripts/       dev runner, GitHub issue creation from the backlog
   by two conservative name rules, and the other spellings are listed as "Also known as". Pairs the
   rules don't cover (e.g. "Aquasec" vs "Aqua Security") stay separate.
 - Feed-level problems (e.g. one outlet timing out) keep the source "ok" and are listed as warnings
-  in the Sources panel.
+  in the Sources panel. A source whose last 3 runs failed, or whose record count fell below half its
+  recent median, is flagged in the header (GDELT only after 12 runs without records).
 - Vendor-name matching is deliberately conservative (case-sensitive, with a stop-list) and is
   always shown as *inferred* (60%). False positives are still possible, e.g. "Apple" or "Meta".
 - The 1:110m base map omits very small countries. Those are listed under the map rather than

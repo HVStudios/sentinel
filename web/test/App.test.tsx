@@ -1,9 +1,18 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { App } from '../src/App.tsx';
 import { article, detail, kevCve, quake } from './fixtures.ts';
 
 const json = (body: unknown) => Promise.resolve(new Response(JSON.stringify(body), { status: 200 }));
+
+const failingRun = { at: '2026-10-30T06:00:00.000Z', status: 'error', count: 0, durationMs: 900, error: 'HTTP 503' };
+const sourcesBody = {
+  sources: [
+    { id: 'usgs-earthquakes', name: 'USGS', homepage: 'https://usgs.gov/', description: 'Earthquakes', lastRunAt: '2026-10-30T06:00:00.000Z', lastStatus: 'ok', lastCount: 140, lastError: null, lastDurationMs: 300, runs: [{ at: '2026-10-30T06:00:00.000Z', status: 'ok', count: 140, durationMs: 300 }] },
+    { id: 'nvd', name: 'NIST NVD', homepage: 'https://nvd.nist.gov/', description: 'CVE details', lastRunAt: '2026-10-30T06:00:00.000Z', lastStatus: 'error', lastCount: null, lastError: 'HTTP 503', lastDurationMs: 900, runs: [failingRun, failingRun, failingRun] },
+  ],
+  ingest: { running: false, last: null },
+};
 
 function mockApi() {
   const calls: string[] = [];
@@ -17,6 +26,7 @@ function mockApi() {
       if (path === '/api/timeline') return json({ from: '2026-10-23T00:00:00.000Z', to: '2026-10-30T00:00:00.000Z', bucketMs: 3_600_000, series: { article: [1] } });
       if (path?.startsWith('/api/nodes/')) return json(detail);
       if (path?.startsWith('/api/graph/')) return json({ nodes: [kevCve], edges: [] });
+      if (path === '/api/sources') return json(sourcesBody);
       return Promise.resolve(new Response('{}', { status: 404 }));
     }),
   );
@@ -43,6 +53,19 @@ describe('App', () => {
     expect(window.location.hash).toBe('#/node/cve%3ACVE-2026-111357');
     fireEvent.click(screen.getByLabelText('Close investigation'));
     expect(screen.queryByRole('complementary', { name: 'Investigation' })).toBeNull();
+  });
+
+  it('flags failing sources in the header and highlights them in the Sources panel', async () => {
+    mockApi();
+    render(<App now={() => new Date('2026-10-30T12:00:00Z')} />);
+    const button = await screen.findByRole('button', { name: /1 source needs attention/ });
+    fireEvent.click(button);
+    const dialog = await screen.findByRole('dialog', { name: 'Data sources' });
+    const row = (await within(dialog).findByText('NIST NVD')).closest('tr')!;
+    expect(row.className).toBe('flagged');
+    expect(within(dialog).getAllByRole('row')[1]).toBe(row);
+    expect(within(row).getByText(/The last 3 runs failed/)).toBeTruthy();
+    expect(within(dialog).getByText('USGS').closest('tr')!.className).toBe('');
   });
 
   it('refetches with category, window and search filters', async () => {
