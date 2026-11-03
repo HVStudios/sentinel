@@ -44,8 +44,10 @@ export function relatedItems<N extends RelNode>(lookup: RelatedLookup<N>, id: st
     const n = lookup.node(otherId);
     if (n && TIMED.has(n.type) && n.occurredAt) out.set(otherId, { node: n, via });
   };
-  const incoming = (nodeId: string, rel: string) => lookup.edges(nodeId).filter((e) => e.dst === nodeId && e.rel === rel);
-  const outgoing = (nodeId: string, rel: string) => lookup.edges(nodeId).filter((e) => e.src === nodeId && e.rel === rel);
+  // Sorted, so an item reachable by several paths gets the same "via" whatever order the store returns edges in.
+  const byIds = (x: RelEdge, y: RelEdge) => x.src.localeCompare(y.src) || x.dst.localeCompare(y.dst);
+  const incoming = (nodeId: string, rel: string) => lookup.edges(nodeId).filter((e) => e.dst === nodeId && e.rel === rel).sort(byIds);
+  const outgoing = (nodeId: string, rel: string) => lookup.edges(nodeId).filter((e) => e.src === nodeId && e.rel === rel).sort(byIds);
   const mentionsOf = (vulnId: string, vulnLabel: string) => {
     for (const e of incoming(vulnId, 'mentions')) add(e.src, `mentions ${vulnLabel}`);
   };

@@ -93,6 +93,20 @@ test('investigates a vulnerability and follows the graph', async ({ page }) => {
   await expect(investigation(page)).toHaveCount(0);
 });
 
+test('lists who reported a vulnerability by publisher country, and outlines them on the map', async ({ page }) => {
+  await open(page, '#/node/cve%3ACVE-2026-111357');
+  const section = investigation(page).locator('section', { has: page.getByRole('heading', { name: 'Who reported it' }) });
+  await expect(section).toContainText('1 mention (1 from government advisories) by outlets and agencies in 1 country');
+  await expect(section.locator('.rel-label')).toHaveText(['Canada (1)']);
+  await expect(section).toContainText('Canadian Centre for Cyber Security');
+  await expect(section.getByText('inferred · 95%')).toHaveAttribute('title', 'The full feed entry contains the exact identifier CVE-2026-111357.');
+  await section.getByRole('button', { name: 'Show on map' }).click();
+  await expect(page.locator('[data-coverage="Canada"]')).toHaveCount(1);
+  await expect(page.locator('.coverage-note')).toContainText('where they are based, not where the vulnerability is (Canada)');
+  await section.getByRole('button', { name: 'Hide on map' }).click();
+  await expect(page.locator('[data-coverage]')).toHaveCount(0);
+});
+
 test('deep links straight into an investigation', async ({ page }) => {
   await open(page, '#/node/cve%3ACVE-2026-111357');
   await expect(investigation(page).getByRole('heading', { name: IVANTI_CVE })).toBeVisible();
@@ -190,7 +204,8 @@ test('groups related items into stories and explains why', async ({ page }) => {
   const stories = page.getByRole('region', { name: 'Story list' });
   await expect(stories.getByText(/not by an AI model/)).toBeVisible();
   const story = stories.getByRole('button', { name: /Ivanti Connect Secure/ });
-  await expect(story).toContainText('Story · 2 items');
+  // Two KEV entries plus the Canadian Cyber Centre's advisory, which lists the CVE.
+  await expect(story).toContainText('Story · 3 items');
   await expect(story).toContainText('CVE-2026-111357');
   await story.click();
   const panel = investigation(page);

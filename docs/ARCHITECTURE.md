@@ -190,7 +190,7 @@ Articles use the same `news:<sha1(url)>` id as GDELT, so an article seen by both
 |---|---|---|
 | KEV/NVD: CVE `affects` product, product `made_by` vendor | reported | 1.0 |
 | NVD: CVE `has_weakness` CWE | reported | 1.0 |
-| Article title/summary contains an exact CVE ID that exists in the store → `mentions` | inferred | 0.95 |
+| Article title/summary contains an exact CVE ID that exists in the store → `mentions`. Summaries are cut to 400 characters, so the feed parser also keeps the CVE/GHSA IDs from the full entry in `attrs.identifiers` (advisories often list them at the end); the rationale then says "The full feed entry contains…" | inferred | 0.95 |
 | Article contains a known vendor name (word boundary, ≥ 4 chars, stop-list for generic names) → `mentions` | inferred | 0.6 |
 
 Inferred edges are deleted and recomputed on every run, so they stay consistent with
@@ -296,7 +296,10 @@ and the parity test covers all three orderings.
 - **UI**: component tests for the feed, filters, detail panel and map rendering (jsdom).
 - **End-to-end**: Playwright drives Chromium against the live server and the static Pages
   build (`e2e/`). Both use the same database, seeded offline from the shared fixture router
-  (`server/test/fixtures/router.ts`), and the browser clock is frozen at the fixtures' date.
+  (`server/test/fixtures/router.ts`), and the browser clock is frozen at the fixtures' date. The
+  router answers each recorded feed (BleepingComputer, the Canadian Cyber Centre, heise) by host,
+  and every other feed with an empty RSS document, so seeded articles carry their real outlet and
+  publisher country.
   `e2e/a11y.spec.ts` adds an axe-core WCAG 2.2 A/AA audit, keyboard-only flows (roving focus
   on the map and graph, focus return, modal focus trap) and phone-width layout checks.
 - **No network in tests**. Live fetching is exercised only by `npm run ingest`.

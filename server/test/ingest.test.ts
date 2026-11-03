@@ -56,6 +56,15 @@ describe('ingest pipeline', () => {
     expect(store.mapData({}).points.every((p) => p.type === 'natural_event')).toBe(true);
     expect(store.mapData({}).points.length).toBeGreaterThan(0);
     expect(inferredEdges).toBeGreaterThan(0); // KEV description of the Ivanti CVE references other CVEs
+
+    // Each recorded feed is credited to its own outlet and country; feeds without a recording add nothing.
+    const outlets = new Map<string, string>();
+    for (const a of store.nodesByType('article')) if (a.attrs.outletId) outlets.set(a.attrs.outletId as string, a.country!);
+    expect(Object.fromEntries(outlets)).toEqual({ bleepingcomputer: 'United States', cccs: 'Canada', 'heise-security': 'Germany' });
+    // CCCS lists the Ivanti CVE past the stored summary; it is still linked, and the rationale says where it was found.
+    const ivanti = store.edgesOf('cve:CVE-2026-111357').find((e) => e.rel === 'mentions')!;
+    expect(store.getNode(ivanti.src)!.attrs.outletId).toBe('cccs');
+    expect(ivanti.rationale).toBe('The full feed entry contains the exact identifier CVE-2026-111357.');
   });
 
   it('only runs the selected sources', async () => {
