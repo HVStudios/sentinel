@@ -159,11 +159,12 @@ Priority: P2 · Labels: frontend, analysis · Status: done (merged)
 - [x] One shared computation (`shared/trends.ts`) for the server and the static site; parity, unit, e2e and axe tests
 
 ### SEN-29 · More national CERT feeds with publisher country
-Priority: P2 · Labels: ingestion, geo · Status: todo
+Priority: P2 · Labels: ingestion, geo · Status: done (merged)
 
-Publisher-country shading currently covers about six countries. Evaluate official advisory feeds
-from more agencies (e.g. JPCERT/CC, CERT-In, BSI, NCSC-NL, CSA Singapore), adding only those with a
-working feed and a verifiable publisher.
+- [x] Added (working feed, publisher checked on its own about/imprint page): JPCERT/CC (Japan, Japanese feed; the English one has a handful of items a quarter), NCSC-NL (Netherlands), CERT Polska (Poland), NCSC-FI (Finland), CERT.at (Austria), INCIBE-CERT (Spain)
+- [x] RSS 1.0 (RDF) parsing covered by a test (JPCERT/CC)
+- [x] Evaluated and not added: BSI/CERT-Bund WID (≈250 items a day, mostly "[UPDATE]" notices without CVE IDs; Germany is already covered by heise), CSA Singapore and NCSC New Zealand (no feed found), CERT-In and the Australian Cyber Security Centre (feeds time out for automated requests), CSIRT Italia (HTTP 403)
+- Publisher-country shading: 7 → 13 countries
 
 ### SEN-30 · GDACS affected-country layer
 Priority: P2 · Labels: geo, frontend · Status: done (merged)
@@ -260,7 +261,7 @@ Priority: P1 · Labels: ingestion, geo · Status: done (merged)
 GDELT DOC 2.0 returned HTTP 429 or empty results for most requests, locally and on GitHub
 Actions runners, so it stays best-effort.
 
-- [x] Curated RSS/Atom feed registry (17 feeds: security news, government advisories, tech/AI) with the publisher country and a reference per outlet
+- [x] Curated RSS/Atom feed registry (17 feeds at first, 23 since SEN-29: security news, government advisories, tech/AI) with the publisher country and a reference per outlet
 - [x] Items without date or link dropped, 30-day window, deduplicated with GDELT by URL
 - [x] Per-feed failures reported as source warnings; GDELT partial failures too
 - [x] Tech-feed items classified by headline (security / AI / tech)

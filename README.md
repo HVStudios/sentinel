@@ -174,7 +174,7 @@ unit and integration tests, then the production build. CI (`.github/workflows/ci
 | [NASA EONET](https://eonet.gsfc.nasa.gov/) | Open natural events (wildfires, storms, volcanoes…) | source point coordinates |
 | [GDACS](https://www.gdacs.org/) | Orange/Red disaster alerts of all types, plus Green cyclones and volcanoes; enriches matching USGS/EONET events with the alert level | epicentre, or centroid of the affected area; multi-country events (e.g. droughts) are not drawn as a point |
 | [Wikidata](https://www.wikidata.org/) | Vendor headquarters (city, country, coordinates), looked up by vendor name | vendor HQ only; the identity match is shown as inferred |
-| [Curated feeds](server/src/sources/feeds.ts) | 17 RSS/Atom feeds: security news, government advisories (CISA, NCSC UK, CERT-FR, Canadian Cyber Centre), tech and AI | publisher country only, configured per outlet with a reference link |
+| [Curated feeds](server/src/sources/feeds.ts) | 23 RSS/Atom/RDF feeds: security news, national CERT advisories (CISA, NCSC UK, CERT-FR, Canadian Cyber Centre, JPCERT/CC, NCSC-NL, CERT Polska, NCSC-FI, CERT.at, INCIBE-CERT), tech and AI | publisher country only, configured per outlet with a reference link |
 | [GDELT DOC 2.0](https://www.gdeltproject.org/) | Security and tech/AI news (best effort, often rate-limited) | publisher country only |
 | [Hacker News](https://hn.algolia.com/api) | Tech stories with ≥ 100 points | none |
 
