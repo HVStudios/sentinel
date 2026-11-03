@@ -339,3 +339,7 @@ button.small { font-size: 12px; padding: 3px 8px; }
 .run-ok { fill: var(--t-low); }
 .run-warn { fill: var(--t-medium); }
 .run-error { fill: var(--t-critical); }
+.movers { width: 100%; border-collapse: collapse; font-size: 13px; }
+.movers th, .movers td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.movers th { color: var(--muted); font-weight: 500; font-size: 12px; }
+.movers td:nth-child(2), .movers td:nth-child(3) { white-space: nowrap; }

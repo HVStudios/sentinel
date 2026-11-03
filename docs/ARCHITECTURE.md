@@ -246,6 +246,11 @@ of history, labelled differently:
   collection start date. Weeks before collection started hold only what was still in the feeds
   then, and retention trims older items. These charts describe SENTINEL's collection, not world
   activity.
+- **EPSS movers:** the 10 largest EPSS rises over 7 and 30 days, from the stored change-point
+  histories (see FIRST EPSS above). The starting score is the one in force at the period start; a
+  CVE first scored during the period is compared from its first score, and its shorter date range
+  is shown. Ranked by the rise in percentage points (relative rises explode on tiny scores);
+  rises under 0.1 pp are ignored. The card states when the stored history starts.
 
 ## Feed ordering
 
@@ -266,7 +271,7 @@ and the parity test covers all three orderings.
 | `GET /api/nodes/:id` | Node, provenance and adjacent edges. |
 | `GET /api/graph/:id?depth=1..2&limit` | Neighbourhood subgraph. |
 | `GET /api/stories?from&to&limit` | Stories active in the window, most recent first. |
-| `GET /api/trends?window=30\|90\|365` | KEV additions per week (complete history), rankings for the window, and collection activity. |
+| `GET /api/trends?window=30\|90\|365` | KEV additions per week (complete history), rankings for the window, EPSS movers (7 and 30 days), and collection activity. |
 | `GET /api/related/:id?limit` | Timed items related to a watched node, each with `via` (the link that relates it). |
 | `GET /api/sources` | Source metadata and last-run status. |
 | `POST /api/ingest` | Triggers a refresh (single-flight, shared with the scheduled refresh). Only bound when the server listens on localhost. |

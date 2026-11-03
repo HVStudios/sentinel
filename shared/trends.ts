@@ -12,6 +12,7 @@ import { productNodeId, vendorNodeId } from './ids.ts';
 export interface TrendNode {
   id: string;
   type: string;
+  title?: string;
   category?: string | null;
   occurredAt?: string | null;
   ingestedAt?: string;
@@ -43,7 +44,29 @@ export interface Trends {
   topWeaknesses: Ranked[];
   collectedSince: string | null;
   collectedWeekly: { article: number[]; natural_event: number[] };
+  /** Largest EPSS rises over each period in EPSS_MOVER_DAYS, from the stored score histories. */
+  epssMovers: { days: number; movers: EpssMover[] }[];
+  /** Earliest day any stored EPSS history reaches back to. */
+  epssHistorySince: string | null;
 }
+
+/**
+ * A CVE whose EPSS score rose. `from` is the score in force at the start of the period, or the
+ * first stored score if the history starts later (then `fromDate` is after the period start).
+ */
+export interface EpssMover {
+  id: string;
+  title: string;
+  kev: boolean;
+  from: number;
+  fromDate: string;
+  to: number;
+  toDate: string;
+}
+
+export const EPSS_MOVER_DAYS = [7, 30] as const;
+/** Rises smaller than this (0.1 percentage points) are noise in the ranking. */
+const MIN_EPSS_RISE = 0.001;
 
 export const WEEKS = 52;
 const TOP = 10;
@@ -67,6 +90,36 @@ function rank(counts: Map<string, { name: string; count: number }>): Ranked[] {
     .map(([id, v]) => ({ id, name: v.name, count: v.count }))
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
     .slice(0, TOP);
+}
+
+interface Epss {
+  date?: string;
+  history?: [string, number][];
+}
+
+function epssMovers(nodes: TrendNode[], now: Date): { movers: Trends['epssMovers']; since: string | null } {
+  let since: string | null = null;
+  const withHistory = nodes.flatMap((n) => {
+    const e = n.attrs?.epss as Epss | undefined;
+    if (n.type !== 'vulnerability' || !e?.history?.length || !e.date) return [];
+    if (since === null || e.history[0]![0] < since) since = e.history[0]![0];
+    return [{ n, e: e as Required<Epss> }];
+  });
+  const movers = EPSS_MOVER_DAYS.map((days) => {
+    const start = new Date(now.getTime() - days * DAY).toISOString().slice(0, 10);
+    const rows: EpssMover[] = [];
+    for (const { n, e } of withHistory) {
+      const h = e.history;
+      // The score in force at the period start: the last change on or before it, else the first known.
+      const before = h.filter(([d]) => d <= start).at(-1) ?? h[0]!;
+      const to = h.at(-1)![1];
+      if (to - before[1] < MIN_EPSS_RISE) continue;
+      rows.push({ id: n.id, title: n.title ?? n.id, kev: !!n.attrs?.kev, from: before[1], fromDate: before[0] < start ? start : before[0], to, toDate: e.date });
+    }
+    rows.sort((a, b) => b.to - b.from - (a.to - a.from) || b.to - a.to || a.id.localeCompare(b.id));
+    return { days, movers: rows.slice(0, TOP) };
+  });
+  return { movers, since };
 }
 
 export function computeTrends({ nodes, weaknessesOf, now, windowDays }: TrendsInput): Trends {
@@ -114,6 +167,7 @@ export function computeTrends({ nodes, weaknessesOf, now, windowDays }: TrendsIn
     }
   }
 
+  const movers = epssMovers(nodes, now);
   return {
     windowDays,
     weeks,
@@ -125,5 +179,7 @@ export function computeTrends({ nodes, weaknessesOf, now, windowDays }: TrendsIn
     topWeaknesses: rank(weaknesses),
     collectedSince,
     collectedWeekly: collected,
+    epssMovers: movers.movers,
+    epssHistorySince: movers.since,
   };
 }

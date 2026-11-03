@@ -29,8 +29,9 @@ connect.
   time. They are linked only by shared identifiers, exploit chains, the same exploited product,
   or near-identical headlines, with the reason shown for every item. No AI model is involved.
 - **Trends.** Known-exploited vulnerabilities added per week over a year (with the ransomware
-  share), the most-affected vendors, products and weaknesses for 30/90/365 days, and SENTINEL's
-  own collection activity, each chart labelled with its source and coverage.
+  share), the most-affected vendors, products and weaknesses for 30/90/365 days, the CVEs whose
+  EPSS exploitation likelihood rose most over 7 and 30 days, and SENTINEL's own collection
+  activity, each chart labelled with its source and coverage.
 - **Shareable links.** The URL captures the time window, categories, search, feed order, views,
   map layers and the open item, so "Copy link" shares exactly what you see. The browser's Back
   button undoes filter changes.

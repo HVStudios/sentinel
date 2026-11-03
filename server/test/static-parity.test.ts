@@ -79,6 +79,7 @@ describe('static snapshot engine parity', () => {
     const now = new Date('2026-10-31T00:00:00Z');
     for (const w of [30, 90, 365]) expect(queryTrends(ix, now, w)).toEqual(store.trends(now, w));
     expect(store.trends(now, 365).kevInWindow).toBeGreaterThan(0);
+    expect(store.trends(now, 30).epssMovers[0]!.movers.map((m) => m.id)).toContain('cve:CVE-2026-111357');
   });
 
   it('lists identical stories', () => {

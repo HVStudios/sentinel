@@ -3,6 +3,7 @@ import type { Trends } from '../api.ts';
 import { api } from '../apiClient.ts';
 import { formatDate } from '../lib/format.ts';
 import { useFetch } from '../lib/useFetch.ts';
+import { epssPercent } from './EpssSparkline.tsx';
 
 const WINDOWS = [30, 90, 365] as const;
 const W = 960;
@@ -73,6 +74,72 @@ function RankList({ title, items, onSelect }: { title: string; items: Trends['to
   );
 }
 
+const shortDate = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString(undefined, { day: 'numeric', month: 'short', timeZone: 'UTC' });
+
+function EpssMovers({ data, onSelect }: { data: Trends; onSelect: (id: string) => void }) {
+  const [days, setDays] = useState<number>(data.epssMovers[0]?.days ?? 7);
+  const movers = data.epssMovers.find((m) => m.days === days)?.movers ?? [];
+  return (
+    <section className="trend-card" aria-labelledby="epss-movers">
+      <div className="trend-head">
+        <h3 id="epss-movers">Largest rises in exploitation likelihood (EPSS), last {days} days</h3>
+        <div className="seg seg-sm" role="group" aria-label="EPSS period">
+          {data.epssMovers.map((m) => (
+            <button key={m.days} className={m.days === days ? 'on' : ''} aria-pressed={m.days === days} onClick={() => setDays(m.days)}>
+              {m.days}d
+            </button>
+          ))}
+        </div>
+      </div>
+      {movers.length === 0 ? (
+        <p className="muted small">No CVE&apos;s EPSS score rose by 0.1 percentage points or more in this period.</p>
+      ) : (
+        <table className="movers">
+          <thead>
+            <tr>
+              <th>Vulnerability</th>
+              <th>EPSS</th>
+              <th>Rise</th>
+            </tr>
+          </thead>
+          <tbody>
+            {movers.map((m) => (
+              <tr key={m.id}>
+                <td>
+                  <button className="link-btn" onClick={() => onSelect(m.id)}>
+                    {m.id.replace(/^cve:/, '')}
+                  </button>{' '}
+                  {m.kev && (
+                    <span className="badge tone-critical" title="Listed in CISA Known Exploited Vulnerabilities">
+                      KEV
+                    </span>
+                  )}
+                  <div className="muted small">{m.title}</div>
+                </td>
+                <td>
+                  {epssPercent(m.from)} → <strong>{epssPercent(m.to)}</strong>
+                  <div className="muted small">
+                    {shortDate(m.fromDate)} – {shortDate(m.toDate)}
+                  </div>
+                </td>
+                <td>
+                  +{((m.to - m.from) * 100).toFixed(m.to - m.from < 0.01 ? 2 : 1)} pp
+                  <div className="muted small">×{(m.to / m.from).toFixed(m.to / m.from < 10 ? 1 : 0)}</div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      <p className="trend-source muted small">
+        Source: FIRST EPSS, the estimated probability of exploitation in the next 30 days. SENTINEL&apos;s stored history starts{' '}
+        {data.epssHistorySince ? shortDate(data.epssHistorySince) : '—'}; a CVE scored for the first time during the period is compared
+        from its first score, so its date range is shorter. Ranked by the rise in percentage points (pp).
+      </p>
+    </section>
+  );
+}
+
 export function TrendsView({ onSelect, dataVersion }: { onSelect: (id: string) => void; dataVersion: string }) {
   const [windowDays, setWindowDays] = useState<(typeof WINDOWS)[number]>(90);
   const { data, error, loading } = useFetch((s) => api.trends(windowDays, s), `${windowDays}|${dataVersion}`);
@@ -126,6 +193,8 @@ export function TrendsView({ onSelect, dataVersion }: { onSelect: (id: string) =
             </div>
             <p className="trend-source muted small">Source: CISA KEV (vendor and product as CISA names them; weaknesses from KEV and NVD).</p>
           </section>
+
+          <EpssMovers data={data} onSelect={onSelect} />
 
           <section className="trend-card" aria-labelledby="collected-weekly">
             <h3 id="collected-weekly">News and events collected by SENTINEL, by publication week</h3>
