@@ -49,7 +49,7 @@ export const extractGhsas = (text: string): string[] => [...new Set((text.match(
 
 /** Pure inference over the given nodes; `exists` reports whether a node id is in the store. */
 export function inferEdges(
-  articles: Pick<NodeRow, 'id' | 'title' | 'summary'>[],
+  articles: (Pick<NodeRow, 'id' | 'title' | 'summary'> & { attrs?: Record<string, unknown> })[],
   vulnerabilities: Pick<NodeRow, 'id' | 'summary' | 'attrs'>[],
   vendors: VendorMatcher[],
   exists: (id: string) => boolean,
@@ -61,19 +61,22 @@ export function inferEdges(
 
   for (const a of articles) {
     const text = `${a.title} ${a.summary ?? ''}`;
-    for (const cve of extractCves(text)) {
+    // Identifiers the feed parser kept from the entry's full text, beyond the stored (shortened) summary.
+    const kept = Array.isArray(a.attrs?.identifiers) ? (a.attrs.identifiers as string[]).join(' ') : '';
+    const where = (id: string) => (extractCves(text).includes(id) || extractGhsas(text).includes(id) ? 'Text contains' : 'The full feed entry contains');
+    for (const cve of extractCves(`${text} ${kept}`)) {
       if (!exists(cveNodeId(cve))) continue;
       edges.push({
         src: a.id, dst: cveNodeId(cve), rel: 'mentions', basis: 'inferred', confidence: CONFIDENCE.cveMention, sourceId,
-        rationale: `Text contains the exact identifier ${cve}.`,
+        rationale: `${where(cve)} the exact identifier ${cve}.`,
       });
     }
-    for (const g of extractGhsas(text)) {
+    for (const g of extractGhsas(`${text} ${kept}`)) {
       const target = ghsaIndex.get(g);
       if (!target || edges.some((e) => e.src === a.id && e.dst === target)) continue;
       edges.push({
         src: a.id, dst: target, rel: 'mentions', basis: 'inferred', confidence: CONFIDENCE.cveMention, sourceId,
-        rationale: `Text contains the exact identifier ${g}.`,
+        rationale: `${where(g)} the exact identifier ${g}.`,
       });
     }
     for (const v of vendors) {

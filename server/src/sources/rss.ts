@@ -3,10 +3,13 @@ import { emptyBatch, type Batch } from '../types.ts';
 import { sha1, type SourceModule } from './common.ts';
 import { FEEDS, type FeedConfig } from './feeds.ts';
 import { classifyHn } from './hn.ts';
+import { extractCves, extractGhsas } from '../relate.ts';
 
 const MAX_ITEMS_PER_FEED = 40;
 const MAX_AGE_DAYS = 30;
 const SUMMARY_MAX = 400;
+/** Identifiers kept from an entry's full text (advisories often list their CVEs past the summary cut-off). */
+const IDENTIFIERS_MAX = 50;
 const CONCURRENCY = 4;
 
 const meta = {
@@ -97,6 +100,8 @@ export function parseFeed(xml: string, feed: FeedConfig, now: Date): Batch {
       feed.category === 'tech-news' || feed.category === 'ai' ? (classified === 'tech' ? 'tech-news' : classified) : feed.category;
     // Same id scheme as GDELT, so an article seen by both is stored once.
     const id = `news:${sha1(it.link)}`;
+    const full = `${it.title} ${it.summary}`;
+    const identifiers = [...extractCves(full), ...extractGhsas(full)].slice(0, IDENTIFIERS_MAX);
     b.nodes.push({
       id,
       type: 'article',
@@ -116,6 +121,7 @@ export function parseFeed(xml: string, feed: FeedConfig, now: Date): Batch {
         publisherCountry: feed.country,
         publisherCountryBasis: 'Outlet headquarters or issuing agency, configured in the SENTINEL feed registry',
         publisherCountryRef: feed.countryRef,
+        ...(identifiers.length ? { identifiers } : {}),
       },
     });
     b.provenance.push({ nodeId: id, sourceId: meta.id, sourceUrl: feed.url });

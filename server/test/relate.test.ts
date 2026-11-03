@@ -43,6 +43,19 @@ describe('relationship inference', () => {
     expect(edges.every((e) => e.rationale && e.rationale.length > 10)).toBe(true);
   });
 
+  it('uses identifiers kept from the full feed entry, and says so', () => {
+    const edges = inferEdges(
+      [{ id: 'news:1', title: 'Advisory for CVE-2026-0001', summary: 'Shortened…', attrs: { identifiers: ['CVE-2026-0001', 'CVE-2026-0002', 'CVE-2026-0003'] } }],
+      [],
+      [],
+      (id) => id !== 'cve:CVE-2026-0003',
+    );
+    expect(edges.map((e) => [e.dst, e.rationale])).toEqual([
+      ['cve:CVE-2026-0001', 'Text contains the exact identifier CVE-2026-0001.'],
+      ['cve:CVE-2026-0002', 'The full feed entry contains the exact identifier CVE-2026-0002.'],
+    ]);
+  });
+
   it('ranks known exploitation above theoretical severity', () => {
     expect(vulnerabilitySeverity({})).toBe(0);
     expect(vulnerabilitySeverity({ kev: {} })).toBe(0.9);

@@ -92,6 +92,14 @@ describe('feed → nodes', () => {
     expect(parseFeed(doc, feed(), NOW).nodes).toEqual([]);
   });
 
+  it('keeps identifiers from the full entry, beyond the shortened summary', () => {
+    const b = parseFeed(xml('atom-cccs.xml'), feed({ id: 'cccs', name: 'CCCS', country: 'Canada', category: 'advisory', countryRef: 'https://ref' }), NOW);
+    const ivanti = b.nodes.find((n) => n.title.startsWith('Ivanti'))!;
+    expect(ivanti.summary).not.toContain('CVE-2026-111357');
+    expect(ivanti.attrs!.identifiers).toContain('CVE-2026-111357');
+    expect(b.nodes.find((n) => n.title.startsWith('MongoDB'))!.attrs).not.toHaveProperty('identifiers');
+  });
+
   it('skips items older than 30 days or dated in the future', () => {
     expect(parseFeed(xml('rss-bleepingcomputer.xml'), feed(), new Date('2027-01-01T00:00:00Z')).nodes).toHaveLength(0);
     expect(parseFeed(xml('rss-bleepingcomputer.xml'), feed(), new Date('2026-10-01T00:00:00Z')).nodes).toHaveLength(0);

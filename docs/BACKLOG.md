@@ -235,13 +235,13 @@ coverage in the investigation panel.
 - [x] Mentions stay marked as inferred, with their confidence
 
 ### SEN-38 · Per-feed fixtures in tests
-Priority: P3 · Labels: testing · Status: todo
+Priority: P3 · Labels: testing · Status: done
 
 The offline fixture router answers every news feed with the same BleepingComputer file, so the
 seeded articles end up credited to whichever feed is processed last (currently TechCrunch).
 
-- [ ] The router returns a feed's own fixture by host, and an empty feed for the rest
-- [ ] Seeded articles carry their real outlet and publisher country; e2e expectations updated
+- [x] The router returns a feed's own fixture by host, and an empty feed for the rest
+- [x] Seeded articles carry their real outlet and publisher country; e2e expectations updated
 
 ### SEN-39 · Article language label and filter
 Priority: P3 · Labels: frontend · Status: todo

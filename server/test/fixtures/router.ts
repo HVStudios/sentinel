@@ -33,9 +33,18 @@ export const fixtureFetchJson = (async (url: string) => {
   }
 }) as typeof fetchJson;
 
-/** Feeds: the Canadian Cyber Centre's Atom feed for the CCCS entry, BleepingComputer's RSS for every other feed. */
-export const fixtureFetchText = (async (url: string) =>
-  read(new URL(url).host.endsWith('cyber.gc.ca') ? 'atom-cccs.xml' : 'rss-bleepingcomputer.xml')) as typeof fetchText;
+/** Feeds with a recorded payload, by host. Every other feed answers with an empty, valid RSS document. */
+const FEED_FIXTURES: Record<string, string> = {
+  'www.bleepingcomputer.com': 'rss-bleepingcomputer.xml',
+  'www.cyber.gc.ca': 'atom-cccs.xml',
+  'www.heise.de': 'atom-heise.xml',
+};
+const EMPTY_RSS = '<?xml version="1.0"?><rss version="2.0"><channel><title>empty</title></channel></rss>';
+
+export const fixtureFetchText = (async (url: string) => {
+  const name = FEED_FIXTURES[new URL(url).host];
+  return name ? read(name) : EMPTY_RSS;
+}) as typeof fetchText;
 
 /** GitHub advisories: one recorded page, no further pages. */
 export const fixtureFetchJsonWithHeaders = (async (url: string) => {
