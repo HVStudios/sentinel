@@ -259,6 +259,18 @@ test('shows KEV trends with sources, and opens a ranked vendor', async ({ page }
   await expect(investigation(page).getByRole('heading', { name: 'Ivanti', exact: true })).toBeVisible();
 });
 
+test('lists EPSS movers and opens one', async ({ page }) => {
+  await open(page);
+  await page.getByRole('group', { name: 'Main view' }).getByRole('button', { name: 'Trends' }).click();
+  const card = page.locator('section').filter({ has: page.getByRole('heading', { name: /Largest rises in exploitation likelihood \(EPSS\), last 7 days/ }) });
+  const row = card.getByRole('row').filter({ hasText: 'CVE-2026-111357' });
+  await expect(row).toContainText('0.12% → 0.32%');
+  await expect(row).toContainText('+0.20 pp');
+  await expect(card.getByText(/stored history starts/)).toBeVisible();
+  await row.getByRole('button', { name: 'CVE-2026-111357' }).click();
+  await expect(investigation(page).getByRole('heading', { name: IVANTI_CVE })).toBeVisible();
+});
+
 test('hatches countries GDACS reports as affected, with an accessible list', async ({ page }) => {
   await open(page);
   await expect(page.locator('[data-affected="Germany"]')).toHaveAttribute('fill', 'url(#hatch-Orange)');

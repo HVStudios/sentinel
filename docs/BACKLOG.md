@@ -206,14 +206,14 @@ Parsing ~10 MB of JSON on a phone still costs time.
 - [ ] Static/live parity tests keep passing; the first map and feed render does not wait for details
 
 ### SEN-35 · EPSS movers in Trends
-Priority: P2 · Labels: analysis, frontend · Status: todo
+Priority: P2 · Labels: analysis, frontend · Status: done (merged)
 
 EPSS history (SEN-32) is now stored per CVE. Show which vulnerabilities' exploitation likelihood
 rose most, so analysts see emerging risk before it reaches KEV.
 
-- [ ] Trends card: largest EPSS rises over 7 and 30 days (absolute and relative), with KEV status
-- [ ] Each row opens the investigation; the card states how far back history goes
-- [ ] Computed in `shared/` so the server and the static build give identical results (parity test)
+- [x] Trends card: largest EPSS rises over 7 and 30 days (absolute and relative), with KEV status
+- [x] Each row opens the investigation; the card states how far back history goes
+- [x] Computed in `shared/` so the server and the static build give identical results (parity test)
 
 ### SEN-36 · Source health alerts
 Priority: P2 · Labels: backend, frontend · Status: todo

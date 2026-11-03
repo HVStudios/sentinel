@@ -51,4 +51,29 @@ describe('trends', () => {
     expect(t.collectedWeekly.article.slice(-2)).toEqual([1, 1]);
     expect(t.collectedWeekly.natural_event.at(-1)).toBe(1);
   });
+
+  it('ranks EPSS rises over 7 and 30 days from the stored change points', () => {
+    const cve = (id: string, history: [string, number][], kevListed = false): TrendNode => ({
+      id, type: 'vulnerability', title: `Title ${id}`, attrs: { epss: { score: history.at(-1)![1], date: '2026-11-04', history }, ...(kevListed ? { kev: { dateAdded: '2025-01-01' } } : {}) },
+    });
+    const nodes = [
+      cve('cve:STEADY', [['2026-09-01', 0.4]]),
+      cve('cve:RECENT', [['2026-09-01', 0.01], ['2026-11-01', 0.31]], true), // +0.30 within 7 days
+      cve('cve:SLOW', [['2026-09-01', 0.05], ['2026-10-10', 0.5], ['2026-10-30', 0.55]]), // +0.05 in 7 days, +0.50 in 30
+      cve('cve:NEW', [['2026-11-02', 0.002], ['2026-11-03', 0.2]]), // history starts inside both periods
+      cve('cve:FELL', [['2026-09-01', 0.9], ['2026-11-01', 0.1]]),
+      cve('cve:NOISE', [['2026-09-01', 0.0004], ['2026-11-01', 0.0008]]),
+      { id: 'news:1', type: 'article', attrs: {} },
+    ];
+    const t = computeTrends({ nodes, weaknessesOf: new Map(), now: NOW, windowDays: 30 });
+    const [week, month] = t.epssMovers;
+    expect(week!.days).toBe(7);
+    expect(week!.movers.map((m) => m.id)).toEqual(['cve:RECENT', 'cve:NEW', 'cve:SLOW']);
+    expect(week!.movers[0]).toEqual({ id: 'cve:RECENT', title: 'Title cve:RECENT', kev: true, from: 0.01, fromDate: '2026-10-28', to: 0.31, toDate: '2026-11-04' });
+    expect(week!.movers[1]).toMatchObject({ from: 0.002, fromDate: '2026-11-02', to: 0.2 });
+    expect(month!.days).toBe(30);
+    expect(month!.movers.map((m) => m.id)).toEqual(['cve:SLOW', 'cve:RECENT', 'cve:NEW']);
+    expect(month!.movers[0]).toMatchObject({ from: 0.05, fromDate: '2026-10-05', to: 0.55 });
+    expect(t.epssHistorySince).toBe('2026-09-01');
+  });
 });
