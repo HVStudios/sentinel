@@ -114,6 +114,14 @@ a summary such as "14 runs: 12 ok, 1 with warnings, 1 failed · median 2.1 s", s
 problems like GDELT's rate limiting show up over time. On Pages the history survives as long as the
 cached database does; if GitHub evicts the cache, it starts again.
 
+`shared/health.ts` turns that history into alerts, in the browser in both modes. A source is
+flagged when its last 3 runs failed, or when its latest successful run returned under half the
+median of its previous (up to 10) successful runs. Drops are judged only after 5 earlier successful
+runs and a median of at least 20 records, so incremental sources like Wikidata, which usually add
+none, are not flagged. GDELT is marked best effort: it is flagged only when none of its last 12
+runs (3 days on Pages) returned records, and one good run clears it. The header shows the number of
+flagged sources next to **Sources**; the panel highlights those rows with the reason.
+
 **FIRST EPSS** (`sources/epss.ts`): scores every stored CVE in batches of 100 with
 `scope=time-series`, which also returns the previous 30 days. Besides the latest score and
 percentile, `attrs.epss.history` keeps the score as change points (`[date, score]`, each holding

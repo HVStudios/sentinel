@@ -95,6 +95,11 @@ h3 { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: 
 .copy-status:empty { display: none; }
 .refreshing-tag { margin-left: 8px; font-size: 11px; color: var(--t-medium); }
 .refresh-schedule { flex-basis: 100%; }
+.alert-tag { margin-left: 8px; font-size: 11px; color: var(--t-high); border: 1px solid rgba(255, 159, 67, 0.5); border-radius: 5px; padding: 0 5px; }
+.sources tr.flagged td { background: rgba(255, 159, 67, 0.08); }
+.sources tr.flagged td:first-child { box-shadow: inset 3px 0 0 var(--t-high); }
+.health-summary { margin: 0; padding: 8px 12px; color: var(--t-high); }
+.health-alert { color: var(--t-high); margin-top: 2px; }
 .snapshot-tag { margin-left: 8px; font-size: 11px; font-family: var(--mono); color: var(--accent); border: 1px solid rgba(94, 230, 196, 0.4); border-radius: 5px; padding: 0 5px; }
 
 /* Layout */

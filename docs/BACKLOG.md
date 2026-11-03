@@ -216,13 +216,13 @@ rose most, so analysts see emerging risk before it reaches KEV.
 - [x] Computed in `shared/` so the server and the static build give identical results (parity test)
 
 ### SEN-36 · Source health alerts
-Priority: P2 · Labels: backend, frontend · Status: todo
+Priority: P2 · Labels: backend, frontend · Status: done
 
 Run history (SEN-33) shows problems only when someone opens the Sources panel. Surface them.
 
-- [ ] A source is flagged when its last 3 runs failed, or its record count fell far below its recent median
-- [ ] Header indicator with the number of flagged sources, opening the Sources panel; flagged rows highlighted there
-- [ ] Works in live and static mode; tests for the flagging rules (best-effort GDELT does not raise a permanent alarm)
+- [x] A source is flagged when its last 3 runs failed, or its record count fell far below its recent median
+- [x] Header indicator with the number of flagged sources, opening the Sources panel; flagged rows highlighted there
+- [x] Works in live and static mode; tests for the flagging rules (best-effort GDELT does not raise a permanent alarm)
 
 ### SEN-37 · Who reported a vulnerability, by country
 Priority: P2 · Labels: frontend, geo · Status: todo

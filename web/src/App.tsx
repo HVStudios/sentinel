@@ -8,6 +8,7 @@ import { Timeline } from './components/Timeline.tsx';
 import { Feed } from './components/Feed.tsx';
 import { Investigate } from './components/Investigate.tsx';
 import { SourcesPanel } from './components/SourcesPanel.tsx';
+import { sourceAlerts } from '../../shared/health.ts';
 import { StoriesList } from './components/StoriesList.tsx';
 import { WatchlistView } from './components/WatchlistView.tsx';
 import { TrendsView } from './components/TrendsView.tsx';
@@ -29,6 +30,8 @@ export const FEED_SORTS: { id: FeedSort; label: string; title: string }[] = [
   { id: 'latest', label: 'Latest', title: 'Strictly newest first across all categories' },
   { id: 'top', label: 'Top', title: 'Highest severity or SENTINEL rank first, taking from each category in turn' },
 ];
+
+const sourceName = (sources: { id: string; name: string }[], id: string) => sources.find((s) => s.id === id)?.name ?? id;
 
 export function App({ now = () => new Date() }: { now?: () => Date }) {
   // The whole view lives in the URL hash, so links reproduce it and Back undoes filter changes.
@@ -187,7 +190,9 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
   const storyWindow = brush ?? windowRange;
   const stories = useFetch((s) => api.stories(storyWindow, s), view === 'stories' ? JSON.stringify([storyWindow, data.version]) : null);
 
-  const snapshot = useFetch((s) => api.sources(s), api.mode === 'static' ? 'snapshot' : null);
+  // Source status for the header: snapshot age (static) and health alerts (both modes).
+  const snapshot = useFetch((s) => api.sources(s), `sources:${data.version}`);
+  const alerts = snapshot.data ? sourceAlerts(snapshot.data.sources) : [];
 
   const counts = map.data ? { points: map.data.points.length, countries: map.data.countries.reduce((s, c) => s + c.count, 0) } : null;
 
@@ -252,6 +257,11 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
         <button className="ghost" onClick={() => setShowSources(true)}>
           Sources
           {data.running && <span className="refreshing-tag">refreshing…</span>}
+          {alerts.length > 0 && (
+            <span className="alert-tag" title={alerts.map((a) => `${sourceName(snapshot.data!.sources, a.sourceId)}: ${a.reason}`).join('\n')}>
+              ⚠ {alerts.length} {alerts.length === 1 ? 'source needs' : 'sources need'} attention
+            </span>
+          )}
           {snapshot.data?.generatedAt && (
             <span className="snapshot-tag" title={`Static snapshot generated ${snapshot.data.generatedAt}`}>
               snapshot · {relativeTime(snapshot.data.generatedAt)}
