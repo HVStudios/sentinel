@@ -7,7 +7,9 @@ connect.
 
 **Live:** https://hvstudios.github.io/sentinel/ (a static snapshot rebuilt every 6 hours by GitHub Actions)
 
-![SENTINEL main view](docs/screenshot.png)
+![SENTINEL main view, night chart](docs/screenshot.png)
+
+![SENTINEL main view, day chart](docs/screenshot-day.png)
 
 - **Real, attributed data.** CISA KEV, NIST NVD, GitHub Security Advisories, FIRST EPSS, USGS, NASA EONET, GDACS, Wikidata, curated news and advisory feeds, GDELT and Hacker News.
   Every item links to its source and shows when it happened, when it was published and when it

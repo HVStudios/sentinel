@@ -8,11 +8,19 @@ that must make reported facts, inferred links and uncertainty look different.
 The world supplies type, palette, density and one signature move. Layout, navigation and controls
 are standard web controls.
 
-## Scene
+## Scene and modes
 
-An analyst at a desk in daylight, scanning a world sheet and following leads. The interface is light
-because a chart is a printed sheet. Density is that of a chart: a lot of information, held together
-by rules and a strict symbol vocabulary rather than cards.
+An analyst scanning a world sheet and following leads, in daylight or at night. Like navigation
+charts, which come in day, dusk and night palettes, SENTINEL has two:
+
+- **Day chart:** a light printed sheet with a chart-blue title band.
+- **Night chart:** the same sheet for low light. Dark navy water, slate land and a near-black band.
+  The overprints brighten so they stay readable.
+
+The chart follows the system setting until the viewer picks Day or Night in the header. That choice
+is kept in the browser (`localStorage`, `sentinel.theme`). Every colour is a token on `:root`, and
+the night palette overrides them under `:root[data-theme='night']`. Both modes are audited by axe in
+the e2e suite.
 
 ## Overprint semantics (reserved colours)
 
@@ -36,9 +44,9 @@ One shape per item type, used the same way in toggles, feed rows, legends and th
 - Story: dashed magenta ring
 - Vendor HQ (Wikidata): blue outlined diamond, filled when selected
 
-## Palette
+## Palette (day; night values in `styles.css`)
 
-Sheet `--paper #fbfbf7` / `--sheet #fff`; ink `--ink #18212b`, secondary `--ink-2 #4f5862`
+Sheet `--paper #f3f4ee` / `--sheet #fff`; ink `--ink #18212b`, secondary `--ink-2 #4f5862`
 (≥ 4.5:1 on the sheet). Chart: water `#d3e5ec`, graticule `#a9c8d4`, land `#ebe8cf`, borders `#8d886a`.
 Title band `--band #16365f`. Severity tones are darkened for text on a light ground (WCAG AA).
 
@@ -58,7 +66,25 @@ That is the only looping motion, and it is disabled under `prefers-reduced-motio
 
 ## Layout
 
-Panels are columns of one sheet, divided by 1px rules. There are no floating cards, except trend
-cards, which are separate exhibits. The feed is a ruled list with a fixed symbol column. No coloured
-side stripes, no glows, no emoji or Unicode glyphs as icons: icons come from `components/Icon.tsx`,
-16px line icons with a 1.5 stroke.
+The map fills the screen, and the work areas float over it as panels, as in map-analysis tools:
+
+- **Left column:** the **Layers** card (collapsible) above the **Feed**. Each layer's switch sits
+  next to its legend and a line on what it shows and does not show.
+- **Centre:** the map, with a small view bar (Map / Trends and counts) and zoom controls. Trends
+  replaces the map in the same frame.
+- **Right:** the **Investigation** panel when an item is open.
+- **Bottom:** the **Timeline**, docked across the map area.
+
+The map is padded so that nothing sits on top of it except the view bar and zoom controls.
+Under 900px everything stacks in reading order (map, layers, timeline, feed, investigation). The
+Layers card starts collapsed there.
+
+The feed is a ruled list with a fixed symbol column. No coloured side stripes, no glows, no emoji or
+Unicode glyphs as icons: icons come from `components/Icon.tsx`, 16px line icons with a 1.5 stroke.
+
+## Next
+
+- Clustering of nearby events, with counts.
+- Selection lines from the investigation panel to vendor headquarters (solid blue) and reporting
+  countries (dashed magenta).
+- Timeline playback.

@@ -14,6 +14,14 @@ const PATHS = {
   ),
   plus: <path d="M8 3.5v9M3.5 8h9" />,
   minus: <path d="M3.5 8h9" />,
+  sun: (
+    <>
+      <circle cx="8" cy="8" r="3" />
+      <path d="M8 1.5V3M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1 1M11.6 11.6l1 1M3.4 12.6l1-1M11.6 4.4l1-1" />
+    </>
+  ),
+  moon: <path d="M13 9.8A5.5 5.5 0 0 1 6.2 3a5.5 5.5 0 1 0 6.8 6.8z" />,
+  chevron: <path d="M4 10l4-4 4 4" />,
   alert: (
     <>
       <path d="M8 2.5l6 10.5H2z" />

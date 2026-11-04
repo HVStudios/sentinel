@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { geoEqualEarth, geoGraticule10, geoPath } from 'd3-geo';
 import { select } from 'd3-selection';
 import { zoom, zoomIdentity, type ZoomTransform } from 'd3-zoom';
@@ -61,12 +61,39 @@ interface Props {
   showAffected?: boolean;
   /** Publisher countries of the outlets and agencies that reported an item (outlined). */
   coverage?: { title: string; countries: string[] } | null;
+  /** The viewer's layer switches (shown in the Layers card when onLayer is given). */
+  layers?: { countries: boolean; vendors: boolean; affected: boolean };
+  onLayer?: (layer: 'countries' | 'vendors' | 'affected', on: boolean) => void;
 }
 
-export const ALERT_COLORS: Record<AffectedCountry['maxAlert'], string> = { Green: '#2f8a4c', Orange: '#c76a0a', Red: '#b42318' };
+function LayerCheck({ label, checked, onChange }: { label: string; checked: boolean; onChange: (on: boolean) => void }) {
+  return (
+    <label className="layer-name check">
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} /> {label}
+    </label>
+  );
+}
 
-export function WorldMap({ points, countryCounts, selectedId, onSelect, showCountries, vendors = [], showVendors = false, affected = [], showAffected = false, coverage = null }: Props) {
+export const ALERT_COLORS: Record<AffectedCountry['maxAlert'], string> = { Green: 'var(--alert-green)', Orange: 'var(--alert-orange)', Red: 'var(--alert-red)' };
+
+export function WorldMap({ points, countryCounts, selectedId, onSelect, showCountries, vendors = [], showVendors = false, affected = [], showAffected = false, coverage = null, layers, onLayer }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
+  const layersRef = useRef<HTMLElement>(null);
+  // Open on wide screens; on a phone the card starts collapsed so the feed stays near the map.
+  const [layersOpen, setLayersOpen] = useState(() => !(typeof window !== 'undefined' && window.matchMedia?.('(max-width: 900px)').matches));
+
+  // The feed panel stacks under the Layers card on wide screens, so publish the card's height.
+  useLayoutEffect(() => {
+    const el = layersRef.current;
+    const host = el?.closest<HTMLElement>('.main');
+    if (!el || !host || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => host.style.setProperty('--layers-h', `${el.offsetHeight}px`));
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      host.style.removeProperty('--layers-h');
+    };
+  }, []);
   const zoomRef = useRef<ReturnType<typeof zoom<SVGSVGElement, unknown>> | null>(null);
   const [transform, setTransform] = useState<ZoomTransform>(zoomIdentity);
   const [hover, setHover] = useState<{ node: SNode; x: number; y: number } | null>(null);
@@ -189,7 +216,7 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
         <defs>
           {Object.entries(ALERT_COLORS).map(([level, color]) => (
             <pattern key={level} id={`hatch-${level}`} width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-              <line x1="0" y1="0" x2="0" y2="5" stroke={color} strokeWidth="1.6" />
+              <line x1="0" y1="0" x2="0" y2="5" style={{ stroke: color }} strokeWidth="1.6" />
             </pattern>
           ))}
           <radialGradient id="glow">
@@ -298,76 +325,103 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
         </g>
       </svg>
 
-      <div className="map-legend">
-        <div className="legend-row">
-          {Object.entries(POINT_COLORS).map(([cat, color]) => (
-            <span key={cat} className="legend-item">
-              <i style={{ background: color }} /> {categoryLabel(cat)}
-            </span>
-          ))}
-          <span className="legend-item">
-            <i style={{ background: 'var(--c-event)' }} /> Other events
-          </span>
+      <section className="layers" aria-labelledby="layers-heading" ref={layersRef}>
+        <div className="layers-head">
+          <h2 id="layers-heading">Layers</h2>
+          <button
+            type="button"
+            className="ghost layers-toggle"
+            aria-expanded={layersOpen}
+            aria-controls="layers-body"
+            onClick={() => setLayersOpen((o) => !o)}
+          >
+            <Icon name="chevron" className={layersOpen ? '' : 'flip'} />
+            <span className="sr-only">{layersOpen ? 'Collapse layers' : 'Expand layers'}</span>
+          </button>
         </div>
-        <div className="legend-note">
-          Points: locations as reported by USGS, NASA EONET and GDACS (for GDACS floods and storms, the centroid of the affected area). Size = severity.
-          Events spread over many countries, such as droughts, are listed in the feed but not drawn as a point.
-        </div>
-        {showCountries && (
-          <div className="legend-note">
-            <i className="swatch-news" /> Shading: news volume by <strong>publisher country</strong> (curated feeds and GDELT), not where events happened.
-            {unmapped.length > 0 && (
-              <span className="unmapped" title="These countries are too small for the 1:110m base map and are not drawn rather than guessed.">
-                {' '}
-                Not drawn: {unmapped.map((u) => `${u.country} (${u.count})`).join(', ')}
+        <div className="layers-body" id="layers-body" hidden={!layersOpen}>
+          <div className="layer">
+            <div className="layer-name">Events</div>
+            <div className="legend-row">
+              {Object.entries(POINT_COLORS).map(([cat, color]) => (
+                <span key={cat} className="legend-item">
+                  <i style={{ background: color }} /> {categoryLabel(cat)}
+                </span>
+              ))}
+              <span className="legend-item">
+                <i style={{ background: 'var(--c-event)' }} /> Other events
               </span>
+            </div>
+            <div className="legend-note">
+              Points: locations as reported by USGS, NASA EONET and GDACS (for GDACS floods and storms, the centroid of the affected area). Size = severity.
+              Events spread over many countries, such as droughts, are listed in the feed but not drawn as a point.
+            </div>
+          </div>
+          <div className="layer">
+            {onLayer && <LayerCheck label="Publisher-country shading" checked={layers?.countries ?? showCountries} onChange={(v) => onLayer('countries', v)} />}
+            {showCountries && (
+              <div className="legend-note">
+                <i className="swatch-news" /> Shading: news volume by <strong>publisher country</strong> (curated feeds and GDELT), not where events happened.
+                {unmapped.length > 0 && (
+                  <span className="unmapped" title="These countries are too small for the 1:110m base map and are not drawn rather than guessed.">
+                    {' '}
+                    Not drawn: {unmapped.map((u) => `${u.country} (${u.count})`).join(', ')}
+                  </span>
+                )}
+              </div>
+            )}
+            {coverage && (
+              <div className="legend-note coverage-note">
+                <i className="swatch-coverage" aria-hidden="true" /> Outlined: <strong>publisher countries</strong> of the outlets and agencies that
+                reported {coverage.title}: where they are based, not where the vulnerability is ({coverage.countries.join(', ')}).
+                {coverageUnmapped.length > 0 && <span className="unmapped"> Not drawn: {coverageUnmapped.join(', ')}.</span>}
+              </div>
             )}
           </div>
-        )}
-        {coverage && (
-          <div className="legend-note coverage-note">
-            <i className="swatch-coverage" aria-hidden="true" /> Outlined: <strong>publisher countries</strong> of the outlets and agencies that
-            reported {coverage.title}: where they are based, not where the vulnerability is ({coverage.countries.join(', ')}).
-            {coverageUnmapped.length > 0 && <span className="unmapped"> Not drawn: {coverageUnmapped.join(', ')}.</span>}
+          <div className="layer">
+            {onLayer && <LayerCheck label="Vendor HQs" checked={layers?.vendors ?? showVendors} onChange={(v) => onLayer('vendors', v)} />}
+            {showVendors ? (
+              <div className="legend-note">
+                <i className="swatch-vendor" /> Diamonds: <strong>vendor headquarters</strong> (Wikidata) for vulnerabilities in this window, sized by
+                count. They show where the vendor is based, not where vulnerabilities are exploited.
+              </div>
+            ) : (
+              <div className="legend-note muted">Vulnerabilities are not mapped: KEV and NVD do not report locations.</div>
+            )}
           </div>
-        )}
-        {showAffected && affected.length > 0 && (
-          <div className="legend-note">
-            <i className="swatch-hatch" aria-hidden="true" /> Hatching: countries <strong>GDACS reports as affected</strong> by disasters in this window,
-            coloured by the highest alert (green, orange, red). Reported by GDACS, not inferred.
-            <details className="affected-list">
-              <summary>Affected countries ({affected.length})</summary>
-              <ul>
-                {affected.map((a) => (
-                  <li key={a.country}>
-                    <span className={`alert-dot alert-${a.maxAlert}`} aria-hidden="true" /> {a.country}
-                    {!resolveCountry(a.country) && <span className="muted"> (too small for this map, not drawn)</span>}:{' '}
-                    {a.events.map((e, i) => (
-                      <span key={e.id}>
-                        {i > 0 && ', '}
-                        {/* GDACS titles can list dozens of countries; keep the full title for hover and the investigation. */}
-                        <button className="link-btn" onClick={() => onSelect(e.id)} title={e.title}>
-                          {e.title.length > 48 ? `${e.title.slice(0, 47).trimEnd()}…` : e.title}
-                        </button>{' '}
-                        <span className="muted">({e.alertLevel})</span>
-                      </span>
+          <div className="layer">
+            {onLayer && <LayerCheck label="GDACS affected countries" checked={layers?.affected ?? showAffected} onChange={(v) => onLayer('affected', v)} />}
+            {showAffected && affected.length > 0 && (
+              <div className="legend-note">
+                <i className="swatch-hatch" aria-hidden="true" /> Hatching: countries <strong>GDACS reports as affected</strong> by disasters in this window,
+                coloured by the highest alert (green, orange, red). Reported by GDACS, not inferred.
+                <details className="affected-list">
+                  <summary>Affected countries ({affected.length})</summary>
+                  <ul>
+                    {affected.map((a) => (
+                      <li key={a.country}>
+                        <span className={`alert-dot alert-${a.maxAlert}`} aria-hidden="true" /> {a.country}
+                        {!resolveCountry(a.country) && <span className="muted"> (too small for this map, not drawn)</span>}:{' '}
+                        {a.events.map((e, i) => (
+                          <span key={e.id}>
+                            {i > 0 && ', '}
+                            {/* GDACS titles can list dozens of countries; keep the full title for hover and the investigation. */}
+                            <button className="link-btn" onClick={() => onSelect(e.id)} title={e.title}>
+                              {e.title.length > 48 ? `${e.title.slice(0, 47).trimEnd()}…` : e.title}
+                            </button>{' '}
+                            <span className="muted">({e.alertLevel})</span>
+                          </span>
+                        ))}
+                      </li>
                     ))}
-                  </li>
-                ))}
-              </ul>
-            </details>
-            {affectedUnmapped.length > 0 && <span className="unmapped"> Not drawn: {affectedUnmapped.map((u) => u.country).join(', ')}.</span>}
+                  </ul>
+                </details>
+                {affectedUnmapped.length > 0 && <span className="unmapped"> Not drawn: {affectedUnmapped.map((u) => u.country).join(', ')}.</span>}
+              </div>
+            )}
           </div>
-        )}
-        {showVendors ? (
-          <div className="legend-note">
-            <i className="swatch-vendor" /> Diamonds: <strong>vendor headquarters</strong> (Wikidata) for vulnerabilities in this window, sized by
-            count. They show where the vendor is based, not where vulnerabilities are exploited.
-          </div>
-        ) : (
-          <div className="legend-note muted">Vulnerabilities are not mapped: KEV and NVD do not report locations.</div>
-        )}
-      </div>
+        </div>
+      </section>
 
       <div className="map-zoom" role="group" aria-label="Map zoom">
         <button type="button" onClick={() => zoomBy(1.5)} aria-label="Zoom in">
