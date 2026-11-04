@@ -15,6 +15,7 @@ import { TrendsView } from './components/TrendsView.tsx';
 import { useWatchData, useWatchlist } from './lib/watchlist.ts';
 import { useDataVersion } from './lib/useDataVersion.ts';
 import { formatHash, isNavigation, parseHash, type ViewState } from './lib/urlState.ts';
+import { BrandMark, Icon } from './components/Icon.tsx';
 
 export const PRESETS = [
   { id: '24h', label: '24h', ms: 86_400_000 },
@@ -213,10 +214,8 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
       </a>
       <header className="topbar">
         <div className="brand">
-          <span className="brand-mark" aria-hidden>
-            ◉
-          </span>
-          SENTINEL
+          <BrandMark />
+          <span className="brand-name">SENTINEL</span>
           <span className="brand-sub">intelligence explorer</span>
         </div>
         <input
@@ -261,7 +260,7 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
           {data.running && <span className="refreshing-tag">refreshing…</span>}
           {alerts.length > 0 && (
             <span className="alert-tag" title={alerts.map((a) => `${sourceName(snapshot.data!.sources, a.sourceId)}: ${a.reason}`).join('\n')}>
-              ⚠ {alerts.length} {alerts.length === 1 ? 'source needs' : 'sources need'} attention
+              <Icon name="alert" /> {alerts.length} {alerts.length === 1 ? 'source needs' : 'sources need'} attention
             </span>
           )}
           {snapshot.data?.generatedAt && (
@@ -347,7 +346,7 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
                 aria-pressed={view === 'watchlist'}
                 onClick={() => setView('watchlist')}
               >
-                <span aria-hidden="true">★ </span>Watchlist
+                <Icon name="star" />Watchlist
                 {watchData.totalNew > 0 && (
                   <span className="count-badge">
                     {watchData.totalNew}

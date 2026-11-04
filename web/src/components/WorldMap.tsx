@@ -10,6 +10,7 @@ import type { AffectedCountry, SNode, VendorHq } from '../api.ts';
 import { createCountryResolver } from '../lib/countries.ts';
 import { categoryLabel, relativeTime } from '../lib/format.ts';
 import { useRovingFocus } from '../lib/useRovingFocus.ts';
+import { Icon } from './Icon.tsx';
 
 const W = 960;
 const H = 500;
@@ -22,8 +23,8 @@ const resolveCountry = createCountryResolver(countries.map((c) => c.properties.n
 
 const projection = geoEqualEarth().fitExtent(
   [
-    [8, 8],
-    [W - 8, H - 8],
+    [34, 6],
+    [W - 34, H - 20],
   ],
   { type: 'Sphere' },
 );
@@ -32,6 +33,11 @@ const spherePath = path({ type: 'Sphere' }) ?? '';
 const graticulePath = path(geoGraticule10()) ?? '';
 const countryPaths = countries.map((c) => ({ name: c.properties.name, d: path(c) ?? '' }));
 const borderPath = path(borders) ?? '';
+
+/** Degree labels printed around the chart's edge, the way an aeronautical chart frames its sheet. */
+const fmtDeg = (v: number, pos: string, neg: string) => (v === 0 ? '0°' : `${Math.abs(v)}°${v > 0 ? pos : neg}`);
+const lonTicks = [-150, -120, -90, -60, -30, 0, 30, 60, 90, 120, 150].map((lon) => ({ label: fmtDeg(lon, 'E', 'W'), xy: projection([lon, -90])! }));
+const latTicks = [-60, -30, 0, 30, 60].map((lat) => ({ label: fmtDeg(lat, 'N', 'S'), xy: projection([-180, lat])! }));
 
 export const POINT_COLORS: Record<string, string> = {
   earthquake: 'var(--c-quake)',
@@ -57,7 +63,7 @@ interface Props {
   coverage?: { title: string; countries: string[] } | null;
 }
 
-export const ALERT_COLORS: Record<AffectedCountry['maxAlert'], string> = { Green: '#5ee6a8', Orange: '#ff9f43', Red: '#ff4d6d' };
+export const ALERT_COLORS: Record<AffectedCountry['maxAlert'], string> = { Green: '#2f8a4c', Orange: '#c76a0a', Red: '#b42318' };
 
 export function WorldMap({ points, countryCounts, selectedId, onSelect, showCountries, vendors = [], showVendors = false, affected = [], showAffected = false, coverage = null }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -193,7 +199,19 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
         </defs>
         <g transform={transform.toString()}>
           <path d={spherePath} className="sphere" />
-          <path d={graticulePath} className="graticule" strokeWidth={0.5 / k} />
+          <path d={graticulePath} className="graticule" strokeWidth={0.6 / k} />
+          <g className="degrees" aria-hidden="true" style={{ fontSize: `${10 / k}px` }}>
+            {lonTicks.map((t) => (
+              <text key={t.label} x={t.xy[0]} y={t.xy[1] + 13 / k} textAnchor="middle">
+                {t.label}
+              </text>
+            ))}
+            {latTicks.map((t) => (
+              <text key={t.label} x={t.xy[0] - 6 / k} y={t.xy[1] + 3.5 / k} textAnchor="end">
+                {t.label}
+              </text>
+            ))}
+          </g>
           {countryPaths.map((c) => {
             const count = showCountries ? shading.get(c.name) : undefined;
             return (
@@ -202,7 +220,7 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
                 d={c.d}
                 className="country"
                 data-country={c.name}
-                style={count ? { fill: `color-mix(in oklab, var(--c-news) ${Math.round(18 + 62 * Math.sqrt(count / max))}%, var(--land))` } : undefined}
+                style={count ? { fill: `color-mix(in oklab, var(--c-shade) ${Math.round(14 + 66 * Math.sqrt(count / max))}%, var(--land))` } : undefined}
               >
                 <title>
                   {[
@@ -245,7 +263,7 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
                 role="button"
                 aria-label={`${categoryLabel(p.category) || 'Event'}: ${p.title}, ${relativeTime(p.occurredAt)}`}
               >
-                {(p.severity ?? 0) > 0.55 && <circle r={r * 2.4} className="pulse" style={{ fill: POINT_COLORS[p.category ?? ''] ?? 'var(--c-event)' }} />}
+                {(p.severity ?? 0) > 0.55 && <circle r={r * 2.4} className="pulse" style={{ stroke: POINT_COLORS[p.category ?? ''] ?? 'var(--c-event)' }} />}
                 <circle r={r} style={{ fill: POINT_COLORS[p.category ?? ''] ?? 'var(--c-event)' }} strokeWidth={(selected ? 2 : 0.8) / Math.sqrt(k)} />
               </g>
             );
@@ -353,13 +371,13 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
 
       <div className="map-zoom" role="group" aria-label="Map zoom">
         <button type="button" onClick={() => zoomBy(1.5)} aria-label="Zoom in">
-          +
+          <Icon name="plus" />
         </button>
         <button type="button" onClick={() => zoomBy(1 / 1.5)} aria-label="Zoom out" disabled={transform.k <= 1}>
-          −
+          <Icon name="minus" />
         </button>
         <button type="button" onClick={() => zoomBy(null)} aria-label="Reset map view" disabled={transform.k <= 1}>
-          ⟲
+          <Icon name="reset" />
         </button>
       </div>
 

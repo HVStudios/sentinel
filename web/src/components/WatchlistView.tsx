@@ -16,7 +16,7 @@ export function WatchlistView({ statuses, totalNew, onSelect, onMarkSeen, onRemo
     <section className="feed" aria-label="Watchlist items">
       <div className="watch-intro">
         <p className="muted small">
-          Watch a vendor, product, vulnerability or story with ★ in its investigation panel. New related items are counted here. Your
+          Watch a vendor, product, vulnerability or story with Watch in its investigation panel. New related items are counted here. Your
           watchlist is stored only in this browser.
         </p>
         {totalNew > 0 && (

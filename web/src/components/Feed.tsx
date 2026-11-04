@@ -1,5 +1,6 @@
 import type { SNode } from '../api.ts';
 import { badgesFor, categoryLabel, relativeTime, sourceDomain, TYPE_LABEL } from '../lib/format.ts';
+import { Icon } from './Icon.tsx';
 
 interface Props {
   items: SNode[];
@@ -26,6 +27,7 @@ export function Feed({ items, loading, error, hasMore, selectedId, onSelect, onM
         {items.map((n) => (
           <li key={n.id}>
             <button className={`feed-item type-${n.type}${n.id === selectedId ? ' selected' : ''}`} onClick={() => onSelect(n.id)}>
+              <i className={`sym sym-${n.type}`} aria-hidden="true" />
               <div className="feed-meta">
                 <span className={`pill pill-${n.type}`}>{categoryLabel(n.category) || TYPE_LABEL[n.type]}</span>
                 <time dateTime={n.occurredAt ?? undefined} title={n.occurredAt ?? undefined}>
@@ -43,7 +45,7 @@ export function Feed({ items, loading, error, hasMore, selectedId, onSelect, onM
                 {n.type !== 'vulnerability' && sourceDomain(n) && <span className="feed-id">{sourceDomain(n)}</span>}
                 {watchHits?.get(n.id) && (
                   <span className="watch-chip" title={`Related to your watchlist: ${watchHits.get(n.id)!.join(', ')}`}>
-                    ★ {watchHits.get(n.id)![0]}
+                    <Icon name="star" filled /> {watchHits.get(n.id)![0]}
                     {watchHits.get(n.id)!.length > 1 ? ` +${watchHits.get(n.id)!.length - 1}` : ''}
                   </span>
                 )}
