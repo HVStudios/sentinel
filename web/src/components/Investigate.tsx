@@ -19,9 +19,11 @@ interface Props {
   /** Countries whose outlets or agencies reported this item, currently outlined on the map. */
   coverageShown?: boolean;
   onShowCoverage?: (c: { id: string; title: string; countries: string[] } | null) => void;
+  /** Called with the loaded detail, so the map can draw selection lines for it. */
+  onDetail?: (d: NodeDetail) => void;
 }
 
-export function Investigate({ id, onSelect, onClose, onBack, watched = false, onToggleWatch, coverageShown = false, onShowCoverage }: Props) {
+export function Investigate({ id, onSelect, onClose, onBack, watched = false, onToggleWatch, coverageShown = false, onShowCoverage, onDetail }: Props) {
   const [depth, setDepth] = useState(1);
   const detail = useFetch((s) => api.node(id, s), id);
   const graph = useFetch((s) => api.graph(id, depth, s), `${id}|${depth}`);
@@ -30,6 +32,11 @@ export function Investigate({ id, onSelect, onClose, onBack, watched = false, on
   // Move focus to the new item's heading so keyboard and screen-reader users land on what they opened.
   useEffect(() => {
     if (detail.data?.node.id === id) headingRef.current?.focus();
+  }, [detail.data, id]);
+
+  useEffect(() => {
+    if (detail.data?.node.id === id) onDetail?.(detail.data);
+    // Report each loaded detail once; the callback's identity does not matter.
   }, [detail.data, id]);
 
   return (

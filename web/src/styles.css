@@ -200,6 +200,7 @@ svg [tabindex]:focus-visible { outline: none; }
 /* Headings and regions that only receive focus programmatically (tabindex=-1) need no ring. */
 h2[tabindex="-1"]:focus, section[tabindex="-1"]:focus { outline: none; }
 .point:focus-visible circle:not(.pulse), .vendor-hq:focus-visible rect, .gnode:focus-visible circle { stroke: var(--ink); stroke-width: 3px; }
+.cluster:focus-visible .cluster-ring { stroke: var(--ink) !important; stroke-width: 3.5px; }
 .icon { flex: none; display: block; transition: transform 200ms var(--ease-out); }
 .icon.flip { transform: rotate(180deg); }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
@@ -370,11 +371,35 @@ h3 { font-size: 13px; color: var(--ink-2); margin: 0 0 8px; }
 .vendor-hq rect { fill: var(--paper); stroke: var(--c-vendor); stroke-width: 1.5px; }
 .vendor-hq:hover rect, .vendor-hq.selected rect { fill: var(--c-vendor); }
 .swatch-vendor { display: inline-block; width: 8px; height: 8px; border: 1.5px solid var(--c-vendor); transform: rotate(45deg); margin: 0 4px 1px 2px; }
+
+/* Clusters: nearby events merged at the current zoom, a ring in the event colour with a count. */
+.cluster { cursor: zoom-in; }
+.cluster-ring { fill: var(--paper); stroke-width: 2.25px; vector-effect: non-scaling-stroke; }
+.cluster-core { fill-opacity: 0.22; pointer-events: none; }
+.cluster:hover .cluster-ring { stroke-width: 3px; }
+.cluster-count { fill: var(--ink); font-family: var(--label); font-weight: 600; text-anchor: middle; font-variant-numeric: tabular-nums; pointer-events: none; }
+.swatch-cluster { display: inline-block; width: 10px; height: 10px; border: 2px solid var(--c-event); border-radius: 50%; vertical-align: -1px; margin-right: 4px; }
+
+/* Selection lines: solid blue = reported link, dashed magenta = inferred (opacity follows confidence). */
+.selection-lines { position: absolute; left: 0; top: 0; z-index: 2; pointer-events: none; overflow: visible; }
+.link { fill: none; stroke-linecap: round; animation: link-in 320ms var(--ease-out); }
+.link-reported { stroke: var(--blue); stroke-width: 2px; }
+.link-inferred { stroke: var(--magenta); stroke-width: 1.75px; stroke-dasharray: 6 5; }
+.link-end { stroke-width: 1.75px; fill: var(--paper); animation: link-in 320ms var(--ease-out); }
+.link-end-reported { stroke: var(--blue); }
+.link-end-inferred { stroke: var(--magenta); }
+.link-port { fill: var(--ink); stroke: var(--paper); stroke-width: 2px; }
+.link-port-point { fill: none; stroke: var(--ink); stroke-width: 1.75px; }
+@keyframes link-in { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .link, .link-end { animation: none; } }
+.link-legend .legend-item { gap: 6px; }
+.swatch-line { display: inline-block; vertical-align: middle; overflow: visible; }
+.swatch-line .link { animation: none; }
 .tt-vendor { color: var(--c-vendor); }
 
 /* ── Timeline, docked along the bottom of the map ───────────────────────── */
 .timeline { position: absolute; z-index: 3; left: var(--l); right: var(--r); bottom: 12px; padding: 10px 14px 10px; }
-.timeline svg { width: 100%; height: 84px; display: block; cursor: crosshair; touch-action: none; }
+.timeline > svg { width: 100%; height: 84px; display: block; cursor: crosshair; touch-action: none; }
 .bar-vulnerability { fill: var(--c-vuln); }
 .bar-natural_event { fill: var(--c-event); }
 .bar-article { fill: var(--c-news); }
@@ -382,7 +407,13 @@ h3 { font-size: 13px; color: var(--ink-2); margin: 0 0 8px; }
 .axis { stroke: var(--ink-3); }
 .tick { fill: var(--ink-2); font-size: 10px; font-family: var(--label); font-weight: 500; }
 .brush { fill: var(--blue); fill-opacity: 0.14; stroke: var(--blue); stroke-width: 1; vector-effect: non-scaling-stroke; }
-.timeline-legend { display: flex; gap: 4px 14px; flex-wrap: wrap; font-size: 12px; margin-top: 6px; }
+.timeline-legend { display: flex; gap: 4px 14px; flex-wrap: wrap; align-items: center; font-size: 12px; margin-top: 6px; }
+.playback { display: inline-flex; gap: 2px; align-items: center; margin: -3px 4px -3px -6px; }
+.playback button { padding: 3px 6px; gap: 4px; font-size: 12px; }
+.playback button.play { color: var(--ink); font-family: var(--label); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+.playback button.play.on { background: var(--tint); }
+.brush-set { transition: x 260ms var(--ease-out), width 260ms var(--ease-out); }
+@media (prefers-reduced-motion: reduce) { .brush-set { transition: none; } }
 .timeline-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 1px; }
 .swatch-vulnerability { background: var(--c-vuln); }
 .swatch-natural_event { background: var(--c-event); }
@@ -563,6 +594,9 @@ button.small { font-size: 12px; padding: 3px 8px; }
   .feed { overflow: visible; }
   .layers-head { position: static; }
   .app.has-inv .stage, .app.has-inv .side { display: none; }
+  /* With selection lines to draw, the map stays above the investigation; lines leave from its bottom edge. */
+  .app.has-inv.has-links .stage { display: flex; }
+  .app.has-inv.has-links .stage .layers, .app.has-inv.has-links .stage .timeline, .app.has-inv.has-links .stage .view-bar { display: none; }
   .brand-sub { display: none; }
   .brand { flex-basis: 100%; }
   .topbar { gap: 6px; padding: 10px 16px; }

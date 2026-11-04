@@ -3,6 +3,7 @@ import { TIMED_TYPES } from './api.ts';
 import type { Api, Filters, SourcesResponse } from './api.ts';
 import { relatedItems } from '../../shared/related.ts';
 import { edgeOther } from '../../shared/coverage.ts';
+import { vendorHqsFor } from '../../shared/vendorHq.ts';
 import { computeTrends } from '../../shared/trends.ts';
 import { aggregateAffected } from '../../shared/affected.ts';
 
@@ -228,7 +229,8 @@ export function queryNode(ix: Index, id: string): NodeDetail {
       return { id: p.sourceId, name: s?.name ?? p.sourceId, homepage: s?.homepage ?? '', description: s?.description ?? '', sourceUrl: p.sourceUrl, fetchedAt: p.fetchedAt };
     })
     .sort((a, b) => a.name.localeCompare(b.name));
-  return { node, provenance, edges };
+  const vendorHqs = vendorHqsFor({ node: (x) => ix.byId.get(x), edges: (x) => ix.adj.get(x) ?? [] }, id);
+  return { node, provenance, edges, vendorHqs };
 }
 
 /** Breadth-first neighbourhood, preferring reported and high-confidence links (as the server does). */

@@ -12,6 +12,8 @@ async function open(page: Page, hash = '') {
 
 /** WCAG 2.2 A/AA rules; violations are reported with their targets so failures are actionable. */
 async function audit(page: Page) {
+  // Let entrance animations (dialog fade-in, line fade-in) finish so colours are sampled at rest; looping ones are ignored.
+  await page.evaluate(() => Promise.all(document.getAnimations().filter((a) => a.effect?.getTiming().iterations !== Infinity).map((a) => a.finished.catch(() => {}))));
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
   return results.violations.map((v) => `${v.id} (${v.impact}): ${v.help} → ${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' | ')}${v.nodes.length > 3 ? ` (+${v.nodes.length - 3})` : ''}`);
 }
@@ -123,12 +125,13 @@ test.describe('keyboard only', () => {
 
   test('map markers are one Tab stop with arrow-key navigation', async ({ page }) => {
     await open(page);
-    const markers = page.locator('g.point, g.vendor-hq');
+    // Events, vendor HQs and clusters of nearby events share one roving focus.
+    const markers = page.locator('g.point, g.vendor-hq, g.cluster');
     const count = await markers.count();
     expect(count).toBeGreaterThan(2);
     // Exactly one marker is in the Tab order.
-    expect(await page.locator('g.point[tabindex="0"], g.vendor-hq[tabindex="0"]').count()).toBe(1);
-    await page.locator('g.point[tabindex="0"], g.vendor-hq[tabindex="0"]').focus();
+    expect(await page.locator('[data-key][tabindex="0"]').count()).toBe(1);
+    await page.locator('[data-key][tabindex="0"]').focus();
     const first = await page.evaluate(() => document.activeElement?.getAttribute('aria-label'));
     await page.keyboard.press('ArrowRight');
     const second = await page.evaluate(() => document.activeElement?.getAttribute('aria-label'));

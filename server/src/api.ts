@@ -5,6 +5,7 @@ import { ingest, type IngestResult } from './ingest.ts';
 import { VERSION } from './version.ts';
 import { RETENTION_DAYS } from './retention.ts';
 import { edgeOther } from '../../shared/coverage.ts';
+import { vendorHqsFor } from '../../shared/vendorHq.ts';
 
 export interface AppOptions {
   /** Enables POST /api/ingest. Only turned on when the server is bound to loopback. */
@@ -128,7 +129,8 @@ export function buildApp(store: Store, opts: AppOptions = {}): FastifyInstance {
       const otherId = e.src === node.id ? e.dst : e.src;
       return { ...e, direction: e.src === node.id ? 'out' : 'in', other: edgeOther(store.getNode(otherId), otherId) };
     });
-    return { node, provenance: store.provenanceFor(node.id), edges };
+    const vendorHqs = vendorHqsFor({ node: (x) => store.getNode(x), edges: (x) => store.edgesOf(x) }, node.id);
+    return { node, provenance: store.provenanceFor(node.id), edges, vendorHqs };
   });
 
   app.get<{ Params: { id: string }; Querystring: { depth?: number; limit?: number } }>(

@@ -84,6 +84,8 @@ describe('HTTP API', () => {
     );
     expect((await get('/api/nodes/cve:CVE-2026-0001')).body.provenance[0]).toMatchObject({ name: 'Test', sourceUrl: 'https://example.org/1' });
     expect((await get('/api/nodes/nope')).status).toBe(404);
+    // Acme has no Wikidata match, so no HQ line is drawn for its vulnerability.
+    expect((await get('/api/nodes/cve:CVE-2026-0001')).body.vendorHqs).toEqual([]);
   });
 
   it('returns graph neighbourhoods by depth', async () => {

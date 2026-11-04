@@ -22,6 +22,10 @@ const PATHS = {
   ),
   moon: <path d="M13 9.8A5.5 5.5 0 0 1 6.2 3a5.5 5.5 0 1 0 6.8 6.8z" />,
   chevron: <path d="M4 10l4-4 4 4" />,
+  play: <path d="M5 3.2v9.6L12.5 8z" />,
+  pause: <path d="M5.5 3.5v9M10.5 3.5v9" />,
+  stepForward: <path d="M4 3.5v9L10 8zM12 3.5v9" />,
+  stepBack: <path d="M12 3.5v9L6 8zM4 3.5v9" />,
   alert: (
     <>
       <path d="M8 2.5l6 10.5H2z" />
