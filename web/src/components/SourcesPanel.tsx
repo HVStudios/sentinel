@@ -4,6 +4,7 @@ import { formatDate, relativeTime } from '../lib/format.ts';
 import { useFetch } from '../lib/useFetch.ts';
 import { RunHistory } from './RunHistory.tsx';
 import { BEST_EFFORT_SOURCES, sourceAlerts } from '../../../shared/health.ts';
+import { Icon } from './Icon.tsx';
 
 export function SourcesPanel({ onClose }: { onClose: () => void }) {
   const [tick, setTick] = useState(0);
@@ -62,13 +63,13 @@ export function SourcesPanel({ onClose }: { onClose: () => void }) {
         <div className="inv-bar">
           <h3>Data sources</h3>
           <button className="ghost" onClick={onClose} aria-label="Close">
-            ✕
+            <Icon name="close" />
           </button>
         </div>
         {error && <div className="error">{error.message}</div>}
         {alerts.size > 0 && (
           <p className="health-summary small">
-            ⚠ {alerts.size} {alerts.size === 1 ? 'source needs' : 'sources need'} attention: recent runs failed or returned far fewer records
+            <Icon name="alert" /> {alerts.size} {alerts.size === 1 ? 'source needs' : 'sources need'} attention: recent runs failed or returned far fewer records
             than usual. Flagged rows are listed first and highlighted.
           </p>
         )}
@@ -105,7 +106,7 @@ export function SourcesPanel({ onClose }: { onClose: () => void }) {
                 <td>{s.lastCount ?? '—'}</td>
                 <td>
                   <RunHistory runs={s.runs ?? []} />
-                  {alerts.has(s.id) && <div className="health-alert small">⚠ {alerts.get(s.id)!.reason}</div>}
+                  {alerts.has(s.id) && <div className="health-alert small"><Icon name="alert" /> {alerts.get(s.id)!.reason}</div>}
                 </td>
               </tr>
             ))}

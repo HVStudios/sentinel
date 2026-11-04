@@ -28,6 +28,7 @@ export function StoriesList({ stories, loading, error, selectedId, onSelect }: P
           return (
             <li key={s.id}>
               <button className={`feed-item type-story${s.id === selectedId ? ' selected' : ''}`} onClick={() => onSelect(s.id)}>
+                <i className="sym sym-story" aria-hidden="true" />
                 <div className="feed-meta">
                   <span className="pill pill-story">Story · {a.size} items</span>
                   <time dateTime={s.occurredAt ?? undefined} title={`Last update ${s.occurredAt}`}>

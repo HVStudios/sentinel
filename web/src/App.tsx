@@ -15,6 +15,8 @@ import { TrendsView } from './components/TrendsView.tsx';
 import { useWatchData, useWatchlist } from './lib/watchlist.ts';
 import { useDataVersion } from './lib/useDataVersion.ts';
 import { formatHash, isNavigation, parseHash, type ViewState } from './lib/urlState.ts';
+import { BrandMark, Icon } from './components/Icon.tsx';
+import { useTheme } from './lib/theme.ts';
 
 export const PRESETS = [
   { id: '24h', label: '24h', ms: 86_400_000 },
@@ -53,6 +55,7 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
   const [view, setView] = useState<'feed' | 'stories' | 'watchlist'>(initial.view);
   const [stageView, setStageView] = useState<'map' | 'trends'>(initial.main);
   const [copyStatus, setCopyStatus] = useState('');
+  const { theme, setTheme } = useTheme();
   // Live mode: reload data whenever a server-side refresh (manual or scheduled) finishes.
   const data = useDataVersion(api);
   const watchlist = useWatchlist(now);
@@ -213,10 +216,8 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
       </a>
       <header className="topbar">
         <div className="brand">
-          <span className="brand-mark" aria-hidden>
-            ◉
-          </span>
-          SENTINEL
+          <BrandMark />
+          <span className="brand-name">SENTINEL</span>
           <span className="brand-sub">intelligence explorer</span>
         </div>
         <input
@@ -250,6 +251,14 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
             </button>
           ))}
         </div>
+        <div className="seg seg-icons" role="group" aria-label="Chart mode">
+          <button className={theme === 'day' ? 'on' : ''} aria-pressed={theme === 'day'} aria-label="Day chart" title="Day chart" onClick={() => setTheme('day')}>
+            <Icon name="sun" />
+          </button>
+          <button className={theme === 'night' ? 'on' : ''} aria-pressed={theme === 'night'} aria-label="Night chart" title="Night chart" onClick={() => setTheme('night')}>
+            <Icon name="moon" />
+          </button>
+        </div>
         <button className="ghost" onClick={copyLink} title="Copy a link to exactly this view">
           Copy link
         </button>
@@ -261,7 +270,7 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
           {data.running && <span className="refreshing-tag">refreshing…</span>}
           {alerts.length > 0 && (
             <span className="alert-tag" title={alerts.map((a) => `${sourceName(snapshot.data!.sources, a.sourceId)}: ${a.reason}`).join('\n')}>
-              ⚠ {alerts.length} {alerts.length === 1 ? 'source needs' : 'sources need'} attention
+              <Icon name="alert" /> {alerts.length} {alerts.length === 1 ? 'source needs' : 'sources need'} attention
             </span>
           )}
           {snapshot.data?.generatedAt && (
@@ -274,7 +283,7 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
 
       <main className="main">
         <section className="stage">
-          <div className="stage-head">
+          <div className="stage-head view-bar">
             <h2>{stageView === 'map' ? 'World view' : 'Trends'}</h2>
             <div className="seg seg-sm seg-view" role="group" aria-label="Main view">
               <button className={stageView === 'map' ? 'on' : ''} aria-pressed={stageView === 'map'} onClick={() => setStageView('map')}>
@@ -290,15 +299,6 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
                   {brush ? `${new Date(brush.from).toLocaleString()} → ${new Date(brush.to).toLocaleString()}` : `Last ${preset}`}
                   {counts && ` · ${counts.points} mapped events · ${counts.countries} articles with publisher country`}
                 </span>
-                <label className="small check">
-                  <input type="checkbox" checked={showCountries} onChange={(e) => setShowCountries(e.target.checked)} /> Publisher-country shading
-                </label>
-                <label className="small check check-tight">
-                  <input type="checkbox" checked={showVendors} onChange={(e) => setShowVendors(e.target.checked)} /> Vendor HQs
-                </label>
-                <label className="small check check-tight">
-                  <input type="checkbox" checked={showAffected} onChange={(e) => setShowAffected(e.target.checked)} /> GDACS affected countries
-                </label>
               </>
             )}
           </div>
@@ -317,6 +317,8 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
             affected={map.data?.affected ?? []}
             showAffected={showAffected && types.includes('natural_event')}
             coverage={coverage?.id === selected ? coverage : null}
+            layers={{ countries: showCountries, vendors: showVendors, affected: showAffected }}
+            onLayer={(layer, on) => ({ countries: setShowCountries, vendors: setShowVendors, affected: setShowAffected })[layer](on)}
             />
             {timeline.data && (
               <Timeline
@@ -347,7 +349,7 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
                 aria-pressed={view === 'watchlist'}
                 onClick={() => setView('watchlist')}
               >
-                <span aria-hidden="true">★ </span>Watchlist
+                <Icon name="star" />Watchlist
                 {watchData.totalNew > 0 && (
                   <span className="count-badge">
                     {watchData.totalNew}

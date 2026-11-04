@@ -23,6 +23,35 @@ test('main view has no WCAG A/AA violations', async ({ page }) => {
   expect(await audit(page)).toEqual([]);
 });
 
+test.describe('night chart', () => {
+  test.beforeEach(async ({ page }) => {
+    // Only on first load, so a choice made during the test survives a reload.
+    await page.addInitScript(() => localStorage.getItem('sentinel.theme') ?? localStorage.setItem('sentinel.theme', 'night'));
+  });
+
+  test('main view has no WCAG A/AA violations', async ({ page }) => {
+    await open(page);
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'night');
+    await page.getByText(/^Affected countries \(\d+\)$/).click();
+    expect(await audit(page)).toEqual([]);
+  });
+
+  test('investigation panel has no WCAG A/AA violations', async ({ page }) => {
+    await open(page, '#/node/cve%3ACVE-2026-111357');
+    await expect(page.getByRole('complementary', { name: 'Investigation' }).getByRole('group', { name: 'Relationship graph' })).toBeVisible();
+    expect(await audit(page)).toEqual([]);
+  });
+
+  test('the Day / Night switch is remembered across reloads', async ({ page }) => {
+    await open(page);
+    await page.getByRole('button', { name: 'Day chart' }).click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'day');
+    await page.reload();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'day');
+    await expect(page.getByRole('button', { name: 'Day chart' })).toHaveAttribute('aria-pressed', 'true');
+  });
+});
+
 test('investigation panel has no WCAG A/AA violations', async ({ page }) => {
   await open(page, '#/node/cve%3ACVE-2026-111357');
   await expect(page.getByRole('complementary', { name: 'Investigation' }).getByRole('group', { name: 'Relationship graph' })).toBeVisible();

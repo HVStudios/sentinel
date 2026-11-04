@@ -7,6 +7,7 @@ import { useFetch } from '../lib/useFetch.ts';
 import { coverageByCountry, type CoverageGroup } from '../../../shared/coverage.ts';
 import { EpssSparkline } from './EpssSparkline.tsx';
 import { Graph } from './Graph.tsx';
+import { Icon } from './Icon.tsx';
 
 interface Props {
   id: string;
@@ -45,7 +46,7 @@ export function Investigate({ id, onSelect, onClose, onBack, watched = false, on
       <div className="inv-bar">
         {onBack && (
           <button className="ghost" onClick={onBack} aria-label="Back">
-            ← Back
+            <Icon name="back" /> Back
           </button>
         )}
         <span className="muted">Investigation</span>
@@ -56,12 +57,12 @@ export function Investigate({ id, onSelect, onClose, onBack, watched = false, on
             onClick={() => onToggleWatch(detail.data!.node)}
             title={watched ? 'Remove from your watchlist' : 'Add to your watchlist (stored in this browser)'}
           >
-            <span aria-hidden="true">{watched ? '★ ' : '☆ '}</span>
+            <Icon name="star" filled={watched} />
             {watched ? 'Watching' : 'Watch'}
           </button>
         )}
         <button className="ghost" onClick={onClose} aria-label="Close investigation">
-          ✕
+          <Icon name="close" />
         </button>
       </div>
       {detail.error && <div className="error">Could not load {id}: {detail.error.message}</div>}
