@@ -10,7 +10,7 @@ export const PRESET_IDS = ['24h', '7d', '30d', '90d', '1y'] as const;
 export type PresetId = (typeof PRESET_IDS)[number];
 export type SideView = 'feed' | 'stories' | 'watchlist';
 export type StageView = 'map' | 'trends';
-export const LAYERS = ['publishers', 'vendors', 'gdacs'] as const;
+export const LAYERS = ['publishers', 'vendors', 'gdacs', 'links'] as const;
 export type Layer = (typeof LAYERS)[number];
 
 export interface ViewState {

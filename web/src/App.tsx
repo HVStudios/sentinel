@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { TIMED_TYPES, type FeedSort, type Filters, type SNode, type TimedType } from './api.ts';
+import { TIMED_TYPES, type FeedSort, type Filters, type NodeDetail, type SNode, type TimedType } from './api.ts';
 import { api } from './apiClient.ts';
 import { relativeTime, TYPE_LABEL } from './lib/format.ts';
 import { useFetch } from './lib/useFetch.ts';
-import { WorldMap } from './components/WorldMap.tsx';
+import { WorldMap, type SelectionLinkSet } from './components/WorldMap.tsx';
+import { coverageByCountry } from '../../shared/coverage.ts';
 import { Timeline } from './components/Timeline.tsx';
 import { Feed } from './components/Feed.tsx';
 import { Investigate } from './components/Investigate.tsx';
@@ -50,6 +51,12 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
   const [sort, setSort] = useState<FeedSort>(initial.sort);
   const [showVendors, setShowVendors] = useState(!initial.hidden.includes('vendors'));
   const [showAffected, setShowAffected] = useState(!initial.hidden.includes('gdacs'));
+  const [showLinks, setShowLinks] = useState(!initial.hidden.includes('links'));
+  // The open item's loaded detail, for selection lines on the map.
+  const [openDetail, setOpenDetail] = useState<NodeDetail | null>(null);
+  // While the timeline plays, each step replaces the history entry instead of adding one.
+  const playing = useRef(false);
+  const playPushed = useRef(false);
   // Publisher countries of a vulnerability's coverage, outlined while that item stays open.
   const [coverage, setCoverage] = useState<{ id: string; title: string; countries: string[] } | null>(null);
   const [view, setView] = useState<'feed' | 'stories' | 'watchlist'>(initial.view);
@@ -78,9 +85,14 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
       sort,
       view,
       main: stageView,
-      hidden: [...(showCountries ? [] : ['publishers' as const]), ...(showVendors ? [] : ['vendors' as const]), ...(showAffected ? [] : ['gdacs' as const])],
+      hidden: [
+        ...(showCountries ? [] : ['publishers' as const]),
+        ...(showVendors ? [] : ['vendors' as const]),
+        ...(showAffected ? [] : ['gdacs' as const]),
+        ...(showLinks ? [] : ['links' as const]),
+      ],
     }),
-    [selected, preset, brush, types, q, sort, view, stageView, showCountries, showVendors, showAffected],
+    [selected, preset, brush, types, q, sort, view, stageView, showCountries, showVendors, showAffected, showLinks],
   );
 
   // State → URL: navigation gets its own history entry; typing a search only replaces the current one.
@@ -88,7 +100,9 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
   useEffect(() => {
     const hash = formatHash(viewState);
     if (hash !== window.location.hash) {
-      const push = isNavigation(lastView.current, viewState) && window.location.hash !== '';
+      // A playback run gets one history entry (its first step), so Back returns to the view before Play.
+      const push = isNavigation(lastView.current, viewState) && window.location.hash !== '' && !(playing.current && playPushed.current);
+      if (push && playing.current) playPushed.current = true;
       window.history[push ? 'pushState' : 'replaceState'](null, '', hash);
     }
     lastView.current = viewState;
@@ -112,6 +126,7 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
       setShowCountries(!v.hidden.includes('publishers'));
       setShowVendors(!v.hidden.includes('vendors'));
       setShowAffected(!v.hidden.includes('gdacs'));
+      setShowLinks(!v.hidden.includes('links'));
     };
     window.addEventListener('popstate', apply);
     window.addEventListener('hashchange', apply);
@@ -199,10 +214,27 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
   const snapshot = useFetch((s) => api.sources(s), `sources:${data.version}`);
   const alerts = snapshot.data ? sourceAlerts(snapshot.data.sources) : [];
 
+  const links: SelectionLinkSet | null = useMemo(() => {
+    const d = openDetail?.node.id === selected ? openDetail : null;
+    if (!d) return null;
+    const n = d.node;
+    const countries = coverageByCountry(d.edges).flatMap((g) =>
+      g.country ? [{ country: g.country, count: g.items.length, confidence: Math.max(...g.items.map((i) => (i.basis === 'reported' ? 1 : i.confidence))) }] : [],
+    );
+    return {
+      id: n.id,
+      title: (n.attrs?.cveId as string | undefined) ?? n.title,
+      origin: n.geoBasis === 'coordinates' && n.lat != null && n.lon != null ? { lat: n.lat, lon: n.lon } : null,
+      vendors: d.vendorHqs ?? [],
+      countries,
+    };
+  }, [openDetail, selected]);
+  const hasLinks = Boolean(showLinks && links && (links.vendors.length || links.countries.length));
+
   const counts = map.data ? { points: map.data.points.length, countries: map.data.countries.reduce((s, c) => s + c.count, 0) } : null;
 
   return (
-    <div className={`app${selected ? ' has-inv' : ''}`}>
+    <div className={`app${selected ? ' has-inv' : ''}${hasLinks && stageView === 'map' ? ' has-links' : ''}`}>
       <a
         className="skip-link"
         href="#feed"
@@ -317,8 +349,10 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
             affected={map.data?.affected ?? []}
             showAffected={showAffected && types.includes('natural_event')}
             coverage={coverage?.id === selected ? coverage : null}
-            layers={{ countries: showCountries, vendors: showVendors, affected: showAffected }}
-            onLayer={(layer, on) => ({ countries: setShowCountries, vendors: setShowVendors, affected: setShowAffected })[layer](on)}
+            layers={{ countries: showCountries, vendors: showVendors, affected: showAffected, links: showLinks }}
+            onLayer={(layer, on) => ({ countries: setShowCountries, vendors: setShowVendors, affected: setShowAffected, links: setShowLinks })[layer](on)}
+            links={links}
+            showLinks={showLinks}
             />
             {timeline.data && (
               <Timeline
@@ -328,6 +362,10 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
                 series={timeline.data.series}
                 selection={brush}
                 onBrush={setBrush}
+                onPlayingChange={(p) => {
+                  playing.current = p;
+                  playPushed.current = false;
+                }}
               />
             )}
             </>
@@ -405,6 +443,7 @@ export function App({ now = () => new Date() }: { now?: () => Date }) {
             watched={watchlist.isWatched(selected)}
             onToggleWatch={watchlist.toggle}
             coverageShown={coverage?.id === selected}
+            onDetail={setOpenDetail}
             onShowCoverage={(c) => {
               setCoverage(c);
               if (c) setStageView('map');

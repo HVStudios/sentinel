@@ -57,6 +57,7 @@ export const article = node({
 
 export const detail: NodeDetail = {
   node: kevCve,
+  vendorHqs: [],
   provenance: [
     { id: 'cisa-kev', name: 'CISA KEV', homepage: 'https://www.cisa.gov', description: 'Exploited vulns', sourceUrl: null, fetchedAt: '2026-10-30T12:00:00.000Z' },
   ],

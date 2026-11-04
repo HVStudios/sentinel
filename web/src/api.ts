@@ -36,6 +36,8 @@ export interface NodeDetail {
   node: SNode;
   provenance: { id: string; name: string; homepage: string; description: string; sourceUrl: string | null; fetchedAt: string }[];
   edges: (SEdge & { direction: 'in' | 'out'; other: EdgeOther<NodeType> })[];
+  /** Wikidata headquarters of the vendors behind this item (confident matches only), for selection lines. */
+  vendorHqs: ItemVendorHq[];
 }
 
 /** Where a vendor is headquartered according to Wikidata. Not the location of any vulnerability or attack. */
@@ -54,6 +56,8 @@ export interface VendorHq {
 }
 
 import type { EdgeOther } from '../../shared/coverage.ts';
+import type { ItemVendorHq } from '../../shared/vendorHq.ts';
+export type { ItemVendorHq } from '../../shared/vendorHq.ts';
 export type { Trends } from '../../shared/trends.ts';
 import type { Trends } from '../../shared/trends.ts';
 

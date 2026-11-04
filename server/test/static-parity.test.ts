@@ -4,6 +4,7 @@ import { Store } from '../src/store.ts';
 import { buildSnapshot } from '../src/snapshot.ts';
 import { RateLimiter } from '../src/http.ts';
 import { edgeOther } from '../../shared/coverage.ts';
+import { vendorHqsFor } from '../../shared/vendorHq.ts';
 import { indexSnapshot, queryFeed, queryGraph, queryMap, queryNode, queryRelated, queryStories, queryTimeline, queryTrends, type Snapshot } from '../../web/src/staticApi.ts';
 import type { TimedType } from '../../web/src/api.ts';
 import { vi } from 'vitest';
@@ -99,6 +100,8 @@ describe('static snapshot engine parity', () => {
       );
       // The linked nodes' details (publisher country, outlet) match what the server API returns.
       for (const e of st.edges) expect(e.other, e.other.id).toEqual(edgeOther(store.getNode(e.other.id), e.other.id));
+      // Vendor HQs for selection lines, followed through the same reported links.
+      expect(st.vendorHqs, id).toEqual(vendorHqsFor({ node: (x) => store.getNode(x), edges: (x) => store.edgesOf(x) }, id));
       for (const depth of [1, 2]) {
         const g = store.graph(id, depth, 8);
         const sg = queryGraph(ix, id, depth, 8);
@@ -106,6 +109,8 @@ describe('static snapshot engine parity', () => {
         expect(sg.edges.map((e) => `${e.src}|${e.dst}|${e.rel}`).sort()).toEqual(g.edges.map((e) => `${e.src}|${e.dst}|${e.rel}`).sort());
       }
     }
+    // The fixtures link these to a Wikidata-matched vendor, so the HQ lines are actually exercised.
+    for (const id of ['cve:CVE-2026-111357', 'vendor:ivanti', 'product:ivanti/connect-secure']) expect(queryNode(ix, id).vendorHqs.map((v) => v.id), id).toContain('vendor:ivanti');
     expect(() => queryNode(ix, 'missing')).toThrow(/404/);
   });
 });

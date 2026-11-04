@@ -1,19 +1,24 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { geoEqualEarth, geoGraticule10, geoPath } from 'd3-geo';
+import { geoContains, geoEqualEarth, geoGraticule10, geoPath } from 'd3-geo';
 import { select } from 'd3-selection';
 import { zoom, zoomIdentity, type ZoomTransform } from 'd3-zoom';
 import { feature, mesh } from 'topojson-client';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { GeometryCollection, Topology } from 'topojson-specification';
 import world from 'world-atlas/countries-110m.json';
-import type { AffectedCountry, SNode, VendorHq } from '../api.ts';
+import type { AffectedCountry, ItemVendorHq, SNode, VendorHq } from '../api.ts';
 import { createCountryResolver } from '../lib/countries.ts';
 import { categoryLabel, relativeTime } from '../lib/format.ts';
 import { useRovingFocus } from '../lib/useRovingFocus.ts';
+import { bounds, clusterPoints, type Cluster, type Placed } from '../lib/clusters.ts';
+import { SelectionLines, svgFrame, type LinkTarget } from './SelectionLines.tsx';
 import { Icon } from './Icon.tsx';
 
 const W = 960;
 const H = 500;
+const MAX_K = 12;
+/** Event points closer than this on screen merge into a cluster. */
+const CLUSTER_PX = 16;
 
 type CountryFeature = Feature<Geometry, { name: string }>;
 const topo = world as unknown as Topology<{ countries: GeometryCollection<{ name: string }> }>;
@@ -33,6 +38,37 @@ const spherePath = path({ type: 'Sphere' }) ?? '';
 const graticulePath = path(geoGraticule10()) ?? '';
 const countryPaths = countries.map((c) => ({ name: c.properties.name, d: path(c) ?? '' }));
 const borderPath = path(borders) ?? '';
+
+/** Where to aim a line at a country: the centroid of its largest polygon (so France points at France, not between it and Guiana). */
+const countryAnchor = new Map(
+  countries.map((c) => {
+    const g = c.geometry;
+    let best: Feature<Geometry> = c;
+    if (g.type === 'MultiPolygon') {
+      let area = -1;
+      for (const coords of g.coordinates) {
+        const f: Feature<Geometry> = { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: coords } };
+        const a = path.area(f);
+        if (a > area) [area, best] = [a, f];
+      }
+    }
+    return [c.properties.name, path.centroid(best)] as const;
+  }),
+);
+
+/** A readable place for a cluster: the country under it, or rounded coordinates at sea. Cached, since clusters move with every zoom step. */
+const placeCache = new Map<string, string>();
+function placeName(x: number, y: number): string {
+  const ll = projection.invert?.([x, y]);
+  if (!ll) return 'this area';
+  const key = `${ll[0].toFixed(1)}|${ll[1].toFixed(1)}`;
+  const hit = placeCache.get(key);
+  if (hit) return hit;
+  const c = countries.find((f) => geoContains(f, ll));
+  const name = c ? c.properties.name : `${Math.abs(Math.round(ll[1]))}°${ll[1] >= 0 ? 'N' : 'S'} ${Math.abs(Math.round(ll[0]))}°${ll[0] >= 0 ? 'E' : 'W'}`;
+  placeCache.set(key, name);
+  return name;
+}
 
 /** Degree labels printed around the chart's edge, the way an aeronautical chart frames its sheet. */
 const fmtDeg = (v: number, pos: string, neg: string) => (v === 0 ? '0°' : `${Math.abs(v)}°${v > 0 ? pos : neg}`);
@@ -62,8 +98,23 @@ interface Props {
   /** Publisher countries of the outlets and agencies that reported an item (outlined). */
   coverage?: { title: string; countries: string[] } | null;
   /** The viewer's layer switches (shown in the Layers card when onLayer is given). */
-  layers?: { countries: boolean; vendors: boolean; affected: boolean };
-  onLayer?: (layer: 'countries' | 'vendors' | 'affected', on: boolean) => void;
+  layers?: { countries: boolean; vendors: boolean; affected: boolean; links?: boolean };
+  onLayer?: (layer: 'countries' | 'vendors' | 'affected' | 'links', on: boolean) => void;
+  /** Places the open item is linked to, drawn as selection lines when `showLinks` is on. */
+  links?: SelectionLinkSet | null;
+  showLinks?: boolean;
+}
+
+/** What the open item links to on the map. */
+export interface SelectionLinkSet {
+  id: string;
+  title: string;
+  /** Set for items with source coordinates: lines leave from the item's own point. */
+  origin: { lon: number; lat: number } | null;
+  /** Reported: vulnerability → product → vendor (NVD, KEV, GHSA); HQ from Wikidata (confident matches only). */
+  vendors: ItemVendorHq[];
+  /** Inferred: publisher countries of the outlets that mentioned the item, with the best mention confidence. */
+  countries: { country: string; confidence: number; count: number }[];
 }
 
 function LayerCheck({ label, checked, onChange }: { label: string; checked: boolean; onChange: (on: boolean) => void }) {
@@ -76,8 +127,9 @@ function LayerCheck({ label, checked, onChange }: { label: string; checked: bool
 
 export const ALERT_COLORS: Record<AffectedCountry['maxAlert'], string> = { Green: 'var(--alert-green)', Orange: 'var(--alert-orange)', Red: 'var(--alert-red)' };
 
-export function WorldMap({ points, countryCounts, selectedId, onSelect, showCountries, vendors = [], showVendors = false, affected = [], showAffected = false, coverage = null, layers, onLayer }: Props) {
+export function WorldMap({ points, countryCounts, selectedId, onSelect, showCountries, vendors = [], showVendors = false, affected = [], showAffected = false, coverage = null, layers, onLayer, links = null, showLinks = false }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const layersRef = useRef<HTMLElement>(null);
   // Open on wide screens; on a phone the card starts collapsed so the feed stays near the map.
   const [layersOpen, setLayersOpen] = useState(() => !(typeof window !== 'undefined' && window.matchMedia?.('(max-width: 900px)').matches));
@@ -98,13 +150,29 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
   const [transform, setTransform] = useState<ZoomTransform>(zoomIdentity);
   const [hover, setHover] = useState<{ node: SNode; x: number; y: number } | null>(null);
   const [hoverVendor, setHoverVendor] = useState<{ v: VendorHq; x: number; y: number } | null>(null);
+  const [hoverCluster, setHoverCluster] = useState<{ c: ClusterView; x: number; y: number } | null>(null);
+  // Screen pixels per map unit at zoom 1, so clusters merge by on-screen distance at any size.
+  const [pxPerUnit, setPxPerUnit] = useState(1);
+  useLayoutEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const measure = () => {
+      const f = svgFrame(svg, W, H);
+      if (f) setPxPerUnit((p) => (Math.abs(p - f.scale) > 0.01 ? f.scale : p));
+    };
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(svg);
+    return () => ro.disconnect();
+  }, []);
   const maxVulns = Math.max(1, ...vendors.map((v) => v.vulnerabilities));
 
   useEffect(() => {
     if (!svgRef.current) return;
     const svg = select(svgRef.current);
     const z = zoom<SVGSVGElement, unknown>()
-      .scaleExtent([1, 12])
+      .scaleExtent([1, MAX_K])
       .translateExtent([
         [0, 0],
         [W, H],
@@ -163,6 +231,16 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
 
   const k = transform.k;
 
+  // Merge nearby events at this zoom. The open item always stays its own point; at full zoom nothing merges.
+  const { singles, clusters } = useMemo(() => {
+    const placed: Placed<SNode>[] = projected.map(({ p, xy }) => ({ id: p.id, x: xy[0], y: xy[1], weight: p.severity ?? 0, item: p }));
+    const res = clusterPoints(placed, k >= MAX_K - 1e-6 ? 0 : CLUSTER_PX / (k * pxPerUnit), (id) => id === selectedId);
+    return {
+      singles: res.singles.map((s) => ({ p: s.item, xy: [s.x, s.y] as [number, number] })),
+      clusters: res.clusters.map((c) => describeCluster(c)),
+    };
+  }, [projected, k, pxPerUnit, selectedId]);
+
   const zoomBy = (factor: number | null) => {
     const svg = svgRef.current;
     const z = zoomRef.current;
@@ -180,12 +258,75 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
     [vendors, showVendors],
   );
   const order = useMemo(() => {
-    const all = [...projected.map((x) => ({ id: x.p.id, x: x.xy[0] })), ...vendorMarkers.map((x) => ({ id: x.v.id, x: x.xy[0] }))];
+    const all = [
+      ...singles.map((x) => ({ id: x.p.id, x: x.xy[0] })),
+      ...clusters.map((c) => ({ id: c.id, x: c.x })),
+      ...vendorMarkers.map((x) => ({ id: x.v.id, x: x.xy[0] })),
+    ];
     all.sort((a, b) => a.x - b.x || (a.id < b.id ? -1 : 1));
     return { ids: all.map((m) => m.id), index: new Map(all.map((m, i) => [m.id, i])) };
-  }, [projected, vendorMarkers]);
-  const activate = useCallback((i: number) => order.ids[i] && onSelect(order.ids[i]!), [order, onSelect]);
+  }, [singles, clusters, vendorMarkers]);
+
+  // After zooming into a cluster from the keyboard, focus lands on the first of its events (or the smaller cluster holding it).
+  const pendingFocus = useRef<string[] | null>(null);
+  const zoomToCluster = useCallback(
+    (c: ClusterView, moveFocus: boolean) => {
+      const svg = svgRef.current;
+      const z = zoomRef.current;
+      if (!svg || !z) return;
+      const [[x0, y0], [x1, y1]] = bounds(c.members);
+      const fit = 0.5 * Math.min(W / Math.max(x1 - x0, 1e-3), H / Math.max(y1 - y0, 1e-3));
+      const kt = Math.min(MAX_K, Math.max(k * 2, fit));
+      if (moveFocus) pendingFocus.current = c.members.map((m) => m.id);
+      setHoverCluster(null);
+      select(svg).call(z.transform, zoomIdentity.translate(W / 2, H / 2).scale(kt).translate(-(x0 + x1) / 2, -(y0 + y1) / 2));
+    },
+    [k],
+  );
+  useEffect(() => {
+    const want = pendingFocus.current;
+    if (!want) return;
+    pendingFocus.current = null;
+    const single = new Set(singles.map((s) => s.p.id));
+    for (const id of want) {
+      const key = single.has(id) ? id : clusters.find((c) => c.members.some((m) => m.id === id))?.id;
+      const el = key && [...(svgRef.current?.querySelectorAll<SVGGElement>('[data-key]') ?? [])].find((e) => e.dataset.key === key);
+      if (el) {
+        el.focus();
+        return;
+      }
+    }
+  }, [singles, clusters]);
+
+  const activate = useCallback(
+    (i: number) => {
+      const id = order.ids[i];
+      if (!id) return;
+      const c = clusters.find((x) => x.id === id);
+      if (c) zoomToCluster(c, true);
+      else onSelect(id);
+    },
+    [order, clusters, onSelect, zoomToCluster],
+  );
   const roving = useRovingFocus<SVGGElement>(order.ids.length, activate);
+
+  // Selection lines: targets in map coordinates; the overlay converts them to screen pixels.
+  const { linkOrigin, linkTargets } = useMemo(() => {
+    if (!showLinks || !links) return { linkOrigin: null, linkTargets: [] as LinkTarget[] };
+    const o = links.origin ? projection([links.origin.lon, links.origin.lat]) : null;
+    const targets: LinkTarget[] = [];
+    for (const v of links.vendors) {
+      const xy = projection([v.lon, v.lat]);
+      if (xy) targets.push({ key: v.id, basis: 'reported', x: xy[0], y: xy[1], confidence: 1 });
+    }
+    for (const c of links.countries) {
+      const name = resolveCountry(c.country);
+      const xy = name ? countryAnchor.get(name) : undefined;
+      if (xy && Number.isFinite(xy[0])) targets.push({ key: `country:${c.country}`, basis: 'inferred', x: xy[0], y: xy[1], confidence: c.confidence });
+    }
+    return { linkOrigin: o ? { x: o[0], y: o[1] } : null, linkTargets: targets };
+  }, [links, showLinks]);
+  const linksUnmapped = useMemo(() => (links?.countries ?? []).filter((c) => !resolveCountry(c.country)).map((c) => c.country), [links]);
 
   /** Shows the tooltip next to a focused marker, so keyboard users see what mouse users see on hover. */
   const tooltipAt = (el: Element) => {
@@ -200,9 +341,10 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
   };
 
   return (
-    <div className="map-wrap">
+    <div className="map-wrap" ref={wrapRef}>
       <p id="map-help" className="sr-only">
-        One Tab stop for all markers: arrow keys move from west to east, Enter opens the selected marker, plus and minus zoom, 0 resets.
+        One Tab stop for all markers: arrow keys move from west to east, Enter opens the selected marker or zooms in to a group of nearby events, plus and
+        minus zoom, 0 resets.
       </p>
       <svg
         ref={svgRef}
@@ -266,7 +408,7 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
           {countryPaths.map((c) =>
             coverageNames.has(c.name) ? <path key={`coverage-${c.name}`} d={c.d} className="coverage-outline" strokeWidth={1.6 / k} data-coverage={c.name} /> : null,
           )}
-          {projected.map(({ p, xy }) => {
+          {singles.map(({ p, xy }) => {
             const r = (2.5 + 7 * (p.severity ?? 0.3)) / Math.sqrt(k);
             const selected = p.id === selectedId;
             return (
@@ -275,6 +417,7 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
                 transform={`translate(${xy[0]},${xy[1]})`}
                 className={`point${selected ? ' selected' : ''}`}
                 data-id={p.id}
+                data-key={p.id}
                 onClick={(e) => {
                   e.stopPropagation();
                   onSelect(p.id);
@@ -295,6 +438,39 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
               </g>
             );
           })}
+          {clusters.map((c) => {
+            const u = 1 / (k * pxPerUnit);
+            const r = (9 + 2.5 * Math.log2(c.members.length)) * u;
+            return (
+              <g
+                key={c.id}
+                transform={`translate(${c.x},${c.y})`}
+                className="cluster"
+                data-key={c.id}
+                data-count={c.members.length}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  zoomToCluster(c, false);
+                }}
+                onMouseEnter={(e) => setHoverCluster({ c, x: e.clientX, y: e.clientY })}
+                onMouseLeave={() => setHoverCluster(null)}
+                {...roving.itemProps(order.index.get(c.id)!)}
+                onFocus={(e) => {
+                  roving.itemProps(order.index.get(c.id)!).onFocus();
+                  setHoverCluster({ c, ...tooltipAt(e.currentTarget) });
+                }}
+                onBlur={() => setHoverCluster(null)}
+                role="button"
+                aria-label={`${c.label}. Zooms in to separate them.`}
+              >
+                <circle r={r} className="cluster-ring" style={{ stroke: c.color }} />
+                <circle r={r - 3 * u} className="cluster-core" style={{ fill: c.color }} />
+                <text className="cluster-count" y={3.6 * u} style={{ fontSize: `${10.5 * u}px` }} aria-hidden="true">
+                  {c.members.length}
+                </text>
+              </g>
+            );
+          })}
           {vendorMarkers.map(({ v, xy }) => {
               const r = (3 + 6 * Math.sqrt(v.vulnerabilities / maxVulns)) / Math.sqrt(k);
               return (
@@ -303,6 +479,7 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
                   transform={`translate(${xy[0]},${xy[1]}) rotate(45)`}
                   className={`vendor-hq${v.id === selectedId ? ' selected' : ''}`}
                   data-vendor={v.id}
+                  data-key={v.id}
                   onClick={(e) => {
                     e.stopPropagation();
                     onSelect(v.id);
@@ -324,6 +501,8 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
           })}
         </g>
       </svg>
+
+      <SelectionLines svgRef={svgRef} wrapRef={wrapRef} w={W} h={H} transform={transform} origin={linkOrigin} targets={linkTargets} />
 
       <section className="layers" aria-labelledby="layers-heading" ref={layersRef}>
         <div className="layers-head">
@@ -356,6 +535,55 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
               Points: locations as reported by USGS, NASA EONET and GDACS (for GDACS floods and storms, the centroid of the affected area). Size = severity.
               Events spread over many countries, such as droughts, are listed in the feed but not drawn as a point.
             </div>
+            <div className="legend-note">
+              <i className="swatch-cluster" aria-hidden="true" /> Rings with a number: nearby events merged at this zoom. Zoom in, or open a ring, to separate them.
+            </div>
+          </div>
+          <div className="layer">
+            {onLayer && <LayerCheck label="Selection links" checked={layers?.links ?? showLinks} onChange={(v) => onLayer('links', v)} />}
+            <div className="legend-row link-legend">
+              <span className="legend-item">
+                <svg className="swatch-line" width="26" height="8" aria-hidden="true">
+                  <line x1="1" y1="4" x2="25" y2="4" className="link link-reported" />
+                </svg>
+                Reported
+              </span>
+              <span className="legend-item">
+                <svg className="swatch-line" width="26" height="8" aria-hidden="true">
+                  <line x1="1" y1="4" x2="25" y2="4" className="link link-inferred" />
+                </svg>
+                Inferred
+              </span>
+            </div>
+            {showLinks && links && (links.vendors.length > 0 || links.countries.length > 0) ? (
+              <div className="legend-note links-note" data-testid="links-note">
+                Lines from <strong>{links.title}</strong>
+                {links.origin ? ' (from its location)' : ''}:
+                {links.vendors.length > 0 && (
+                  <>
+                    {' '}
+                    solid to the headquarters of {links.vendors.map((v) => `${v.title} (${v.hq}${v.country ? `, ${v.country}` : ''})`).join(', ')}, the vendor
+                    {links.vendors.length === 1 ? '' : 's'} of affected products, as reported by the sources (HQ from Wikidata);
+                  </>
+                )}
+                {links.countries.length > 0 && (
+                  <>
+                    {' '}
+                    dashed to the publisher countries of outlets that mentioned it ({links.countries.map((c) => c.country).join(', ')}), inferred from the
+                    text.
+                  </>
+                )}
+                {linksUnmapped.length > 0 && <span className="unmapped"> Not drawn: {linksUnmapped.join(', ')}.</span>}
+              </div>
+            ) : (
+              <div className="legend-note muted">
+                {showLinks
+                  ? links
+                    ? 'The open item has no vendor headquarters or reporting countries to link to.'
+                    : 'Open an item to draw lines to where its vendors are based (reported) and to the countries of outlets that mentioned it (inferred).'
+                  : 'Lines from the open item are hidden.'}
+              </div>
+            )}
           </div>
           <div className="layer">
             {onLayer && <LayerCheck label="Publisher-country shading" checked={layers?.countries ?? showCountries} onChange={(v) => onLayer('countries', v)} />}
@@ -447,6 +675,14 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
         </div>
       )}
 
+      {hoverCluster && (
+        <div className="map-tooltip" style={{ left: hoverCluster.x + 12, top: hoverCluster.y + 12 }} role="tooltip">
+          <div className="tt-cat">{hoverCluster.c.members.length} nearby events</div>
+          <div className="tt-title">Near {hoverCluster.c.place}</div>
+          <div className="tt-meta">{hoverCluster.c.breakdown} · open to zoom in</div>
+        </div>
+      )}
+
       {hover && (
         <div className="map-tooltip" style={{ left: hover.x + 12, top: hover.y + 12 }} role="tooltip">
           <div className="tt-cat">{categoryLabel(hover.node.category)}</div>
@@ -456,4 +692,27 @@ export function WorldMap({ points, countryCounts, selectedId, onSelect, showCoun
       )}
     </div>
   );
+}
+
+interface ClusterView extends Cluster<SNode> {
+  color: string;
+  place: string;
+  breakdown: string;
+  label: string;
+}
+
+function describeCluster(c: Cluster<SNode>): ClusterView {
+  const byCat = new Map<string, number>();
+  for (const m of c.members) byCat.set(m.item.category ?? '', (byCat.get(m.item.category ?? '') ?? 0) + 1);
+  const cats = [...byCat].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1));
+  const only = cats.length === 1 ? cats[0]![0] : null;
+  const place = placeName(c.x, c.y);
+  const breakdown = cats.map(([cat, n]) => `${categoryLabel(cat) || 'Other'}: ${n}`).join(', ');
+  return {
+    ...c,
+    color: (only !== null && POINT_COLORS[only]) || 'var(--c-event)',
+    place,
+    breakdown,
+    label: `${c.members.length} events near ${place} (${breakdown})`,
+  };
 }
